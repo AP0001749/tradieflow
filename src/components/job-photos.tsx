@@ -1,0 +1,187 @@
+"use client";
+
+import { useState, useCallback } from "react";
+import { useDropzone } from "react-dropzone";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Upload, X, Image as ImageIcon, Trash2 } from "lucide-react";
+import { uploadJobPhoto, deleteJobPhoto } from "@/app/dashboard/jobs/actions";
+
+interface JobPhotosProps {
+  jobId: string;
+  userId: string;
+  initialPhotos?: JobPhoto[];
+}
+
+interface JobPhoto {
+  name: string;
+  url: string;
+  path: string;
+}
+
+export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps) {
+  const [photos, setPhotos] = useState<JobPhoto[]>(initialPhotos);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      setError(null);
+      setUploading(true);
+
+      try {
+        for (const file of acceptedFiles) {
+          // Validate file type
+          if (!file.type.startsWith("image/")) {
+            setError(`${file.name} is not an image file`);
+            continue;
+          }
+
+          // Validate file size (max 10MB)
+          if (file.size > 10 * 1024 * 1024) {
+            setError(`${file.name} is too large (max 10MB)`);
+            continue;
+          }
+
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("jobId", jobId);
+          formData.append("userId", userId);
+
+          console.log("Uploading photo:", { jobId, userId, fileName: file.name });
+          
+          let result;
+          try {
+            result = await uploadJobPhoto(formData);
+            console.log("Upload result:", result);
+          } catch (fetchError) {
+            console.error("Fetch error calling uploadJobPhoto:", fetchError);
+            setError(`Network error: ${fetchError instanceof Error ? fetchError.message : 'Failed to fetch'}`);
+            continue;
+          }
+
+          if (result.success && result.photo) {
+            console.log("Adding photo to state:", result.photo);
+            setPhotos((prev) => [...prev, result.photo!]);
+            setError(null); // Clear any previous errors on success
+          } else {
+            setError(result.error || "Failed to upload photo");
+          }
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "An error occurred while uploading";
+        setError(errorMessage);
+        console.error("Upload error:", err);
+      } finally {
+        setUploading(false);
+      }
+    },
+    [jobId, userId]
+  );
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
+    },
+    multiple: true,
+    disabled: uploading,
+  });
+
+  const handleDelete = async (photo: JobPhoto) => {
+    if (!confirm("Are you sure you want to delete this photo?")) {
+      return;
+    }
+
+    const result = await deleteJobPhoto(photo.path);
+
+    if (result.success) {
+      setPhotos((prev) => prev.filter((p) => p.path !== photo.path));
+    } else {
+      setError(result.error || "Failed to delete photo");
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Upload Area */}
+      <Card className="border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors">
+        <div
+          {...getRootProps()}
+          className={`p-8 text-center cursor-pointer ${
+            isDragActive ? "bg-blue-50" : "bg-gray-50"
+          } ${uploading ? "opacity-50 cursor-not-allowed" : ""}`}
+        >
+          <input {...getInputProps()} />
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+              <Upload className="w-6 h-6 text-blue-600" />
+            </div>
+            {isDragActive ? (
+              <p className="text-gray-700 font-medium">Drop the images here...</p>
+            ) : (
+              <>
+                <div>
+                  <p className="text-gray-700 font-medium">
+                    Drag & drop images here, or click to select
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    PNG, JPG, GIF up to 10MB
+                  </p>
+                </div>
+                <Button type="button" variant="outline" disabled={uploading}>
+                  {uploading ? "Uploading..." : "Select Files"}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-sm text-red-800">{error}</p>
+        </div>
+      )}
+
+      {/* Photo Grid */}
+      {photos.length > 0 ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {photos.map((photo) => (
+            <Card key={photo.path} className="overflow-hidden group relative">
+              <div className="aspect-square relative">
+                <img
+                  src={photo.url}
+                  alt={photo.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-red-600 hover:bg-red-700 text-white"
+                    onClick={() => handleDelete(photo)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="p-2 bg-white">
+                <p className="text-xs text-gray-600 truncate">{photo.name}</p>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
+          <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+          <p className="text-gray-500">No photos uploaded yet</p>
+          <p className="text-sm text-gray-400 mt-1">
+            Upload before & after photos to showcase your work
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
