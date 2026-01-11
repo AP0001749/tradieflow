@@ -24,6 +24,13 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
+
+    /* Printable / document surfaces (stay light even in dark mode) */
+    --paper: 0 0% 100%;
+    --paper-foreground: 222.2 84% 4.9%;
+    --paper-muted: 210 40% 96.1%;
+    --paper-muted-foreground: 215.4 16.3% 46.9%;
+    --paper-border: 214.3 31.8% 91.4%;
   }
 
   .dark {

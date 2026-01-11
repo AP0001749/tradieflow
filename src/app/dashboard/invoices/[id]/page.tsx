@@ -118,28 +118,28 @@ export default async function InvoiceViewPage({
 
       {/* A4 Paper */}
       <div
-        className="print-paper mx-auto bg-white border border-border/60 shadow-sm p-10 max-w-[210mm] min-h-[297mm]"
+        className="print-paper mx-auto rounded-xl border shadow-sm p-10 max-w-[210mm] min-h-[297mm] bg-[hsl(var(--paper))] text-[hsl(var(--paper-foreground))] border-[hsl(var(--paper-border))] print:rounded-none"
         style={{ pageBreakInside: "avoid" }}
       >
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-2xl font-bold">
               {businessName}
             </div>
             {profile?.email ? (
-              <div className="text-sm text-gray-600 mt-1">{profile.email}</div>
+              <div className="text-sm mt-1 text-[hsl(var(--paper-muted-foreground))]">{profile.email}</div>
             ) : null}
             {profile?.phone ? (
-              <div className="text-sm text-gray-600">{profile.phone}</div>
+              <div className="text-sm text-[hsl(var(--paper-muted-foreground))]">{profile.phone}</div>
             ) : null}
           </div>
 
           <div className="text-right">
-            <div className="text-3xl font-extrabold tracking-wide text-gray-900">
+            <div className="text-3xl font-extrabold tracking-wide">
               INVOICE
             </div>
-            <div className="mt-2 text-sm text-gray-600">
+            <div className="mt-2 text-sm text-[hsl(var(--paper-muted-foreground))]">
               <div>
                 <span className="font-medium">Invoice #</span> {shortId}
               </div>
@@ -153,14 +153,14 @@ export default async function InvoiceViewPage({
           </div>
         </div>
 
-        <div className="h-px bg-gray-200 my-8" />
+        <div className="my-8 h-px bg-[hsl(var(--paper-border))]" />
 
         {/* Bill To */}
         <div className="grid grid-cols-2 gap-8">
           <div>
-            <div className="text-sm font-semibold text-gray-900">Bill To</div>
-            <div className="mt-2 text-sm text-gray-700">
-              <div className="font-medium text-gray-900">
+            <div className="text-sm font-semibold">Bill To</div>
+            <div className="mt-2 text-sm text-[hsl(var(--paper-muted-foreground))]">
+              <div className="font-medium text-[hsl(var(--paper-foreground))]">
                 {invoice.job?.client?.name || "—"}
               </div>
               {invoice.job?.client?.address ? (
@@ -175,36 +175,36 @@ export default async function InvoiceViewPage({
           </div>
 
           <div>
-            <div className="text-sm font-semibold text-gray-900">Details</div>
-            <div className="mt-2 text-sm text-gray-700 space-y-1">
+            <div className="text-sm font-semibold">Details</div>
+            <div className="mt-2 space-y-1 text-sm text-[hsl(var(--paper-muted-foreground))]">
               <div>
-                <span className="font-medium text-gray-900">Job</span>: {invoice.job?.title || "—"}
+                <span className="font-medium text-[hsl(var(--paper-foreground))]">Job</span>: {invoice.job?.title || "—"}
               </div>
               <div>
-                <span className="font-medium text-gray-900">Status</span>: {status.label}
+                <span className="font-medium text-[hsl(var(--paper-foreground))]">Status</span>: {status.label}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="h-px bg-gray-200 my-8" />
+        <div className="my-8 h-px bg-[hsl(var(--paper-border))]" />
 
         {/* Line Item */}
         <div>
-          <div className="text-sm font-semibold text-gray-900">Line Items</div>
+          <div className="text-sm font-semibold">Line Items</div>
 
-          <div className="mt-3 border border-gray-200 rounded-lg overflow-hidden">
-            <div className="grid grid-cols-12 bg-gray-50 text-xs font-semibold text-gray-700 px-4 py-3">
+          <div className="mt-3 overflow-hidden rounded-lg border border-[hsl(var(--paper-border))]">
+            <div className="grid grid-cols-12 bg-[hsl(var(--paper-muted))] px-4 py-3 text-xs font-semibold text-[hsl(var(--paper-muted-foreground))]">
               <div className="col-span-9">Description</div>
               <div className="col-span-3 text-right">Amount</div>
             </div>
-            <div className="grid grid-cols-12 px-4 py-4 text-sm text-gray-800">
+            <div className="grid grid-cols-12 px-4 py-4 text-sm">
               <div className="col-span-9">
-                <div className="font-medium text-gray-900">
+                <div className="font-medium">
                   {invoice.job?.title || "Job"}
                 </div>
                 {invoice.job?.description ? (
-                  <div className="text-sm text-gray-600 mt-1 whitespace-pre-line">
+                  <div className="mt-1 whitespace-pre-line text-sm text-[hsl(var(--paper-muted-foreground))]">
                     {invoice.job.description}
                   </div>
                 ) : null}
@@ -219,14 +219,14 @@ export default async function InvoiceViewPage({
         {/* Total */}
         <div className="mt-10 flex justify-end">
           <div className="w-full max-w-sm">
-            <div className="flex items-center justify-between text-sm text-gray-700">
+            <div className="flex items-center justify-between text-sm text-[hsl(var(--paper-muted-foreground))]">
               <span>Subtotal</span>
               <span>{formatMoney(invoice.amount)}</span>
             </div>
-            <div className="h-px bg-gray-200 my-3" />
+            <div className="my-3 h-px bg-[hsl(var(--paper-border))]" />
             <div className="flex items-center justify-between">
-              <span className="text-lg font-semibold text-gray-900">Total</span>
-              <span className="text-2xl font-extrabold text-gray-900">
+              <span className="text-lg font-semibold">Total</span>
+              <span className="text-2xl font-extrabold">
                 {formatMoney(invoice.amount)}
               </span>
             </div>
@@ -234,8 +234,8 @@ export default async function InvoiceViewPage({
         </div>
 
         {invoice.notes ? (
-          <div className="mt-10 text-sm text-gray-700">
-            <div className="font-semibold text-gray-900">Notes</div>
+          <div className="mt-10 text-sm text-[hsl(var(--paper-muted-foreground))]">
+            <div className="font-semibold text-[hsl(var(--paper-foreground))]">Notes</div>
             <div className="mt-2 whitespace-pre-line">{invoice.notes}</div>
           </div>
         ) : null}
