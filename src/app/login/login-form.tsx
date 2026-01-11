@@ -31,6 +31,13 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
   const [notice, setNotice] = useState<string | null>(null);
   const router = useRouter();
 
+  function validateCredentials() {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) return "Email address is required.";
+    if (!password) return "Password is required.";
+    return null;
+  }
+
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -38,6 +45,13 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validationError = validateCredentials();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setNotice(null);
@@ -57,6 +71,12 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
   };
 
   const handleSignUp = async () => {
+    const validationError = validateCredentials();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setNotice(null);
