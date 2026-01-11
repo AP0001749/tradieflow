@@ -131,7 +131,7 @@ export async function uploadJobPhoto(formData: FormData): Promise<UploadPhotoRes
 
     const file = formData.get("file") as File;
     const jobId = formData.get("jobId") as string;
-    const userId = formData.get("userId") as string;
+    const userId = user.id;
 
     console.log("Server: Upload request received", { 
       jobId, 
@@ -141,7 +141,7 @@ export async function uploadJobPhoto(formData: FormData): Promise<UploadPhotoRes
       fileSize: file?.size 
     });
 
-    if (!file || !jobId || !userId) {
+    if (!file || !jobId) {
       return { success: false, error: "Missing required fields" };
     }
 
@@ -166,7 +166,8 @@ export async function uploadJobPhoto(formData: FormData): Promise<UploadPhotoRes
 
     // Generate unique filename
     const timestamp = Date.now();
-    const fileExt = file.name.split(".").pop();
+    const fileExtRaw = file.name.split(".").pop();
+    const fileExt = fileExtRaw && /^[a-z0-9]+$/i.test(fileExtRaw) ? fileExtRaw : "jpg";
     const fileName = `${timestamp}-${Math.random().toString(36).substring(7)}.${fileExt}`;
     const filePath = `${userId}/${jobId}/${fileName}`;
 
@@ -225,6 +226,11 @@ export async function deleteJobPhoto(filePath: string) {
 
   if (!user) {
     return { success: false, error: "Unauthorized" };
+  }
+
+  // Basic safety: only allow deleting within the caller's own prefix.
+  if (!filePath || !filePath.startsWith(`${user.id}/`)) {
+    return { success: false, error: "Forbidden" };
   }
 
   // Delete from Supabase Storage

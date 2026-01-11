@@ -22,14 +22,19 @@ interface JobPhoto {
 export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps) {
   const [photos, setPhotos] = useState<JobPhoto[]>(initialPhotos);
   const [uploading, setUploading] = useState(false);
+  const [uploadTotal, setUploadTotal] = useState(0);
+  const [uploadCompleted, setUploadCompleted] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
       setError(null);
       setUploading(true);
+      setUploadTotal(acceptedFiles.length);
+      setUploadCompleted(0);
 
       try {
+        let completed = 0;
         for (const file of acceptedFiles) {
           // Validate file type
           if (!file.type.startsWith("image/")) {
@@ -46,7 +51,7 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
           const formData = new FormData();
           formData.append("file", file);
           formData.append("jobId", jobId);
-          formData.append("userId", userId);
+          // userId is derived server-side from the authenticated session.
 
           console.log("Uploading photo:", { jobId, userId, fileName: file.name });
           
@@ -67,6 +72,9 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
           } else {
             setError(result.error || "Failed to upload photo");
           }
+
+          completed += 1;
+          setUploadCompleted(completed);
         }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "An error occurred while uploading";
@@ -76,8 +84,11 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
         setUploading(false);
       }
     },
-    [jobId, userId]
+    [jobId]
   );
+
+  const uploadPercent =
+    uploadTotal > 0 ? Math.round((uploadCompleted / uploadTotal) * 100) : 0;
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -135,6 +146,23 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
               </>
             )}
           </div>
+
+          {uploading ? (
+            <div className="mt-5 mx-auto max-w-sm">
+              <div className="flex items-center justify-between text-xs text-gray-600">
+                <span>Uploading…</span>
+                <span>
+                  {Math.min(uploadCompleted + 1, uploadTotal)}/{uploadTotal}
+                </span>
+              </div>
+              <div className="mt-2 h-2 w-full rounded-full bg-gray-200 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-blue-600 transition-[width] duration-300"
+                  style={{ width: `${uploadPercent}%` }}
+                />
+              </div>
+            </div>
+          ) : null}
         </div>
       </Card>
 
