@@ -3,6 +3,7 @@
 import type * as React from "react";
 import { useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, Lock, Mail, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -245,6 +246,40 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
           >
             Don&apos;t have an account? <span className="ml-1.5 font-semibold text-zinc-300">Sign Up</span>
           </Button>
+
+          <p className="text-center text-xs leading-relaxed text-zinc-500">
+            By signing up, you agree to our{" "}
+            <Link
+              href="/legal/terms"
+              className="underline underline-offset-4 hover:text-zinc-300"
+            >
+              Terms of Service
+            </Link>
+            {" "}and{" "}
+            <Link
+              href="/legal/privacy"
+              className="underline underline-offset-4 hover:text-zinc-300"
+            >
+              Privacy Policy
+            </Link>
+            .
+          </p>
+
+          <div className="flex items-center justify-center gap-3 pt-1 text-xs text-zinc-500">
+            <Link
+              href="/legal/privacy"
+              className="underline underline-offset-4 hover:text-zinc-300"
+            >
+              Privacy
+            </Link>
+            <span className="text-zinc-700">•</span>
+            <Link
+              href="/legal/terms"
+              className="underline underline-offset-4 hover:text-zinc-300"
+            >
+              Terms
+            </Link>
+          </div>
         </CardFooter>
       </Card>
     </div>

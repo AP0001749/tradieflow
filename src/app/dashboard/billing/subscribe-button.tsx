@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 
@@ -51,6 +52,18 @@ export function SubscribeButton({
       <Button onClick={handleSubscribe} disabled={loading} className="w-full">
         {loading ? "Redirecting…" : "Upgrade Now"}
       </Button>
+
+      <p className="text-xs text-muted-foreground">
+        By upgrading, you agree to our{" "}
+        <Link href="/legal/terms" className="underline underline-offset-4">
+          Terms
+        </Link>
+        {" "}and{" "}
+        <Link href="/legal/privacy" className="underline underline-offset-4">
+          Privacy Policy
+        </Link>
+        .
+      </p>
       {error ? <div className="text-sm text-red-600">{error}</div> : null}
     </div>
   );
