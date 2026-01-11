@@ -45,7 +45,9 @@ export async function POST(request: Request) {
       console.error("Error fetching profile:", profileError);
     }
 
-    let stripeCustomerId = (profile as any)?.stripe_customer_id as string | null;
+    let stripeCustomerId =
+      (profile as { stripe_customer_id?: string | null } | null)?.stripe_customer_id ??
+      null;
 
     if (!stripeCustomerId) {
       const customer = await stripe.customers.create({

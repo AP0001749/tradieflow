@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,20 +26,26 @@ export function CreateJobDialog() {
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [loadingClients, setLoadingClients] = useState(false);
 
-  // Fetch clients when dialog opens
-  useEffect(() => {
-    if (open && clients.length === 0) {
-      setLoadingClients(true);
-      getClients().then((result) => {
-        if (result.error) {
-          setError(result.error);
-        } else {
-          setClients(result.clients);
-        }
-        setLoadingClients(false);
-      });
+  async function handleOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen);
+
+    if (!nextOpen) return;
+    if (clients.length > 0) return;
+
+    setLoadingClients(true);
+    setError(null);
+
+    try {
+      const result = await getClients();
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      setClients(result.clients);
+    } finally {
+      setLoadingClients(false);
     }
-  }, [open, clients.length]);
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -64,7 +70,7 @@ export function CreateJobDialog() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="w-4 h-4" />

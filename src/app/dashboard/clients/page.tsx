@@ -78,7 +78,7 @@ export default async function ClientsPage() {
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-2">No clients yet</p>
             <p className="text-sm text-muted-foreground/80">
-              Click "New Client" to add your first client
+              Click &quot;New Client&quot; to add your first client
             </p>
           </div>
         )}

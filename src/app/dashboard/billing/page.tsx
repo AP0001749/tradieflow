@@ -26,7 +26,9 @@ export default async function BillingPage({
     .eq("user_id", user.id)
     .maybeSingle();
 
-  const tier = (profile as any)?.subscription_tier ?? "free";
+  const tier =
+    (profile as { subscription_tier?: string | null } | null)?.subscription_tier ??
+    "free";
 
   const priceId = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID;
 

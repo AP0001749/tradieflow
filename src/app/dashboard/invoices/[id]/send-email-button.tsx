@@ -25,7 +25,7 @@ export function SendEmailButton({ invoiceId }: SendEmailButtonProps) {
       } else {
         setMessage({ type: "error", text: result.error || "Failed to send email" });
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: "An unexpected error occurred" });
     } finally {
       setIsLoading(false);

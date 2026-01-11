@@ -87,17 +87,6 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
     setLoading(false);
   };
 
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
-    setError(null);
-    try {
-      await signInWithGoogle();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to sign in with Google");
-      setGoogleLoading(false);
-    }
-  };
-
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-zinc-950 px-4 py-12 overflow-hidden">
       {/* Premium Gradient Backdrop */}
@@ -197,7 +186,7 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
             </div>
           </div>
 
-          <form action={signInWithGoogle}>
+          <form action={signInWithGoogle} onSubmit={() => setGoogleLoading(true)}>
             <Button
               type="submit"
               variant="outline"

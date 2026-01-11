@@ -118,7 +118,7 @@ export default async function JobsPage() {
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-2">No jobs yet</p>
             <p className="text-sm text-muted-foreground/80">
-              Click "New Job" to create your first job
+              Click &quot;New Job&quot; to create your first job
             </p>
           </div>
         )}

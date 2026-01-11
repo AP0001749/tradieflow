@@ -8,6 +8,17 @@ interface MonthlyRevenue {
   total: number;
 }
 
+type RecentSale = {
+  id: string;
+  amount: number | null;
+  jobs?: {
+    clients?: {
+      name?: string | null;
+      email?: string | null;
+    } | null;
+  } | null;
+};
+
 export default async function DashboardPage() {
   const supabase = await createClient();
   const {
@@ -121,6 +132,8 @@ export default async function DashboardPage() {
     },
   ];
 
+  const recentSales = (recentSalesResult.data || []) as unknown as RecentSale[];
+
   return (
     <div className="space-y-6">
       <div>
@@ -183,7 +196,7 @@ export default async function DashboardPage() {
           <CardContent>
             <div className="space-y-4">
               {recentSalesResult.data && recentSalesResult.data.length > 0 ? (
-                recentSalesResult.data.map((invoice: any) => {
+                recentSales.map((invoice) => {
                   const clientName = invoice.jobs?.clients?.name || "Unknown Client";
                   const initials = clientName
                     .split(" ")
@@ -208,7 +221,7 @@ export default async function DashboardPage() {
                         </p>
                       </div>
                       <div className="text-sm font-semibold">
-                        ${invoice.amount.toLocaleString()}
+                        ${(invoice.amount ?? 0).toLocaleString()}
                       </div>
                     </div>
                   );

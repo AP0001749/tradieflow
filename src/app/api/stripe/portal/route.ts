@@ -28,7 +28,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to load profile" }, { status: 500 });
     }
 
-    const stripeCustomerId = (profile as any)?.stripe_customer_id as string | null;
+    const stripeCustomerId =
+      (profile as { stripe_customer_id?: string | null } | null)?.stripe_customer_id ??
+      null;
 
     if (!stripeCustomerId) {
       return NextResponse.json(

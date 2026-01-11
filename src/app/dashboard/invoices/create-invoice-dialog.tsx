@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,24 +40,29 @@ export function CreateInvoiceDialog() {
 
   const [amount, setAmount] = useState<string>("");
 
-  useEffect(() => {
-    if (!open) return;
+  async function handleOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen);
+
+    if (!nextOpen) return;
 
     setLoadingJobs(true);
     setError(null);
 
-    getInvoiceableJobs().then((result) => {
+    try {
+      const result = await getInvoiceableJobs();
       if (result.error) setError(result.error);
-      setJobs(result.jobs || []);
-      setLoadingJobs(false);
-    });
-  }, [open]);
 
-  useEffect(() => {
-    if (selectedJob?.price != null) {
-      setAmount(String(selectedJob.price));
+      const nextJobs = result.jobs || [];
+      setJobs(nextJobs);
+
+      if (!nextJobs.some((j) => j.id === selectedJobId)) {
+        setSelectedJobId("");
+        setAmount("");
+      }
+    } finally {
+      setLoadingJobs(false);
     }
-  }, [selectedJobId, selectedJob?.price]);
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -85,7 +90,7 @@ export function CreateInvoiceDialog() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="w-4 h-4" />
@@ -116,7 +121,17 @@ export function CreateInvoiceDialog() {
               <Select
                 name="job_id"
                 value={selectedJobId}
-                onChange={(e) => setSelectedJobId(e.target.value)}
+                onChange={(e) => {
+                  const nextId = e.target.value;
+                  setSelectedJobId(nextId);
+
+                  const job = jobs.find((j) => j.id === nextId) || null;
+                  if (job?.price != null) {
+                    setAmount(String(job.price));
+                  } else if (!nextId) {
+                    setAmount("");
+                  }
+                }}
                 disabled={loading}
                 required
               >

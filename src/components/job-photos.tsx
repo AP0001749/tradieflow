@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, X, Image as ImageIcon, Trash2 } from "lucide-react";
+import { Upload, Image as ImageIcon, Trash2 } from "lucide-react";
 import { uploadJobPhoto, deleteJobPhoto } from "@/app/dashboard/jobs/actions";
 
 interface JobPhotosProps {
@@ -84,7 +84,7 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
         setUploading(false);
       }
     },
-    [jobId]
+    [jobId, userId]
   );
 
   const uploadPercent =
@@ -179,6 +179,7 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
           {photos.map((photo) => (
             <Card key={photo.path} className="overflow-hidden group relative">
               <div className="aspect-square relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={photo.url}
                   alt={photo.name}

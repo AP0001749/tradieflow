@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { getStripeServer } from "@/utils/stripe/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type Stripe from "stripe";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
 
   try {
     if (event.type === "checkout.session.completed") {
-      const session = event.data.object as any;
+      const session = event.data.object as Stripe.Checkout.Session;
 
       const userId = session?.metadata?.userId as string | undefined;
       const customerId =

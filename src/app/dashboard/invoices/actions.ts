@@ -273,9 +273,9 @@ export async function sendInvoiceEmail(invoiceId: string) {
   console.log("✅ Business name:", businessName);
   console.log("✅ FROM address:", fromEmail);
   
-  // @ts-ignore - Type assertion for nested relations
+  // @ts-expect-error -- Supabase nested relation typing is not inferred here.
   const clientName = invoice.job?.client?.name || "Valued Client";
-  // @ts-ignore
+  // @ts-expect-error -- Supabase nested relation typing is not inferred here.
   const clientEmail = invoice.job?.client?.email;
 
   console.log("✅ Client name:", clientName);

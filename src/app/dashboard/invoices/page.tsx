@@ -161,7 +161,7 @@ export default async function InvoicesPage() {
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-2">No invoices yet</p>
             <p className="text-sm text-muted-foreground/80">
-              Click "New Invoice" to create your first invoice
+              Click &quot;New Invoice&quot; to create your first invoice
             </p>
           </div>
         )}
