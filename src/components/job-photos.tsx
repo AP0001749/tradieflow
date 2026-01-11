@@ -116,27 +116,27 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
   return (
     <div className="space-y-6">
       {/* Upload Area */}
-      <Card className="border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors">
+      <Card className="border-2 border-dashed border-border/70 bg-card/40 hover:border-border transition-colors">
         <div
           {...getRootProps()}
           className={`p-8 text-center cursor-pointer ${
-            isDragActive ? "bg-blue-50" : "bg-gray-50"
+            isDragActive ? "bg-accent/60" : "bg-transparent"
           } ${uploading ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <input {...getInputProps()} />
           <div className="flex flex-col items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-              <Upload className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 rounded-full bg-blue-500/15 flex items-center justify-center">
+              <Upload className="w-6 h-6 text-blue-300" />
             </div>
             {isDragActive ? (
-              <p className="text-gray-700 font-medium">Drop the images here...</p>
+              <p className="text-foreground font-medium">Drop the images here…</p>
             ) : (
               <>
                 <div>
-                  <p className="text-gray-700 font-medium">
+                  <p className="text-foreground font-medium">
                     Drag & drop images here, or click to select
                   </p>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     PNG, JPG, GIF up to 10MB
                   </p>
                 </div>
@@ -149,15 +149,15 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
 
           {uploading ? (
             <div className="mt-5 mx-auto max-w-sm">
-              <div className="flex items-center justify-between text-xs text-gray-600">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Uploading…</span>
                 <span>
                   {Math.min(uploadCompleted + 1, uploadTotal)}/{uploadTotal}
                 </span>
               </div>
-              <div className="mt-2 h-2 w-full rounded-full bg-gray-200 overflow-hidden">
+              <div className="mt-2 h-2 w-full rounded-full bg-muted overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-blue-600 transition-[width] duration-300"
+                  className="h-full rounded-full bg-primary transition-[width] duration-300"
                   style={{ width: `${uploadPercent}%` }}
                 />
               </div>
@@ -168,8 +168,8 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-sm text-red-800">{error}</p>
+        <div className="rounded-lg p-4 border border-rose-500/20 bg-rose-500/10">
+          <p className="text-sm text-rose-200">{error}</p>
         </div>
       )}
 
@@ -195,17 +195,17 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
                   </Button>
                 </div>
               </div>
-              <div className="p-2 bg-white">
-                <p className="text-xs text-gray-600 truncate">{photo.name}</p>
+              <div className="p-2 bg-card">
+                <p className="text-xs text-muted-foreground truncate">{photo.name}</p>
               </div>
             </Card>
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-          <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <p className="text-gray-500">No photos uploaded yet</p>
-          <p className="text-sm text-gray-400 mt-1">
+        <div className="text-center py-12 rounded-lg border border-border/60 bg-card/40">
+          <ImageIcon className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground">No photos uploaded yet</p>
+          <p className="text-sm text-muted-foreground/80 mt-1">
             Upload before & after photos to showcase your work
           </p>
         </div>

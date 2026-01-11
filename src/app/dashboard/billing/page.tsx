@@ -35,17 +35,17 @@ export default async function BillingPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Billing</h1>
-        <p className="text-gray-500 mt-1">Manage your subscription plan.</p>
+        <h1 className="text-3xl font-semibold tracking-tight">Billing</h1>
+        <p className="text-muted-foreground mt-1">Manage your subscription plan.</p>
       </div>
 
       {/* Success/Cancel Messages */}
       {params.success === "true" && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
-          <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+        <div className="p-4 rounded-lg flex items-start gap-3 border border-emerald-500/20 bg-emerald-500/10">
+          <CheckCircle2 className="h-5 w-5 text-emerald-300 mt-0.5" />
           <div>
-            <h3 className="font-semibold text-green-900">Payment Successful!</h3>
-            <p className="text-sm text-green-700 mt-1">
+            <h3 className="font-semibold text-emerald-200">Payment Successful!</h3>
+            <p className="text-sm text-emerald-200/80 mt-1">
               Your Pro subscription is now active. Welcome aboard!
             </p>
           </div>
@@ -53,11 +53,11 @@ export default async function BillingPage({
       )}
 
       {params.canceled === "true" && (
-        <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-3">
-          <XCircle className="h-5 w-5 text-orange-600 mt-0.5" />
+        <div className="p-4 rounded-lg flex items-start gap-3 border border-orange-500/20 bg-orange-500/10">
+          <XCircle className="h-5 w-5 text-orange-300 mt-0.5" />
           <div>
-            <h3 className="font-semibold text-orange-900">Payment Canceled</h3>
-            <p className="text-sm text-orange-700 mt-1">
+            <h3 className="font-semibold text-orange-200">Payment Canceled</h3>
+            <p className="text-sm text-orange-200/80 mt-1">
               No charges were made. You can try again whenever you&apos;re ready.
             </p>
           </div>
@@ -65,28 +65,28 @@ export default async function BillingPage({
       )}
 
       {tier === "free" ? (
-        <Card className="p-6 space-y-4 max-w-xl border-gray-200">
+        <Card className="p-6 space-y-4 max-w-xl border-border/60">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Pro Plan</h2>
-              <p className="text-gray-600 mt-1">$29/month</p>
+              <h2 className="text-xl font-semibold">Pro Plan</h2>
+              <p className="text-muted-foreground mt-1">$29/month</p>
             </div>
-            <Badge variant="outline" className="text-gray-600">
+            <Badge variant="outline" className="text-muted-foreground">
               Current: Free
             </Badge>
           </div>
 
-          <ul className="space-y-2 text-sm text-gray-700">
+          <ul className="space-y-2 text-sm text-muted-foreground">
             <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <CheckCircle2 className="h-4 w-4 text-emerald-300" />
               Unlimited clients & jobs
             </li>
             <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <CheckCircle2 className="h-4 w-4 text-emerald-300" />
               Professional invoicing
             </li>
             <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <CheckCircle2 className="h-4 w-4 text-emerald-300" />
               Priority support
             </li>
           </ul>
@@ -94,22 +94,24 @@ export default async function BillingPage({
           {priceId ? (
             <SubscribeButton priceId={priceId} userId={user.id} />
           ) : (
-            <div className="text-sm text-red-600 p-3 bg-red-50 rounded border border-red-200">
+            <div className="text-sm text-rose-300 p-3 bg-rose-500/10 rounded border border-rose-500/20">
               Missing env var: NEXT_PUBLIC_STRIPE_PRO_PRICE_ID
             </div>
           )}
         </Card>
       ) : (
-        <Card className="p-6 space-y-4 max-w-xl border-green-200 bg-green-50/50">
+        <Card className="p-6 space-y-4 max-w-xl border-emerald-500/20 bg-emerald-500/5">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Pro Plan</h2>
-              <p className="text-gray-600 mt-1">$29/month</p>
+              <h2 className="text-xl font-semibold">Pro Plan</h2>
+              <p className="text-muted-foreground mt-1">$29/month</p>
             </div>
-            <Badge className="bg-green-600 text-white">Active Pro Plan</Badge>
+            <Badge className="bg-emerald-500/15 text-emerald-300 border-transparent">
+              Active Pro Plan
+            </Badge>
           </div>
 
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-muted-foreground">
             You have full access to all Pro features.
           </p>
 

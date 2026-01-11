@@ -83,26 +83,26 @@ export default async function InvoicesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Invoices</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-3xl font-semibold tracking-tight">Invoices</h1>
+          <p className="text-muted-foreground mt-1">
             Create and manage invoices for your clients
           </p>
         </div>
         <CreateInvoiceDialog />
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+      <div className="rounded-xl border border-border/60 bg-card shadow-sm">
         {rows.length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-gray-700 font-semibold">Invoice</TableHead>
-                <TableHead className="text-gray-700 font-semibold">Job</TableHead>
-                <TableHead className="text-gray-700 font-semibold">Client</TableHead>
-                <TableHead className="text-gray-700 font-semibold">Amount</TableHead>
-                <TableHead className="text-gray-700 font-semibold">Status</TableHead>
-                <TableHead className="text-gray-700 font-semibold">Due Date</TableHead>
-                <TableHead className="text-gray-700 font-semibold">Actions</TableHead>
+                <TableHead className="font-semibold">Invoice</TableHead>
+                <TableHead className="font-semibold">Job</TableHead>
+                <TableHead className="font-semibold">Client</TableHead>
+                <TableHead className="font-semibold">Amount</TableHead>
+                <TableHead className="font-semibold">Status</TableHead>
+                <TableHead className="font-semibold">Due Date</TableHead>
+                <TableHead className="font-semibold">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -113,27 +113,27 @@ export default async function InvoicesPage() {
 
                 return (
                   <TableRow key={invoice.id}>
-                    <TableCell className="font-mono text-xs text-gray-900">{shortId}</TableCell>
-                    <TableCell className="font-medium text-gray-900">
+                    <TableCell className="font-mono text-xs">{shortId}</TableCell>
+                    <TableCell className="font-medium">
                       {invoice.job?.title || "—"}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="font-medium text-gray-900">{invoice.job?.client?.name || "—"}</span>
+                        <span className="font-medium">{invoice.job?.client?.name || "—"}</span>
                         {invoice.job?.client?.email && (
-                          <span className="text-xs text-gray-700 mt-0.5">
+                          <span className="text-xs text-muted-foreground mt-0.5">
                             {invoice.job.client.email}
                           </span>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-gray-900">
+                    <TableCell>
                       {formatMoney(invoice.amount)}
                     </TableCell>
                     <TableCell>
                       <Badge variant={config.variant}>{config.label}</Badge>
                     </TableCell>
-                    <TableCell className="text-gray-600">
+                    <TableCell className="text-muted-foreground">
                       {invoice.due_date
                         ? new Date(invoice.due_date).toLocaleDateString()
                         : "—"}
@@ -159,8 +159,8 @@ export default async function InvoicesPage() {
           </Table>
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-500 mb-4">No invoices yet</p>
-            <p className="text-sm text-gray-400">
+            <p className="text-muted-foreground mb-2">No invoices yet</p>
+            <p className="text-sm text-muted-foreground/80">
               Click "New Invoice" to create your first invoice
             </p>
           </div>

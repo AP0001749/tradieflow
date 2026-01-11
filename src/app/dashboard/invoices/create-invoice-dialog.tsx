@@ -103,13 +103,13 @@ export function CreateInvoiceDialog() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label>
-              Job <span className="text-red-500">*</span>
+              Job <span className="text-destructive">*</span>
             </Label>
 
             {loadingJobs ? (
-              <div className="text-sm text-gray-500">Loading jobs...</div>
+              <div className="text-sm text-muted-foreground">Loading jobs...</div>
             ) : jobs.length === 0 ? (
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 No eligible jobs found. (Either no In Progress/Done jobs, or they already have invoices.)
               </div>
             ) : (
@@ -133,7 +133,7 @@ export function CreateInvoiceDialog() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>
-                Amount <span className="text-red-500">*</span>
+                Amount <span className="text-destructive">*</span>
               </Label>
               <Input
                 name="amount"
@@ -150,14 +150,14 @@ export function CreateInvoiceDialog() {
 
             <div className="space-y-2">
               <Label>
-                Due Date <span className="text-red-500">*</span>
+                Due Date <span className="text-destructive">*</span>
               </Label>
               <Input name="due_date" type="date" disabled={loading} required />
             </div>
           </div>
 
           {error && (
-            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+            <div className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
               {error}
             </div>
           )}

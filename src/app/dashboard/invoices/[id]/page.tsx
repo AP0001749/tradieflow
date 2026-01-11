@@ -71,7 +71,7 @@ export default async function InvoiceViewPage({
 
   if (invoiceError || !invoiceRow) {
     return (
-      <div className="text-sm text-gray-600">Invoice not found.</div>
+      <div className="text-sm text-muted-foreground">Invoice not found.</div>
     );
   }
 
@@ -118,7 +118,7 @@ export default async function InvoiceViewPage({
 
       {/* A4 Paper */}
       <div
-        className="print-paper mx-auto bg-white border border-gray-200 shadow-sm p-10 max-w-[210mm] min-h-[297mm]"
+        className="print-paper mx-auto bg-white border border-border/60 shadow-sm p-10 max-w-[210mm] min-h-[297mm]"
         style={{ pageBreakInside: "avoid" }}
       >
         {/* Header */}

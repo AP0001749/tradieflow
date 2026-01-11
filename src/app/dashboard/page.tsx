@@ -124,29 +124,35 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Command Center</h1>
-        <p className="text-gray-500 mt-1">
-          Your business analytics at a glance
+        <h1 className="text-3xl font-semibold tracking-tight">Command Center</h1>
+        <p className="text-muted-foreground mt-1">
+          Your business analytics at a glance.
         </p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.title} className="bg-white border-gray-200">
+          <Card key={stat.title} className="border-border/60">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 {stat.title}
               </CardTitle>
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <stat.icon className="w-4 h-4 text-gray-700" />
+              <div className="p-2 bg-muted rounded-lg">
+                <stat.icon className="w-4 h-4 text-foreground" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+              <div className="text-2xl font-bold">{stat.value}</div>
               {stat.change && (
-                <p className="text-xs text-gray-500 mt-1">
-                  <span className={stat.changeType === "positive" ? "text-green-600" : "text-red-600"}>
+                <p className="text-xs text-muted-foreground mt-1">
+                  <span
+                    className={
+                      stat.changeType === "positive"
+                        ? "text-emerald-400"
+                        : "text-rose-400"
+                    }
+                  >
                     {stat.change}
                   </span>{" "}
                   from last month
@@ -160,9 +166,9 @@ export default async function DashboardPage() {
       {/* Main Content Grid */}
       <div className="grid gap-6 lg:grid-cols-7">
         {/* Revenue Chart - Takes up more space */}
-        <Card className="lg:col-span-4 bg-white border-gray-200">
+        <Card className="lg:col-span-4 border-border/60">
           <CardHeader>
-            <CardTitle className="text-gray-900">Monthly Revenue</CardTitle>
+            <CardTitle>Monthly Revenue</CardTitle>
           </CardHeader>
           <CardContent>
             <RevenueChart data={monthlyRevenue} />
@@ -170,9 +176,9 @@ export default async function DashboardPage() {
         </Card>
 
         {/* Recent Sales */}
-        <Card className="lg:col-span-3 bg-white border-gray-200">
+        <Card className="lg:col-span-3 border-border/60">
           <CardHeader>
-            <CardTitle className="text-gray-900">Recent Sales</CardTitle>
+            <CardTitle>Recent Sales</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -194,14 +200,14 @@ export default async function DashboardPage() {
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm font-medium truncate">
                           {clientName}
                         </p>
-                        <p className="text-xs text-gray-500 truncate">
+                        <p className="text-xs text-muted-foreground truncate">
                           {invoice.jobs?.clients?.email || "No email"}
                         </p>
                       </div>
-                      <div className="text-sm font-semibold text-gray-900">
+                      <div className="text-sm font-semibold">
                         ${invoice.amount.toLocaleString()}
                       </div>
                     </div>
@@ -209,7 +215,7 @@ export default async function DashboardPage() {
                 })
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-sm text-gray-500">No sales yet</p>
+                  <p className="text-sm text-muted-foreground">No sales yet</p>
                 </div>
               )}
             </div>

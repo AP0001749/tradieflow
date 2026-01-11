@@ -36,35 +36,35 @@ export default async function ClientsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Clients</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-3xl font-semibold tracking-tight">Clients</h1>
+          <p className="text-muted-foreground mt-1">
             Manage your client database and contact information
           </p>
         </div>
         <AddClientDialog />
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+      <div className="rounded-xl border border-border/60 bg-card shadow-sm">
         {clients && clients.length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-gray-700 font-semibold">Name</TableHead>
-                <TableHead className="text-gray-700 font-semibold">Email</TableHead>
-                <TableHead className="text-gray-700 font-semibold">Phone</TableHead>
-                <TableHead className="text-gray-700 font-semibold">Address</TableHead>
-                <TableHead className="text-gray-700 font-semibold">Created</TableHead>
-                <TableHead className="text-gray-700 font-semibold w-20">Actions</TableHead>
+                <TableHead className="font-semibold">Name</TableHead>
+                <TableHead className="font-semibold">Email</TableHead>
+                <TableHead className="font-semibold">Phone</TableHead>
+                <TableHead className="font-semibold">Address</TableHead>
+                <TableHead className="font-semibold">Created</TableHead>
+                <TableHead className="font-semibold w-20">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {clients.map((client: Client) => (
                 <TableRow key={client.id}>
-                  <TableCell className="font-medium text-gray-900">{client.name}</TableCell>
-                  <TableCell className="text-gray-700">{client.email || "—"}</TableCell>
-                  <TableCell className="text-gray-700">{client.phone || "—"}</TableCell>
-                  <TableCell className="text-gray-700">{client.address || "—"}</TableCell>
-                  <TableCell className="text-gray-600">
+                  <TableCell className="font-medium">{client.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{client.email || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{client.phone || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{client.address || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">
                     {new Date(client.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
@@ -76,8 +76,8 @@ export default async function ClientsPage() {
           </Table>
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-500 mb-4">No clients yet</p>
-            <p className="text-sm text-gray-400">
+            <p className="text-muted-foreground mb-2">No clients yet</p>
+            <p className="text-sm text-muted-foreground/80">
               Click "New Client" to add your first client
             </p>
           </div>

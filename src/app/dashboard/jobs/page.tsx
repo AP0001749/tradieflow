@@ -55,25 +55,25 @@ export default async function JobsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Jobs</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-3xl font-semibold tracking-tight">Jobs</h1>
+          <p className="text-muted-foreground mt-1">
             Manage your projects and work assignments
           </p>
         </div>
         <CreateJobDialog />
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+      <div className="rounded-xl border border-border/60 bg-card shadow-sm">
         {jobs && jobs.length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-gray-700 font-semibold">Title</TableHead>
-                <TableHead className="text-gray-700 font-semibold">Client</TableHead>
-                <TableHead className="text-gray-700 font-semibold">Status</TableHead>
-                <TableHead className="text-gray-700 font-semibold">Price</TableHead>
-                <TableHead className="text-gray-700 font-semibold">Start Date</TableHead>
-                <TableHead className="text-gray-700 font-semibold">Actions</TableHead>
+                <TableHead className="font-semibold">Title</TableHead>
+                <TableHead className="font-semibold">Client</TableHead>
+                <TableHead className="font-semibold">Status</TableHead>
+                <TableHead className="font-semibold">Price</TableHead>
+                <TableHead className="font-semibold">Start Date</TableHead>
+                <TableHead className="font-semibold">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -81,8 +81,8 @@ export default async function JobsPage() {
                 const statusInfo = statusConfig[job.status];
                 return (
                   <TableRow key={job.id}>
-                    <TableCell className="font-medium text-gray-900">{job.title}</TableCell>
-                    <TableCell className="text-gray-700">
+                    <TableCell className="font-medium">{job.title}</TableCell>
+                    <TableCell className="text-muted-foreground">
                       {job.clients?.name || "—"}
                     </TableCell>
                     <TableCell>
@@ -90,17 +90,21 @@ export default async function JobsPage() {
                         {statusInfo.label}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-gray-700">
+                    <TableCell className="text-muted-foreground">
                       {job.price ? `$${job.price.toLocaleString()}` : "—"}
                     </TableCell>
-                    <TableCell className="text-gray-600">
+                    <TableCell className="text-muted-foreground">
                       {job.start_date
                         ? new Date(job.start_date).toLocaleDateString()
                         : "—"}
                     </TableCell>
                     <TableCell>
                       <Link href={`/dashboard/jobs/${job.id}`}>
-                        <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-indigo-300 hover:text-indigo-200"
+                        >
                           View
                         </Button>
                       </Link>
@@ -112,8 +116,8 @@ export default async function JobsPage() {
           </Table>
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-500 mb-4">No jobs yet</p>
-            <p className="text-sm text-gray-400">
+            <p className="text-muted-foreground mb-2">No jobs yet</p>
+            <p className="text-sm text-muted-foreground/80">
               Click "New Job" to create your first job
             </p>
           </div>

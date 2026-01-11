@@ -82,12 +82,12 @@ export function CreateJobDialog() {
           {/* Client Select - CRITICAL */}
           <div className="space-y-2">
             <Label htmlFor="client_id">
-              Client <span className="text-red-500">*</span>
+              Client <span className="text-destructive">*</span>
             </Label>
             {loadingClients ? (
-              <div className="text-sm text-gray-500">Loading clients...</div>
+              <div className="text-sm text-muted-foreground">Loading clients...</div>
             ) : clients.length === 0 ? (
-              <div className="text-sm text-red-600">
+              <div className="text-sm text-destructive">
                 No clients found. Please add a client first.
               </div>
             ) : (
@@ -110,7 +110,7 @@ export function CreateJobDialog() {
 
           <div className="space-y-2">
             <Label htmlFor="title">
-              Job Title <span className="text-red-500">*</span>
+              Job Title <span className="text-destructive">*</span>
             </Label>
             <Input
               id="title"
@@ -169,7 +169,7 @@ export function CreateJobDialog() {
           </div>
 
           {error && (
-            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+            <div className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
               {error}
             </div>
           )}

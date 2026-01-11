@@ -4,6 +4,7 @@ import { JobPhotos } from "@/components/job-photos";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, DollarSign, User, FileText } from "lucide-react";
+import { JobStatus } from "@/types";
 
 interface JobDetailPageProps {
   params: Promise<{
@@ -63,28 +64,29 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
     }
   }
 
-  const statusColors: Record<string, string> = {
-    draft: "bg-gray-100 text-gray-800",
-    scheduled: "bg-blue-100 text-blue-800",
-    in_progress: "bg-yellow-100 text-yellow-800",
-    completed: "bg-green-100 text-green-800",
-    cancelled: "bg-red-100 text-red-800",
+  const statusConfig: Record<
+    JobStatus,
+    {
+      label: string;
+      variant: "draft" | "scheduled" | "in_progress" | "completed" | "cancelled";
+    }
+  > = {
+    draft: { label: "Draft", variant: "draft" },
+    scheduled: { label: "Scheduled", variant: "scheduled" },
+    in_progress: { label: "In Progress", variant: "in_progress" },
+    completed: { label: "Completed", variant: "completed" },
+    cancelled: { label: "Cancelled", variant: "cancelled" },
   };
 
-  const statusLabels: Record<string, string> = {
-    draft: "Draft",
-    scheduled: "Scheduled",
-    in_progress: "In Progress",
-    completed: "Completed",
-    cancelled: "Cancelled",
-  };
+  const status =
+    statusConfig[(job.status as JobStatus) ?? "draft"] ?? statusConfig.draft;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">{job.title}</h1>
-        <p className="text-gray-500 mt-1">Job Details and Photos</p>
+        <h1 className="text-3xl font-semibold tracking-tight">{job.title}</h1>
+        <p className="text-muted-foreground mt-1">Job details and photos</p>
       </div>
 
       {/* Job Details Card */}
@@ -92,21 +94,19 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Job Information</span>
-            <Badge className={statusColors[job.status]}>
-              {statusLabels[job.status]}
-            </Badge>
+            <Badge variant={status.variant}>{status.label}</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Client */}
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                <User className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 rounded-full bg-blue-500/15 flex items-center justify-center flex-shrink-0">
+                <User className="w-5 h-5 text-blue-300" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Client</p>
-                <p className="font-medium text-gray-900">
+                <p className="text-sm text-muted-foreground">Client</p>
+                <p className="font-medium">
                   {job.clients?.name || "—"}
                 </p>
               </div>
@@ -114,12 +114,12 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
 
             {/* Price */}
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                <DollarSign className="w-5 h-5 text-green-600" />
+              <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                <DollarSign className="w-5 h-5 text-emerald-300" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Price</p>
-                <p className="font-medium text-gray-900">
+                <p className="text-sm text-muted-foreground">Price</p>
+                <p className="font-medium">
                   {job.price ? `$${job.price.toFixed(2)}` : "Not set"}
                 </p>
               </div>
@@ -127,12 +127,12 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
 
             {/* Start Date */}
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                <Calendar className="w-5 h-5 text-purple-600" />
+              <div className="w-10 h-10 rounded-full bg-violet-500/15 flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-5 h-5 text-violet-300" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Start Date</p>
-                <p className="font-medium text-gray-900">
+                <p className="text-sm text-muted-foreground">Start Date</p>
+                <p className="font-medium">
                   {job.start_date
                     ? new Date(job.start_date).toLocaleDateString()
                     : "Not scheduled"}
@@ -142,12 +142,12 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
 
             {/* End Date */}
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                <Calendar className="w-5 h-5 text-purple-600" />
+              <div className="w-10 h-10 rounded-full bg-violet-500/15 flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-5 h-5 text-violet-300" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">End Date</p>
-                <p className="font-medium text-gray-900">
+                <p className="text-sm text-muted-foreground">End Date</p>
+                <p className="font-medium">
                   {job.end_date
                     ? new Date(job.end_date).toLocaleDateString()
                     : "Not set"}
@@ -158,14 +158,14 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
 
           {/* Description */}
           {job.description && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="mt-6 pt-6 border-t border-border">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-5 h-5 text-orange-600" />
+                <div className="w-10 h-10 rounded-full bg-orange-500/15 flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-5 h-5 text-orange-300" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500 mb-1">Description</p>
-                  <p className="text-gray-900 whitespace-pre-wrap">{job.description}</p>
+                  <p className="text-sm text-muted-foreground mb-1">Description</p>
+                  <p className="whitespace-pre-wrap">{job.description}</p>
                 </div>
               </div>
             </div>
