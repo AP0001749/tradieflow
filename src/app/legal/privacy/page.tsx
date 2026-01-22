@@ -149,13 +149,22 @@ export default function PrivacyPolicyPage() {
 
           <h2>10. Complaints</h2>
           <p>
-            If you have a privacy complaint or question, contact us using the
-            contact details provided within the TradieFlow app or in billing and
-            service emails. We will respond within a reasonable time.
+            If you have a privacy complaint or question, please contact us at{" "}
+            <strong>support@tradieflow.com</strong>. We will respond within a 
+            reasonable time.
           </p>
           <p>
             If you are not satisfied with our response, you may contact the
-            Office of the Australian Information Commissioner (OAIC).
+            Office of the Australian Information Commissioner (OAIC) at{" "}
+            <a 
+              href="https://www.oaic.gov.au" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-primary underline underline-offset-4 hover:text-primary/80 transition-colors"
+            >
+              www.oaic.gov.au
+            </a>
+            .
           </p>
 
           <h2>11. Changes</h2>

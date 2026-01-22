@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { InvoiceInsert, InvoiceStatus } from "@/types";
+import { InvoiceInsert, InvoiceStatus, InvoiceUpdate } from "@/types";
 import { resend } from "@/lib/resend";
 import { InvoiceEmail } from "@/emails/invoice-email";
 import { render } from "@react-email/render";
@@ -214,6 +214,84 @@ export async function deleteInvoice(invoiceId: string) {
   }
 
   revalidatePath("/dashboard/invoices");
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
+export async function updateInvoice(
+  invoiceId: string,
+  data: {
+    job_id: string;
+    amount: number;
+    due_date: string | null;
+    notes: string | null;
+  }
+) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
+
+  // Verify invoice exists and belongs to user
+  const { data: invoice, error: invoiceError } = await supabase
+    .from("invoices")
+    .select("id, status")
+    .eq("id", invoiceId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (invoiceError || !invoice) {
+    return { error: "Invoice not found" };
+  }
+
+  // Only allow editing unpaid invoices
+  if (invoice.status !== "unpaid") {
+    return { error: "Only unpaid invoices can be edited" };
+  }
+
+  // Validate amount
+  if (!Number.isFinite(data.amount) || data.amount <= 0) {
+    return { error: "Amount must be a positive number" };
+  }
+
+  // Verify job belongs to user
+  const { data: job, error: jobError } = await supabase
+    .from("jobs")
+    .select("id")
+    .eq("id", data.job_id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (jobError || !job) {
+    return { error: "Invalid job selected" };
+  }
+
+  const payload: InvoiceUpdate = {
+    job_id: data.job_id,
+    amount: data.amount,
+    due_date: data.due_date,
+    notes: data.notes,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error } = await supabase
+    .from("invoices")
+    .update(payload)
+    .eq("id", invoiceId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error updating invoice:", error);
+    return { error: error.message };
+  }
+
+  revalidatePath("/dashboard/invoices");
+  revalidatePath(`/dashboard/invoices/${invoiceId}`);
   revalidatePath("/dashboard");
   return { success: true };
 }

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { CreateInvoiceDialog } from "./create-invoice-dialog";
 import { DeleteInvoiceButton } from "./delete-invoice-button";
+import EditInvoiceDialog from "./edit-invoice-dialog";
 import { InvoiceStatus, InvoiceWithJobClient } from "@/types";
 import { SubscriptionBanner } from "@/components/subscription-banner";
 
@@ -43,6 +44,13 @@ export default async function InvoicesPage() {
   if (!user) {
     return null;
   }
+
+  // Fetch jobs for edit dialog
+  const { data: jobs } = await supabase
+    .from("jobs")
+    .select("id, title")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
 
   // DOUBLE JOIN: invoice -> job -> client
   const { data: invoices, error } = await supabase
@@ -151,6 +159,10 @@ export default async function InvoicesPage() {
                         >
                           View Invoice
                         </Link>
+                        <EditInvoiceDialog 
+                          invoice={invoice} 
+                          jobs={jobs || []}
+                        />
                         <DeleteInvoiceButton 
                           invoiceId={invoice.id} 
                           invoiceNumber={shortId}
