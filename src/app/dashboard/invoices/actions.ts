@@ -6,6 +6,7 @@ import { InvoiceInsert, InvoiceStatus } from "@/types";
 import { resend } from "@/lib/resend";
 import { InvoiceEmail } from "@/emails/invoice-email";
 import { render } from "@react-email/render";
+import { canCreateInvoice } from "@/lib/subscription";
 
 type InvoiceableJob = {
   id: string;
@@ -73,6 +74,12 @@ export async function getInvoiceableJobs() {
 }
 
 export async function createInvoice(formData: FormData) {
+  // Check subscription limits first
+  const limitCheck = await canCreateInvoice();
+  if (!limitCheck.allowed) {
+    return { error: limitCheck.error };
+  }
+
   const supabase = await createClient();
 
   const {

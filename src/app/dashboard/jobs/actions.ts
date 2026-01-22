@@ -3,8 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { JobInsert, JobStatus } from "@/types";
+import { canCreateJob } from "@/lib/subscription";
 
 export async function createJob(formData: FormData) {
+  // Check subscription limits first
+  const limitCheck = await canCreateJob();
+  if (!limitCheck.allowed) {
+    return { error: limitCheck.error };
+  }
+
   const supabase = await createClient();
 
   const {

@@ -11,6 +11,7 @@ import {
 import { AddClientDialog } from "./add-client-dialog";
 import { DeleteClientButton } from "./delete-client-button";
 import { EditClientDialog } from "./edit-client-dialog";
+import { SubscriptionBanner } from "@/components/subscription-banner";
 
 export default async function ClientsPage() {
   const supabase = await createClient();
@@ -35,6 +36,8 @@ export default async function ClientsPage() {
 
   return (
     <div className="space-y-8">
+      <SubscriptionBanner resourceType="clients" />
+      
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-in fade-in slide-in-from-top-4 duration-700">
         <div>
           <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text">Clients</h1>

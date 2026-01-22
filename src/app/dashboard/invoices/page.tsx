@@ -14,6 +14,7 @@ import {
 import { CreateInvoiceDialog } from "./create-invoice-dialog";
 import { DeleteInvoiceButton } from "./delete-invoice-button";
 import { InvoiceStatus, InvoiceWithJobClient } from "@/types";
+import { SubscriptionBanner } from "@/components/subscription-banner";
 
 const statusConfig: Record<
   InvoiceStatus,
@@ -81,6 +82,8 @@ export default async function InvoicesPage() {
 
   return (
     <div className="space-y-8">
+      <SubscriptionBanner resourceType="invoices" />
+      
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-in fade-in slide-in-from-top-4 duration-700">
         <div>
           <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text">Invoices</h1>

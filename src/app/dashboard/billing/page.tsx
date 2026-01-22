@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SubscribeButton } from "./subscribe-button";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { checkSubscriptionLimits } from "@/lib/subscription";
 
 export default async function BillingPage({
   searchParams,
@@ -33,6 +34,9 @@ export default async function BillingPage({
   const priceId = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID;
 
   const params = await searchParams;
+
+  // Get current usage for free tier users
+  const usage = tier === "free" ? await checkSubscriptionLimits() : null;
 
   return (
     <div className="space-y-8">
@@ -92,6 +96,32 @@ export default async function BillingPage({
               Priority support
             </li>
           </ul>
+
+          {usage && (
+            <div className="p-4 rounded-lg bg-muted/50 border border-border/40 space-y-3">
+              <p className="text-sm font-medium text-muted-foreground">Current Usage (Free Tier)</p>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Clients</span>
+                  <span className="font-medium tabular-nums">
+                    {usage.current?.clients ?? 0} / {usage.limits?.maxClients ?? 0}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Jobs</span>
+                  <span className="font-medium tabular-nums">
+                    {usage.current?.jobs ?? 0} / {usage.limits?.maxJobs ?? 0}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Invoices</span>
+                  <span className="font-medium tabular-nums">
+                    {usage.current?.invoices ?? 0} / {usage.limits?.maxInvoices ?? 0}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {priceId ? (
             <SubscribeButton priceId={priceId} userId={user.id} />

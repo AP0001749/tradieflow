@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CreateJobDialog } from "./create-job-dialog";
 import { DeleteJobButton } from "./delete-job-button";
+import { SubscriptionBanner } from "@/components/subscription-banner";
 import Link from "next/link";
 
 const statusConfig: Record<
@@ -54,6 +55,8 @@ export default async function JobsPage() {
 
   return (
     <div className="space-y-8">
+      <SubscriptionBanner resourceType="jobs" />
+      
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-in fade-in slide-in-from-top-4 duration-700">
         <div>
           <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text">Jobs</h1>

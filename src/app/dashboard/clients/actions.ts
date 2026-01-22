@@ -3,8 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ClientInsert } from "@/types";
+import { canCreateClient } from "@/lib/subscription";
 
 export async function addClient(formData: FormData) {
+  // Check subscription limits first
+  const limitCheck = await canCreateClient();
+  if (!limitCheck.allowed) {
+    return { error: limitCheck.error };
+  }
+
   const supabase = await createClient();
 
   const {
