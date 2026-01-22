@@ -34,19 +34,21 @@ export default async function ClientsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Clients</h1>
           <p className="text-muted-foreground mt-1">
             Manage your client database and contact information
           </p>
         </div>
-        <AddClientDialog />
+        <div className="shrink-0">
+          <AddClientDialog />
+        </div>
       </div>
 
       <div className="rounded-xl border border-border/60 bg-card shadow-sm">
         {clients && clients.length > 0 ? (
-          <Table>
+          <Table className="min-w-[860px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="font-semibold">Name</TableHead>

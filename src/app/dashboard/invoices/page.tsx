@@ -81,19 +81,21 @@ export default async function InvoicesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Invoices</h1>
           <p className="text-muted-foreground mt-1">
             Create and manage invoices for your clients
           </p>
         </div>
-        <CreateInvoiceDialog />
+        <div className="shrink-0">
+          <CreateInvoiceDialog />
+        </div>
       </div>
 
       <div className="rounded-xl border border-border/60 bg-card shadow-sm">
         {rows.length > 0 ? (
-          <Table>
+          <Table className="min-w-[1024px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="font-semibold">Invoice</TableHead>

@@ -92,7 +92,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
       {/* Job Details Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <span>Job Information</span>
             <Badge variant={status.variant}>{status.label}</Badge>
           </CardTitle>

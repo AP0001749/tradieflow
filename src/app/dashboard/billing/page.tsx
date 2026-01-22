@@ -68,7 +68,7 @@ export default async function BillingPage({
 
       {tier === "free" ? (
         <Card className="p-6 space-y-4 max-w-xl border-border/60">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold">Pro Plan</h2>
               <p className="text-muted-foreground mt-1">$29/month</p>
@@ -103,7 +103,7 @@ export default async function BillingPage({
         </Card>
       ) : (
         <Card className="p-6 space-y-4 max-w-xl border-emerald-500/20 bg-emerald-500/5">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold">Pro Plan</h2>
               <p className="text-muted-foreground mt-1">$29/month</p>

@@ -98,14 +98,14 @@ export default async function InvoiceViewPage({
     <div className="space-y-4">
       {/* Toolbar (hidden in print) */}
       <div
-        className="flex items-center justify-between"
+        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
         data-print-hidden="true"
       >
         <div className="flex items-center gap-3">
           <Badge variant={status.variant}>{status.label}</Badge>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
           <SendEmailButton invoiceId={invoice.id} />
           <PrintButton />
           <form action={markAsPaid.bind(null, invoice.id)}>
