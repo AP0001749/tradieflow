@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface LoginFormProps {
   signInWithGoogle: () => Promise<void>;
@@ -108,26 +109,30 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-zinc-950 px-4 py-12 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-12 overflow-hidden">
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
+
       {/* Premium Gradient Backdrop */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-950/50 via-zinc-950 to-black" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-violet-950/30 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-200/70 via-background to-background dark:from-indigo-950/50 dark:via-zinc-950 dark:to-black" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-violet-200/60 via-transparent to-transparent dark:from-violet-950/30" />
       
       {/* Animated gradient orbs */}
-      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}} />
+      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-indigo-500/10 dark:bg-indigo-500/20 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-violet-500/10 dark:bg-violet-500/20 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}} />
 
-      <Card className="w-full max-w-md border-zinc-800/80 bg-zinc-900/80 text-zinc-100 backdrop-blur-2xl shadow-2xl relative z-10">
+      <Card className="w-full max-w-md border-border/60 bg-card/70 text-card-foreground backdrop-blur-2xl shadow-2xl relative z-10">
         <CardHeader className="space-y-2 text-center pb-6 pt-8">
           <div className="flex justify-center mb-4">
-            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-violet-500/10 border border-indigo-500/30 shadow-lg shadow-indigo-500/20">
+            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 shadow-lg shadow-indigo-500/10">
               <Briefcase className="h-8 w-8 text-indigo-400" />
             </div>
           </div>
           <CardTitle className="text-3xl font-bold tracking-tight bg-gradient-to-br from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent">
             TradieFlow
           </CardTitle>
-          <CardDescription className="text-zinc-400 text-base pt-1">
+          <CardDescription className="text-muted-foreground text-base pt-1">
             Business command center
           </CardDescription>
         </CardHeader>
@@ -146,16 +151,16 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-zinc-300 text-sm font-medium">
+              <Label htmlFor="email" className="text-sm font-medium">
                 Email Address
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
                   placeholder="you@company.com"
-                  className="pl-10 h-11 bg-zinc-950/50 border-zinc-800 text-white placeholder:text-zinc-600 focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:border-indigo-500/60 transition-all"
+                  className="pl-10 h-11 bg-background/40 border-border placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500/40 transition-all"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -164,16 +169,16 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-zinc-300 text-sm font-medium">
+              <Label htmlFor="password" className="text-sm font-medium">
                 Password
               </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
                   type="password"
                   placeholder="••••••••"
-                  className="pl-10 h-11 bg-zinc-950/50 border-zinc-800 text-white placeholder:text-zinc-600 focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:border-indigo-500/60 transition-all"
+                  className="pl-10 h-11 bg-background/40 border-border placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500/40 transition-all"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -199,10 +204,10 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
 
           <div className="relative py-3">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-zinc-800/60" />
+              <span className="w-full border-t border-border/60" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-zinc-900/80 backdrop-blur-sm px-3 text-zinc-500 font-medium tracking-wider">Or continue with</span>
+              <span className="bg-card/60 backdrop-blur-sm px-3 text-muted-foreground font-medium tracking-wider">Or continue with</span>
             </div>
           </div>
 
@@ -210,7 +215,7 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
             <Button
               type="submit"
               variant="outline"
-              className="w-full h-11 border-zinc-800/80 bg-zinc-950/50 hover:bg-zinc-800/60 hover:border-zinc-700 text-zinc-300 hover:text-white font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-11 border-border/60 bg-background/40 hover:bg-accent hover:text-accent-foreground font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={googleLoading}
             >
               {googleLoading ? (

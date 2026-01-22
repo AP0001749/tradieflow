@@ -38,7 +38,7 @@ export function GoogleSignInButton() {
       <Button
         type="button"
         variant="outline"
-        className="w-full h-11 border-zinc-800/80 bg-zinc-950/50 hover:bg-zinc-800/60 hover:border-zinc-700 text-zinc-300 hover:text-white font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full h-11 border-border/60 bg-background/40 hover:bg-accent hover:text-accent-foreground font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         onClick={onGoogleSignIn}
         disabled={loading}
       >
