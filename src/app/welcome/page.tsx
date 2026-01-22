@@ -10,10 +10,10 @@ export default function WelcomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Track Google Ads conversion
+    // Track Google Ads conversion with verified label
     if (typeof window !== 'undefined' && window.gtag) {
       window.gtag('event', 'conversion', {
-        'send_to': 'AW-17896188158/YOUR_CONVERSION_LABEL',
+        'send_to': 'AW-17896188158/0fciCMj5wOobEP7RyNVC',
         'value': 1.0,
         'currency': 'AUD'
       });
