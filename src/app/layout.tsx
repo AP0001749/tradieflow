@@ -26,13 +26,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* Google Ads Conversion Tracking */}
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background text-foreground antialiased overflow-x-hidden`}
+      >
+        {/* Google Ads Conversion Tracking - Global Site Tag */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=AW-17896188158"
           strategy="afterInteractive"
         />
-        <Script id="google-ads-init" strategy="afterInteractive">
+        <Script id="google-ads-config" strategy="afterInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
@@ -40,10 +42,7 @@ export default function RootLayout({
             gtag('config', 'AW-17896188158');
           `}
         </Script>
-      </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background text-foreground antialiased overflow-x-hidden`}
-      >
+
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
