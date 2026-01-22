@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
   }
 
   let redirectPath = "/dashboard";
+  const response = NextResponse.redirect(new URL(redirectPath, requestUrl.origin));
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -24,7 +25,6 @@ export async function GET(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
-        const response = NextResponse.next();
         for (const { name, value, options } of cookiesToSet) {
           response.cookies.set(name, value, options);
         }
@@ -45,26 +45,9 @@ export async function GET(request: NextRequest) {
 
     if (isNewUser) {
       redirectPath = "/welcome";
+      // Update redirect URL
+      return NextResponse.redirect(new URL(redirectPath, requestUrl.origin));
     }
-  }
-
-  const response = NextResponse.redirect(new URL(redirectPath, requestUrl.origin));
-  
-  // Set cookies for the redirect response
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    response.cookies.set('sb-access-token', session.access_token, {
-      path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      httpOnly: true,
-      sameSite: 'lax',
-    });
-    response.cookies.set('sb-refresh-token', session.refresh_token, {
-      path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      httpOnly: true,
-      sameSite: 'lax',
-    });
   }
 
   return response;
