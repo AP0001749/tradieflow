@@ -25,9 +25,9 @@ export async function createJob(formData: FormData) {
   console.log("=== JOB CREATION DEBUG ===");
   console.log("Raw status from form:", statusRaw);
 
-  // Ensure status is lowercase and valid
-  const validStatuses: JobStatus[] = ["draft", "scheduled", "in_progress", "completed", "cancelled"];
-  const status = statusRaw.trim().toLowerCase() as JobStatus;
+  // Database expects hyphenated status values (e.g., "in-progress" not "in_progress")
+  const validStatuses: JobStatus[] = ["draft", "scheduled", "in-progress", "completed", "cancelled"];
+  let status = statusRaw.trim().toLowerCase().replace(/_/g, "-") as JobStatus;
   
   console.log("Processed status:", status);
   console.log("Is valid?", validStatuses.includes(status));

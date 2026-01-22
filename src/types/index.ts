@@ -99,7 +99,8 @@ export interface ClientUpdate {
 }
 
 // Job Types
-export type JobStatus = "draft" | "scheduled" | "in_progress" | "completed" | "cancelled";
+// Note: Database uses hyphenated status values
+export type JobStatus = "draft" | "scheduled" | "in-progress" | "completed" | "cancelled";
 
 export interface Job {
   id: string;
