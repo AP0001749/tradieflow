@@ -21,7 +21,7 @@ const statusConfig: Record<
 > = {
   draft: { label: "Draft", variant: "draft" },
   scheduled: { label: "Scheduled", variant: "scheduled" },
-  "in-progress": { label: "In Progress", variant: "in_progress" },
+  "in_progress": { label: "In Progress", variant: "in_progress" },
   completed: { label: "Completed", variant: "completed" },
   cancelled: { label: "Cancelled", variant: "cancelled" },
 };

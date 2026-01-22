@@ -29,10 +29,10 @@ export async function createJob(formData: FormData) {
   const start_date = formData.get("start_date") as string;
   const description = formData.get("description") as string;
 
-  // Database expects hyphenated status values (e.g., "in-progress" not "in_progress")
-  // Convert any underscores to hyphens and ensure lowercase
-  const validStatuses: JobStatus[] = ["draft", "scheduled", "in-progress", "completed", "cancelled"];
-  let status = statusRaw.trim().toLowerCase().replace(/_/g, "-") as JobStatus;
+  // Database expects underscore in status values (e.g., "in_progress")
+  // Convert any hyphens to underscores and ensure lowercase
+  const validStatuses: JobStatus[] = ["draft", "scheduled", "in_progress", "completed", "cancelled"];
+  let status = statusRaw.trim().toLowerCase().replace(/-/g, "_") as JobStatus;
   
   // Ensure status is valid
   if (!validStatuses.includes(status)) {
