@@ -110,27 +110,31 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-12 overflow-hidden">
-      <div className="absolute top-4 right-4 z-20">
+      {/* Theme Toggle */}
+      <div className="absolute top-4 right-4 z-20 animate-in fade-in slide-in-from-top-2 duration-500">
         <ThemeToggle />
       </div>
 
       {/* Premium Gradient Backdrop */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-200/70 via-background to-background dark:from-indigo-950/50 dark:via-zinc-950 dark:to-black" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-violet-200/60 via-transparent to-transparent dark:from-violet-950/30" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,_var(--tw-gradient-stops))] from-indigo-300/40 via-background to-background dark:from-indigo-900/40 dark:via-background animate-in fade-in duration-1000" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,_var(--tw-gradient-stops))] from-violet-300/30 via-transparent to-transparent dark:from-violet-900/30 animate-in fade-in duration-1000" style={{ animationDelay: '200ms' }} />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,_var(--tw-gradient-stops))] from-indigo-300/30 via-transparent to-transparent dark:from-indigo-900/30 animate-in fade-in duration-1000" style={{ animationDelay: '400ms' }} />
       
       {/* Animated gradient orbs */}
-      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-indigo-500/10 dark:bg-indigo-500/20 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-violet-500/10 dark:bg-violet-500/20 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}} />
+      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-indigo-500/20 dark:bg-indigo-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
+      <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-violet-500/20 dark:bg-violet-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s', animationDuration: '4s' }} />
 
-      <Card className="w-full max-w-md border-border/60 bg-card/70 text-card-foreground backdrop-blur-2xl shadow-2xl relative z-10">
+      <Card className="w-full max-w-md border-border/40 bg-card/60 backdrop-blur-2xl text-card-foreground shadow-2xl shadow-black/10 dark:shadow-black/30 relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
         <CardHeader className="space-y-2 text-center pb-6 pt-8">
-          <div className="flex justify-center mb-4">
-            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 shadow-lg shadow-indigo-500/10">
-              <Briefcase className="h-8 w-8 text-indigo-400" />
+          <div className="flex justify-center mb-4 animate-in zoom-in duration-500" style={{ animationDelay: '100ms' }}>
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/30 shadow-xl shadow-indigo-500/20 backdrop-blur-sm">
+              <Briefcase className="h-8 w-8 text-indigo-500 dark:text-indigo-400" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold tracking-tight bg-gradient-to-br from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent">
-            TradieFlow
+          <CardTitle className="text-3xl font-bold tracking-tight">
+            <span className="bg-gradient-to-br from-indigo-500 to-violet-600 bg-clip-text text-transparent">
+              TradieFlow
+            </span>
           </CardTitle>
           <CardDescription className="text-muted-foreground text-base pt-1">
             Business command center

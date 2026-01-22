@@ -137,8 +137,8 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="animate-in fade-in slide-in-from-top-4 duration-700">
-        <h1 className="text-3xl font-semibold tracking-tight">Command Center</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text">Command Center</h1>
+        <p className="text-muted-foreground mt-1.5">
           Your business analytics at a glance.
         </p>
       </div>
@@ -148,18 +148,18 @@ export default async function DashboardPage() {
         {stats.map((stat, index) => (
           <Card
             key={stat.title}
-            className="border-border/60 shadow-sm hover:shadow-md hover:border-border transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
+            className="group border-border/60 bg-gradient-to-br from-card to-card/50 hover:from-card hover:to-card/80 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
             style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'backwards' }}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {stat.title}
               </CardTitle>
-              <div className="p-2 bg-muted rounded-lg">
-                <stat.icon className="w-4 h-4 text-foreground" />
+              <div className="p-2.5 bg-gradient-to-br from-indigo-500/10 to-violet-500/10 rounded-xl group-hover:from-indigo-500/20 group-hover:to-violet-500/20 transition-all duration-300">
+                <stat.icon className="w-4 h-4 text-indigo-500 dark:text-indigo-400 group-hover:scale-110 transition-transform duration-300" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className="text-2xl font-bold tracking-tight">{stat.value}</div>
               {stat.change && (
                 <p className="text-xs text-muted-foreground mt-1">
                   <span
@@ -182,19 +182,19 @@ export default async function DashboardPage() {
       {/* Main Content Grid */}
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-7 animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
         {/* Revenue Chart - Takes up more space */}
-        <Card className="lg:col-span-4 border-border/60 shadow-sm">
+        <Card className="lg:col-span-4 border-border/60 bg-gradient-to-br from-card to-card/50 overflow-hidden">
           <CardHeader>
-            <CardTitle>Monthly Revenue</CardTitle>
+            <CardTitle className="text-lg font-semibold">Monthly Revenue</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-6">
             <RevenueChart data={monthlyRevenue} />
           </CardContent>
         </Card>
 
         {/* Recent Sales */}
-        <Card className="lg:col-span-3 border-border/60 shadow-sm">
+        <Card className="lg:col-span-3 border-border/60 bg-gradient-to-br from-card to-card/50">
           <CardHeader>
-            <CardTitle>Recent Sales</CardTitle>
+            <CardTitle className="text-lg font-semibold">Recent Sales</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -209,8 +209,8 @@ export default async function DashboardPage() {
                     .slice(0, 2);
 
                   return (
-                    <div key={invoice.id} className="flex items-center gap-4 animate-in fade-in slide-in-from-right-2 duration-500" style={{ animationDelay: `${invoice.id.charCodeAt(0) % 5 * 100}ms`, animationFillMode: 'backwards' }}>
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0 shadow-md">
+                    <div key={invoice.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent/50 transition-all duration-200 animate-in fade-in slide-in-from-right-2 duration-500 group" style={{ animationDelay: `${invoice.id.charCodeAt(0) % 5 * 100}ms`, animationFillMode: 'backwards' }}>
+                      <div className="w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/30 group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
                         <span className="text-sm font-semibold text-white">
                           {initials}
                         </span>

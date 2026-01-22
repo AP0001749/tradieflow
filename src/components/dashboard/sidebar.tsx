@@ -16,10 +16,13 @@ const navItems = [
 export function DashboardSidebar({ email }: { email?: string | null }) {
   return (
     <aside
-      className="w-72 shrink-0 border-r border-border/60 bg-background/60 backdrop-blur supports-[backdrop-filter]:bg-background/40 dark:bg-card/50 dark:supports-[backdrop-filter]:bg-card/40 flex flex-col"
+      className="w-72 shrink-0 border-r border-border/40 bg-card/40 backdrop-blur-xl supports-[backdrop-filter]:bg-card/30 flex flex-col shadow-2xl shadow-black/5 dark:shadow-black/20 relative"
       data-print-hidden="true"
     >
-      <div className="p-6 border-b border-border/60">
+      {/* Subtle gradient overlay */}
+      <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none" />
+      
+      <div className="relative p-6 border-b border-border/40 backdrop-blur-sm">
         <Link href="/dashboard" className="block">
           <h1 className="text-2xl font-semibold tracking-tight">
             <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
@@ -32,7 +35,7 @@ export function DashboardSidebar({ email }: { email?: string | null }) {
         </p>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="relative flex-1 p-4 space-y-1">
         {navItems.map((item) => (
           <DashboardNavLink
             key={item.href}
@@ -43,7 +46,7 @@ export function DashboardSidebar({ email }: { email?: string | null }) {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-border/60">
+      <div className="relative p-4 border-t border-border/40 backdrop-blur-sm">
         <form action="/auth/signout" method="post">
           <button
             type="submit"

@@ -11,11 +11,11 @@ export default function TermsOfServicePage() {
   const lastUpdated = "11 January 2026";
 
   return (
-    <main className="container py-10">
+    <main className="container py-10 min-h-screen">
       <div className="mx-auto max-w-3xl">
-        <div className="mb-6 flex items-center justify-between gap-4">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-700">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">
+            <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text">
               Terms of Service
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -24,13 +24,14 @@ export default function TermsOfServicePage() {
           </div>
           <Link
             href="/"
-            className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+            className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors inline-flex items-center gap-2 group"
           >
+            <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             Back
           </Link>
         </div>
 
-        <article className="prose prose-zinc max-w-none dark:prose-invert">
+        <article className="prose prose-zinc prose-lg max-w-none dark:prose-invert prose-headings:font-bold prose-headings:tracking-tight prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4 prose-p:text-muted-foreground prose-p:leading-relaxed prose-li:text-muted-foreground prose-strong:text-foreground animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
           <h2>1. Agreement</h2>
           <p>
             These Terms of Service (Terms) govern your access to and use of
