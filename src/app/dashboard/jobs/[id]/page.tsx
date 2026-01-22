@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { JobPhotos } from "@/components/job-photos";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { BackButton } from "@/components/back-button";
 import { Calendar, DollarSign, User, FileText } from "lucide-react";
 import { JobStatus } from "@/types";
 
@@ -85,6 +86,9 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
     <div className="space-y-8">
       {/* Header */}
       <div className="animate-in fade-in slide-in-from-top-4 duration-700">
+        <div className="flex items-center gap-4 mb-2">
+          <BackButton />
+        </div>
         <h1 className="text-3xl font-semibold tracking-tight">{job.title}</h1>
         <p className="text-muted-foreground mt-1">Job details and photos</p>
       </div>

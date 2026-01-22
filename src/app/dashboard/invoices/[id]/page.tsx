@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/back-button";
 import { InvoiceWithJobClient, InvoiceStatus } from "@/types";
 import { markAsPaid } from "../actions";
 import { PrintButton } from "./print-button";
@@ -97,10 +98,10 @@ export default async function InvoiceViewPage({
   return (
     <div className="space-y-4">
       {/* Toolbar (hidden in print) */}
-      <div
-        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between animate-in fade-in slide-in-from-top-4 duration-700"
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between animate-in fade-in slide-in-from-top-4 duration-700"
         data-print-hidden="true"
       >
+        <BackButton />
         <div className="flex items-center gap-3">
           <Badge variant={status.variant}>{status.label}</Badge>
         </div>

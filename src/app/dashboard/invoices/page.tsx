@@ -148,8 +148,8 @@ export default async function InvoicesPage() {
                         >
                           View Invoice
                         </Link>
-                        <DeleteInvoiceButton
-                          invoiceId={invoice.id}
+                        <DeleteInvoiceButton 
+                          invoiceId={invoice.id} 
                           invoiceNumber={shortId}
                         />
                       </div>

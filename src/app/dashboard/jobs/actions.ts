@@ -79,6 +79,52 @@ export async function createJob(formData: FormData) {
   return { success: true };
 }
 
+export async function deleteJob(jobId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  // Check if job has invoices
+  const { data: invoices, error: invoicesError } = await supabase
+    .from("invoices")
+    .select("id")
+    .eq("job_id", jobId)
+    .eq("user_id", user.id);
+
+  if (invoicesError) {
+    console.error("Error checking invoices:", invoicesError);
+    return { success: false, error: "Failed to check job dependencies" };
+  }
+
+  if (invoices && invoices.length > 0) {
+    return { 
+      success: false, 
+      error: "Cannot delete job with associated invoices. Delete the invoices first." 
+    };
+  }
+
+  const { error } = await supabase
+    .from("jobs")
+    .delete()
+    .eq("id", jobId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error deleting job:", error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/dashboard/jobs");
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
 export async function getClients() {
   const supabase = await createClient();
 

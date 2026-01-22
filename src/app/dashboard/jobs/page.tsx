@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CreateJobDialog } from "./create-job-dialog";
+import { DeleteJobButton } from "./delete-job-button";
 import Link from "next/link";
 
 const statusConfig: Record<
@@ -101,15 +102,18 @@ export default async function JobsPage() {
                         : "—"}
                     </TableCell>
                     <TableCell>
-                      <Link href={`/dashboard/jobs/${job.id}`}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-indigo-300 hover:text-indigo-200"
-                        >
-                          View
-                        </Button>
-                      </Link>
+                      <div className="flex items-center gap-1">
+                        <Link href={`/dashboard/jobs/${job.id}`}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-indigo-300 hover:text-indigo-200"
+                          >
+                            View
+                          </Button>
+                        </Link>
+                        <DeleteJobButton jobId={job.id} jobTitle={job.title} />
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

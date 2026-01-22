@@ -45,6 +45,49 @@ export async function addClient(formData: FormData) {
   return { success: true };
 }
 
+export async function updateClient(clientId: string, formData: FormData) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
+
+  const name = formData.get("name") as string;
+  const email = formData.get("email") as string;
+  const phone = formData.get("phone") as string;
+  const address = formData.get("address") as string;
+  const notes = formData.get("notes") as string;
+
+  if (!name) {
+    return { error: "Name is required" };
+  }
+
+  const { error } = await supabase
+    .from("clients")
+    .update({
+      name,
+      email: email || null,
+      phone: phone || null,
+      address: address || null,
+      notes: notes || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", clientId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error updating client:", error);
+    return { error: error.message };
+  }
+
+  revalidatePath("/dashboard/clients");
+  return { success: true };
+}
+
 export async function deleteClient(clientId: string) {
   const supabase = await createClient();
 

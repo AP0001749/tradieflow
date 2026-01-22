@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { AddClientDialog } from "./add-client-dialog";
 import { DeleteClientButton } from "./delete-client-button";
+import { EditClientDialog } from "./edit-client-dialog";
 
 export default async function ClientsPage() {
   const supabase = await createClient();
@@ -70,7 +71,10 @@ export default async function ClientsPage() {
                     {new Date(client.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <DeleteClientButton clientId={client.id} clientName={client.name} />
+                    <div className="flex items-center gap-1">
+                      <EditClientDialog client={client} />
+                      <DeleteClientButton clientId={client.id} clientName={client.name} />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
