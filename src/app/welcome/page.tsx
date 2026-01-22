@@ -10,6 +10,15 @@ export default function WelcomePage() {
   const router = useRouter();
 
   useEffect(() => {
+    // Track Google Ads conversion
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'conversion', {
+        'send_to': 'AW-17896188158/YOUR_CONVERSION_LABEL',
+        'value': 1.0,
+        'currency': 'AUD'
+      });
+    }
+
     // Auto-redirect after 3 seconds
     const timer = setTimeout(() => {
       router.push("/dashboard");
