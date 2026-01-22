@@ -24,8 +24,8 @@ export function DashboardNavLink({
       className={cn(
         "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
         active
-          ? "bg-accent text-accent-foreground shadow-sm"
-          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:shadow-sm"
+          ? "bg-accent text-accent-foreground shadow-md shadow-black/5 dark:shadow-black/50"
+          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:shadow-sm hover:shadow-black/5 dark:hover:shadow-black/40"
       )}
     >
       <Icon

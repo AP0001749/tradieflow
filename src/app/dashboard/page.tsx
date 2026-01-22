@@ -216,7 +216,7 @@ export default async function DashboardPage() {
 
                   return (
                     <div key={invoice.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent/50 transition-all duration-200 animate-in fade-in slide-in-from-right-2 duration-500 group" style={{ animationDelay: `${invoice.id.charCodeAt(0) % 5 * 100}ms`, animationFillMode: 'backwards' }}>
-                      <div className="w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/30 group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                      <div className="w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/40 group-hover:shadow-xl group-hover:shadow-indigo-500/50 group-hover:scale-105 transition-all duration-300 dark:shadow-indigo-500/50 dark:group-hover:shadow-indigo-500/60">
                         <span className="text-sm font-semibold text-white">
                           {initials}
                         </span>

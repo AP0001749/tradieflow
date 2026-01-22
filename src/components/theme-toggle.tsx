@@ -19,7 +19,7 @@ export function ThemeToggle() {
       size="icon"
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="rounded-lg"
+      className="rounded-lg hover:ring-2 hover:ring-ring/20 hover:shadow-md hover:shadow-black/10 dark:hover:shadow-black/50"
     >
       <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
       <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
