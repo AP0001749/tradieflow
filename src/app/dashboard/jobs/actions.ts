@@ -30,14 +30,17 @@ export async function createJob(formData: FormData) {
   const description = formData.get("description") as string;
 
   // Database expects underscore in status values (e.g., "in_progress")
-  // Convert any hyphens to underscores and ensure lowercase
+  // Normalize: trim, lowercase, convert spaces/hyphens to underscores
   const validStatuses: JobStatus[] = ["draft", "scheduled", "in_progress", "completed", "cancelled"];
-  let status = statusRaw.trim().toLowerCase().replace(/-/g, "_") as JobStatus;
+  let status = statusRaw
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_") as JobStatus; // Convert spaces and hyphens to underscores
   
-  // Ensure status is valid
+  // Ensure status is valid, fallback to draft if not
   if (!validStatuses.includes(status)) {
     console.error("Invalid status received:", statusRaw, "->", status);
-    status = "draft"; // Fallback to draft if invalid
+    status = "draft";
   }
 
   // Validation
