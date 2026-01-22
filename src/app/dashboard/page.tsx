@@ -148,18 +148,18 @@ export default async function DashboardPage() {
         {stats.map((stat, index) => (
           <Card
             key={stat.title}
-            className="group border-border/60 bg-gradient-to-br from-card to-card/50 hover:from-card hover:to-card/80 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
+            className="group cursor-default border-border/60 bg-gradient-to-br from-card to-card/50 hover:from-card hover:to-card/80 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] animate-in fade-in slide-in-from-bottom-4"
             style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'backwards' }}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {stat.title}
               </CardTitle>
-              <div className="p-2.5 bg-gradient-to-br from-indigo-500/10 to-violet-500/10 rounded-xl group-hover:from-indigo-500/20 group-hover:to-violet-500/20 transition-all duration-300">
-                <stat.icon className="w-4 h-4 text-indigo-500 dark:text-indigo-400 group-hover:scale-110 transition-transform duration-300" />
+              <div className="p-2.5 bg-gradient-to-br from-indigo-500/10 to-violet-500/10 rounded-xl group-hover:from-indigo-500/20 group-hover:to-violet-500/20 group-hover:shadow-lg group-hover:shadow-indigo-500/20 transition-all duration-500">
+                <stat.icon className="w-4 h-4 text-indigo-500 dark:text-indigo-400 group-hover:scale-125 group-hover:rotate-12 transition-all duration-500" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold tracking-tight">{stat.value}</div>
+              <div className="text-2xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent">{stat.value}</div>
               {stat.change && (
                 <p className="text-xs text-muted-foreground mt-1">
                   <span
@@ -182,9 +182,12 @@ export default async function DashboardPage() {
       {/* Main Content Grid */}
       <div className="grid gap-6 lg:grid-cols-7 animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
         {/* Revenue Chart - Takes up more space */}
-        <Card className="lg:col-span-4 border-border/60 bg-gradient-to-br from-card to-card/50 overflow-hidden">
+        <Card className="lg:col-span-4 border-border/60 bg-gradient-to-br from-card to-card/50 overflow-hidden hover:scale-[1.01] transition-all duration-500">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold">Monthly Revenue</CardTitle>
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <span className="w-1 h-5 bg-gradient-to-b from-indigo-500 to-violet-500 rounded-full"></span>
+              Monthly Revenue
+            </CardTitle>
           </CardHeader>
           <CardContent className="pb-6">
             <RevenueChart data={monthlyRevenue} />
@@ -192,9 +195,12 @@ export default async function DashboardPage() {
         </Card>
 
         {/* Recent Sales */}
-        <Card className="lg:col-span-3 border-border/60 bg-gradient-to-br from-card to-card/50">
+        <Card className="lg:col-span-3 border-border/60 bg-gradient-to-br from-card to-card/50 hover:scale-[1.01] transition-all duration-500">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold">Recent Sales</CardTitle>
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <span className="w-1 h-5 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></span>
+              Recent Sales
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-5">

@@ -43,17 +43,17 @@ export default async function DashboardLayout({
             <div className="container py-5 px-6">
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium">Dashboard</p>
+                  <p className="text-sm font-semibold tracking-wide bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Dashboard</p>
                   <p className="text-xs text-muted-foreground truncate">
                     Welcome back
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-3 shrink-0">
                   <ThemeToggle />
                   <Link
                     href="/legal/privacy"
-                    className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                    className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors duration-200"
                   >
                     Privacy
                   </Link>

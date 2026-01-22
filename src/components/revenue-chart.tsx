@@ -1,6 +1,7 @@
 "use client";
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { useTheme } from "next-themes";
 
 interface RevenueChartProps {
   data: {
@@ -10,34 +11,42 @@ interface RevenueChartProps {
 }
 
 export function RevenueChart({ data }: RevenueChartProps) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  
   return (
     <ResponsiveContainer width="100%" height={350}>
       <BarChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+        <CartesianGrid 
+          strokeDasharray="3 3" 
+          stroke={isDark ? "#374151" : "#e5e7eb"} 
+          vertical={false} 
+          opacity={0.5}
+        />
         <XAxis
           dataKey="name"
-          stroke="#6b7280"
+          stroke={isDark ? "#9ca3af" : "#6b7280"}
           fontSize={12}
           tickLine={false}
           axisLine={false}
         />
         <YAxis
-          stroke="#6b7280"
+          stroke={isDark ? "#9ca3af" : "#6b7280"}
           fontSize={12}
           tickLine={false}
           axisLine={false}
           tickFormatter={(value) => `$${value.toLocaleString()}`}
         />
         <Tooltip
-          cursor={{ fill: "rgba(0, 0, 0, 0.05)" }}
+          cursor={{ fill: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)" }}
           content={({ active, payload }) => {
             if (active && payload && payload.length) {
               return (
-                <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
-                  <p className="text-sm font-medium text-gray-900">
+                <div className="bg-background/95 backdrop-blur-xl border border-border/60 rounded-xl shadow-2xl p-3.5">
+                  <p className="text-sm font-medium text-foreground/90">
                     {payload[0].payload.name}
                   </p>
-                  <p className="text-sm font-semibold text-gray-700">
+                  <p className="text-base font-bold text-primary mt-0.5">
                     ${payload[0].value?.toLocaleString()}
                   </p>
                 </div>
@@ -48,10 +57,16 @@ export function RevenueChart({ data }: RevenueChartProps) {
         />
         <Bar
           dataKey="total"
-          fill="#3b82f6"
-          radius={[8, 8, 0, 0]}
+          fill="url(#barGradient)"
+          radius={[12, 12, 0, 0]}
           maxBarSize={60}
         />
+        <defs>
+          <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6366f1" stopOpacity={1} />
+            <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.8} />
+          </linearGradient>
+        </defs>
       </BarChart>
     </ResponsiveContainer>
   );

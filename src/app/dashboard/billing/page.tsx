@@ -37,17 +37,17 @@ export default async function BillingPage({
   return (
     <div className="space-y-8">
       <div className="animate-in fade-in slide-in-from-top-4 duration-700">
-        <h1 className="text-3xl font-semibold tracking-tight">Billing</h1>
+        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text">Billing</h1>
         <p className="text-muted-foreground mt-1">Manage your subscription plan.</p>
       </div>
 
       {/* Success/Cancel Messages */}
       {params.success === "true" && (
-        <div className="p-4 rounded-lg flex items-start gap-3 border border-emerald-500/20 bg-emerald-500/10 animate-in fade-in slide-in-from-top-2 duration-500">
+        <div className="p-5 rounded-xl flex items-start gap-3 border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 shadow-lg shadow-emerald-500/10 animate-in fade-in slide-in-from-top-2 duration-500">
           <CheckCircle2 className="h-5 w-5 text-emerald-300 mt-0.5" />
           <div>
-            <h3 className="font-semibold text-emerald-200">Payment Successful!</h3>
-            <p className="text-sm text-emerald-200/80 mt-1">
+            <h3 className="font-semibold text-emerald-300">Payment Successful!</h3>
+            <p className="text-sm text-emerald-300/90 mt-1">
               Your Pro subscription is now active. Welcome aboard!
             </p>
           </div>
@@ -55,7 +55,7 @@ export default async function BillingPage({
       )}
 
       {params.canceled === "true" && (
-        <div className="p-4 rounded-lg flex items-start gap-3 border border-orange-500/20 bg-orange-500/10 animate-in fade-in slide-in-from-top-2 duration-500">
+        <div className="p-5 rounded-xl flex items-start gap-3 border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-orange-500/5 shadow-lg shadow-orange-500/10 animate-in fade-in slide-in-from-top-2 duration-500">
           <XCircle className="h-5 w-5 text-orange-300 mt-0.5" />
           <div>
             <h3 className="font-semibold text-orange-200">Payment Canceled</h3>
@@ -67,7 +67,7 @@ export default async function BillingPage({
       )}
 
       {tier === "free" ? (
-        <Card className="p-6 space-y-4 max-w-xl border-border/60 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+        <Card className="p-6 space-y-5 max-w-xl border-border/60 shadow-lg hover:shadow-xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold">Pro Plan</h2>

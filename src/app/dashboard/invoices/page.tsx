@@ -83,7 +83,7 @@ export default async function InvoicesPage() {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-in fade-in slide-in-from-top-4 duration-700">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Invoices</h1>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text">Invoices</h1>
           <p className="text-muted-foreground mt-1">
             Create and manage invoices for your clients
           </p>
@@ -93,7 +93,7 @@ export default async function InvoicesPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border/60 bg-card shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+      <div className="rounded-xl border border-border/60 bg-card shadow-sm hover:shadow-md transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
         {rows.length > 0 ? (
           <Table className="min-w-[1024px]">
             <TableHeader>

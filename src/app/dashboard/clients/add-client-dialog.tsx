@@ -55,9 +55,9 @@ export function AddClientDialog() {
             Enter the client details below. Only the name is required.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2.5.5">
+            <Label htmlFor="name" className="text-sm font-medium">
               Name <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -69,8 +69,8 @@ export function AddClientDialog() {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+          <div className="space-y-2.5">
+            <Label htmlFor="email" className="text-sm font-medium">Email</Label>
             <Input
               id="email"
               name="email"
