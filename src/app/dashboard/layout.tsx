@@ -55,7 +55,7 @@ export default async function DashboardLayout({
                     href="/legal/privacy"
                     className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors duration-200"
                   >
-                    Privacy
+                    Privacy Policy
                   </Link>
                 </div>
               </div>
