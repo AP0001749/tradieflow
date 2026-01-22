@@ -29,18 +29,15 @@ export async function createJob(formData: FormData) {
   const start_date = formData.get("start_date") as string;
   const description = formData.get("description") as string;
 
-  console.log("=== JOB CREATION DEBUG ===");
-  console.log("Raw status from form:", statusRaw);
-
   // Database expects hyphenated status values (e.g., "in-progress" not "in_progress")
+  // Convert any underscores to hyphens and ensure lowercase
   const validStatuses: JobStatus[] = ["draft", "scheduled", "in-progress", "completed", "cancelled"];
   let status = statusRaw.trim().toLowerCase().replace(/_/g, "-") as JobStatus;
   
-  console.log("Processed status:", status);
-  console.log("Is valid?", validStatuses.includes(status));
-  
+  // Ensure status is valid
   if (!validStatuses.includes(status)) {
-    return { error: `Invalid job status: "${status}". Expected one of: ${validStatuses.join(", ")}` };
+    console.error("Invalid status received:", statusRaw, "->", status);
+    status = "draft"; // Fallback to draft if invalid
   }
 
   // Validation
