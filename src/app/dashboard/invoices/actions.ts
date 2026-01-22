@@ -276,7 +276,6 @@ export async function updateInvoice(
     amount: data.amount,
     due_date: data.due_date,
     notes: data.notes,
-    updated_at: new Date().toISOString(),
   };
 
   const { error } = await supabase

@@ -81,7 +81,6 @@ export async function updateClient(clientId: string, formData: FormData) {
       phone: phone || null,
       address: address || null,
       notes: notes || null,
-      updated_at: new Date().toISOString(),
     })
     .eq("id", clientId)
     .eq("user_id", user.id);

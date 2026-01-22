@@ -220,7 +220,6 @@ export async function updateJob(
     price: data.price ? parseFloat(data.price) : null,
     start_date: data.start_date || null,
     description: data.description || null,
-    updated_at: new Date().toISOString(),
   };
 
   const { error } = await supabase
