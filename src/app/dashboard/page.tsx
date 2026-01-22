@@ -11,8 +11,8 @@ interface MonthlyRevenue {
 type RecentSale = {
   id: string;
   amount: number | null;
-  jobs?: {
-    clients?: {
+  job?: {
+    client?: {
       name?: string | null;
       email?: string | null;
     } | null;
@@ -30,40 +30,41 @@ export default async function DashboardPage() {
   }
 
   // Fetch all data in parallel
-  const [clientsResult, jobsResult, invoicesResult, paidInvoicesResult, recentSalesResult] = await Promise.all([
+  const [clientsResult, jobsResult, invoicesResult, allInvoicesResult, recentSalesResult] = await Promise.all([
     // Total clients count
     supabase.from("clients").select("*", { count: "exact", head: true }).eq("user_id", user.id),
     
-    // Active jobs (in_progress status)
+    // Active jobs count (in_progress status)
     supabase
       .from("jobs")
       .select("*", { count: "exact", head: true })
       .eq("user_id", user.id)
       .eq("status", "in_progress"),
     
-    // All paid invoices for revenue calculation
+    // All paid invoices for revenue and chart calculation
     supabase
       .from("invoices")
-      .select("amount, created_at")
+      .select("amount, created_at, status")
       .eq("user_id", user.id)
-      .eq("status", "paid")
       .order("created_at", { ascending: false }),
     
-    // Paid invoices sum
+    // All invoices for sales count
     supabase
       .from("invoices")
-      .select("amount")
-      .eq("user_id", user.id)
-      .eq("status", "paid"),
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id),
     
     // Recent sales - last 5 paid invoices with client info
     supabase
       .from("invoices")
       .select(`
-        *,
-        jobs!inner (
+        id,
+        amount,
+        created_at,
+        status,
+        job:job_id (
           title,
-          clients!inner (
+          client:client_id (
             name,
             email
           )
@@ -75,8 +76,13 @@ export default async function DashboardPage() {
       .limit(5),
   ]);
 
-  // Calculate total revenue
-  const totalRevenue = paidInvoicesResult.data?.reduce((sum, invoice) => sum + (invoice.amount || 0), 0) || 0;
+  // Calculate total revenue from paid invoices only
+  const totalRevenue = invoicesResult.data
+    ?.filter(invoice => invoice.status === "paid")
+    .reduce((sum, invoice) => sum + (invoice.amount || 0), 0) || 0;
+
+  // Count paid invoices for sales metric
+  const salesCount = invoicesResult.data?.filter(invoice => invoice.status === "paid").length || 0;
 
   // Process monthly revenue for chart (last 6 months)
   const monthlyRevenue: MonthlyRevenue[] = [];
@@ -91,7 +97,7 @@ export default async function DashboardPage() {
     const monthTotal = invoicesResult.data
       ?.filter((invoice) => {
         const invoiceDate = new Date(invoice.created_at);
-        return invoiceDate >= monthStart && invoiceDate <= monthEnd;
+        return invoice.status === "paid" && invoiceDate >= monthStart && invoiceDate <= monthEnd;
       })
       .reduce((sum, invoice) => sum + (invoice.amount || 0), 0) || 0;
     
@@ -111,7 +117,7 @@ export default async function DashboardPage() {
     },
     {
       title: "Sales",
-      value: paidInvoicesResult.data?.length || 0,
+      value: salesCount,
       icon: TrendingUp,
       change: "",
       changeType: "neutral" as const,
@@ -206,7 +212,7 @@ export default async function DashboardPage() {
             <div className="space-y-5">
               {recentSalesResult.data && recentSalesResult.data.length > 0 ? (
                 recentSales.map((invoice) => {
-                  const clientName = invoice.jobs?.clients?.name || "Unknown Client";
+                  const clientName = invoice.job?.client?.name || "Unknown Client";
                   const initials = clientName
                     .split(" ")
                     .map((n: string) => n[0])
@@ -226,7 +232,7 @@ export default async function DashboardPage() {
                           {clientName}
                         </p>
                         <p className="text-xs text-muted-foreground truncate">
-                          {invoice.jobs?.clients?.email || "No email"}
+                          {invoice.job?.client?.email || "No email"}
                         </p>
                       </div>
                       <div className="text-sm font-semibold">
