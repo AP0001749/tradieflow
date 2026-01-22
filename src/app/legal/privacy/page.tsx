@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPolicyPage() {
-  const lastUpdated = "11 January 2026";
+  const lastUpdated = "22 January 2026";
 
   return (
     <main className="container py-10 min-h-screen">
@@ -150,7 +150,7 @@ export default function PrivacyPolicyPage() {
           <h2>10. Complaints</h2>
           <p>
             If you have a privacy complaint or question, please contact us at{" "}
-            <strong>support@tradieflow.com</strong>. We will respond within a 
+            <strong>ajit20patilap@gmail.com</strong>. We will respond within a 
             reasonable time.
           </p>
           <p>
