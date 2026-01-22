@@ -157,6 +157,89 @@ export async function getClients() {
   return { clients: clients || [], error: null };
 }
 
+export async function updateJob(
+  jobId: string,
+  data: {
+    client_id: string;
+    title: string;
+    status: string;
+    price: string;
+    start_date: string | null;
+    description: string | null;
+  }
+) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
+
+  // Verify job exists and belongs to user
+  const { data: job, error: jobError } = await supabase
+    .from("jobs")
+    .select("id")
+    .eq("id", jobId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (jobError || !job) {
+    return { error: "Job not found" };
+  }
+
+  // Verify client belongs to user
+  const { data: client, error: clientError } = await supabase
+    .from("clients")
+    .select("id")
+    .eq("id", data.client_id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (clientError || !client) {
+    return { error: "Invalid client selected" };
+  }
+
+  // Normalize status
+  const validStatuses: JobStatus[] = ["draft", "scheduled", "in_progress", "completed", "cancelled"];
+  let status = data.status
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_") as JobStatus;
+  
+  if (!validStatuses.includes(status)) {
+    status = "draft";
+  }
+
+  const payload = {
+    client_id: data.client_id,
+    title: data.title,
+    status: status,
+    price: data.price ? parseFloat(data.price) : null,
+    start_date: data.start_date || null,
+    description: data.description || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error } = await supabase
+    .from("jobs")
+    .update(payload)
+    .eq("id", jobId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error updating job:", error);
+    return { error: error.message };
+  }
+
+  revalidatePath("/dashboard/jobs");
+  revalidatePath(`/dashboard/jobs/${jobId}`);
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
 interface UploadPhotoResult {
   success: boolean;
   error?: string;

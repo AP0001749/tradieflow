@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CreateJobDialog } from "./create-job-dialog";
 import { DeleteJobButton } from "./delete-job-button";
+import EditJobDialog from "./edit-job-dialog";
 import { SubscriptionBanner } from "@/components/subscription-banner";
 import Link from "next/link";
 
@@ -36,6 +37,13 @@ export default async function JobsPage() {
   if (!user) {
     return null;
   }
+
+  // Fetch clients for edit dialog
+  const { data: clients } = await supabase
+    .from("clients")
+    .select("id, name")
+    .eq("user_id", user.id)
+    .order("name", { ascending: true });
 
   // CRITICAL: Relational join to fetch client name
   const { data: jobs, error } = await supabase
@@ -115,6 +123,7 @@ export default async function JobsPage() {
                             View
                           </Button>
                         </Link>
+                        <EditJobDialog job={job} clients={clients || []} />
                         <DeleteJobButton jobId={job.id} jobTitle={job.title} />
                       </div>
                     </TableCell>
