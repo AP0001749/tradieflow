@@ -136,7 +136,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="animate-in fade-in slide-in-from-top-4 duration-700">
         <h1 className="text-3xl font-semibold tracking-tight">Command Center</h1>
         <p className="text-muted-foreground mt-1">
           Your business analytics at a glance.
@@ -144,9 +144,12 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.title} className="border-border/60">
+      <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat, index) => (
+          <Card
+            key={stat.title}
+            className="border-border/60 shadow-sm hover:shadow-md hover:border-border transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
+            style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'backwards' }}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {stat.title}
@@ -177,9 +180,9 @@ export default async function DashboardPage() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-7">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-7 animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
         {/* Revenue Chart - Takes up more space */}
-        <Card className="lg:col-span-4 border-border/60">
+        <Card className="lg:col-span-4 border-border/60 shadow-sm">
           <CardHeader>
             <CardTitle>Monthly Revenue</CardTitle>
           </CardHeader>
@@ -189,7 +192,7 @@ export default async function DashboardPage() {
         </Card>
 
         {/* Recent Sales */}
-        <Card className="lg:col-span-3 border-border/60">
+        <Card className="lg:col-span-3 border-border/60 shadow-sm">
           <CardHeader>
             <CardTitle>Recent Sales</CardTitle>
           </CardHeader>
@@ -206,8 +209,8 @@ export default async function DashboardPage() {
                     .slice(0, 2);
 
                   return (
-                    <div key={invoice.id} className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                    <div key={invoice.id} className="flex items-center gap-4 animate-in fade-in slide-in-from-right-2 duration-500" style={{ animationDelay: `${invoice.id.charCodeAt(0) % 5 * 100}ms`, animationFillMode: 'backwards' }}>
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0 shadow-md">
                         <span className="text-sm font-semibold text-white">
                           {initials}
                         </span>

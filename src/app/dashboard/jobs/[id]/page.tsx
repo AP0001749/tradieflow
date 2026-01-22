@@ -84,13 +84,13 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
+      <div className="animate-in fade-in slide-in-from-top-4 duration-700">
         <h1 className="text-3xl font-semibold tracking-tight">{job.title}</h1>
         <p className="text-muted-foreground mt-1">Job details and photos</p>
       </div>
 
       {/* Job Details Card */}
-      <Card>
+      <Card className="shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
         <CardHeader>
           <CardTitle className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <span>Job Information</span>
@@ -174,7 +174,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
       </Card>
 
       {/* Job Photos Section */}
-      <Card>
+      <Card className="shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
         <CardHeader>
           <CardTitle>Before & After Photos</CardTitle>
         </CardHeader>

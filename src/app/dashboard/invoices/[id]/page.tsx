@@ -98,7 +98,7 @@ export default async function InvoiceViewPage({
     <div className="space-y-4">
       {/* Toolbar (hidden in print) */}
       <div
-        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between animate-in fade-in slide-in-from-top-4 duration-700"
         data-print-hidden="true"
       >
         <div className="flex items-center gap-3">
@@ -118,8 +118,8 @@ export default async function InvoiceViewPage({
 
       {/* A4 Paper */}
       <div
-        className="print-paper mx-auto rounded-xl border shadow-sm p-10 max-w-[210mm] min-h-[297mm] bg-[hsl(var(--paper))] text-[hsl(var(--paper-foreground))] border-[hsl(var(--paper-border))] print:rounded-none"
-        style={{ pageBreakInside: "avoid" }}
+        className="print-paper mx-auto rounded-xl border shadow-sm p-10 max-w-[210mm] min-h-[297mm] bg-[hsl(var(--paper))] text-[hsl(var(--paper-foreground))] border-[hsl(var(--paper-border))] print:rounded-none animate-in fade-in slide-in-from-bottom-4 duration-700"
+        style={{ pageBreakInside: "avoid", animationDelay: '200ms', animationFillMode: 'backwards' }}
       >
         {/* Header */}
         <div className="flex items-start justify-between">
