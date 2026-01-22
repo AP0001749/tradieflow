@@ -19,11 +19,12 @@ import { SubscriptionBanner } from "@/components/subscription-banner";
 
 const statusConfig: Record<
   InvoiceStatus,
-  { label: string; variant: "destructive" | "completed" | "overdue" }
+  { label: string; variant: "destructive" | "completed" | "overdue" | "sent" }
 > = {
   unpaid: { label: "Unpaid", variant: "destructive" },
   paid: { label: "Paid", variant: "completed" },
   overdue: { label: "Overdue", variant: "overdue" },
+  sent: { label: "Sent", variant: "sent" },
 };
 
 function formatMoney(amount: number) {

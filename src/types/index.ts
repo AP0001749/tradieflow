@@ -149,7 +149,7 @@ export interface JobUpdate {
 }
 
 // Invoice Types
-export type InvoiceStatus = "unpaid" | "paid" | "overdue";
+export type InvoiceStatus = "unpaid" | "paid" | "overdue" | "sent";
 
 export interface Invoice {
   id: string;

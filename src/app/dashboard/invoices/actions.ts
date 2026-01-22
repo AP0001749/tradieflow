@@ -381,12 +381,14 @@ export async function sendInvoiceEmail(invoiceId: string) {
     currency: "AUD",
   }).format(invoice.amount);
 
-  // Format due date
-  const formattedDueDate = new Date(invoice.due_date).toLocaleDateString("en-AU", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  // Format due date with null safety
+  const formattedDueDate = invoice.due_date 
+    ? new Date(invoice.due_date).toLocaleDateString("en-AU", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "Upon Receipt";
 
   // Generate invoice URL (adjust this to your actual domain)
   const invoiceUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/invoices/${invoiceId}`;
@@ -441,6 +443,19 @@ export async function sendInvoiceEmail(invoiceId: string) {
 
     console.log("\n✅ RESEND API SUCCESS!");
     console.log("   Response:", JSON.stringify(data, null, 2));
+    
+    // Update invoice status to 'sent' after successful email
+    const { error: updateError } = await supabase
+      .from("invoices")
+      .update({ status: "sent" })
+      .eq("id", invoiceId);
+    
+    if (updateError) {
+      console.warn("⚠️  Failed to update invoice status:", updateError);
+    } else {
+      console.log("✅ Invoice status updated to 'sent'");
+    }
+    
     console.log("\n📬 NEXT STEPS:");
     console.log("   1. Check Resend Dashboard: https://resend.com/emails");
     console.log("   2. Check client email inbox and spam folder");
