@@ -22,7 +22,7 @@ export function DashboardSidebar({ email }: { email?: string | null }) {
       {/* Subtle gradient overlay */}
       <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none" />
       
-      <div className="relative p-6 border-b border-border/40 backdrop-blur-sm">
+      <div className="relative p-8 border-b border-border/40 backdrop-blur-sm">
         <Link href="/dashboard" className="block">
           <h1 className="text-2xl font-semibold tracking-tight">
             <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
@@ -35,7 +35,7 @@ export function DashboardSidebar({ email }: { email?: string | null }) {
         </p>
       </div>
 
-      <nav className="relative flex-1 p-4 space-y-1">
+      <nav className="relative flex-1 p-5 space-y-1.5">
         {navItems.map((item) => (
           <DashboardNavLink
             key={item.href}
@@ -46,7 +46,7 @@ export function DashboardSidebar({ email }: { email?: string | null }) {
         ))}
       </nav>
 
-      <div className="relative p-4 border-t border-border/40 backdrop-blur-sm">
+      <div className="relative p-5 border-t border-border/40 backdrop-blur-sm">
         <form action="/auth/signout" method="post">
           <button
             type="submit"

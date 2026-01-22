@@ -82,7 +82,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
     statusConfig[(job.status as JobStatus) ?? "draft"] ?? statusConfig.draft;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
       <div className="animate-in fade-in slide-in-from-top-4 duration-700">
         <h1 className="text-3xl font-semibold tracking-tight">{job.title}</h1>

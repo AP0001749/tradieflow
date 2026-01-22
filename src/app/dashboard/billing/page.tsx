@@ -35,7 +35,7 @@ export default async function BillingPage({
   const params = await searchParams;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="animate-in fade-in slide-in-from-top-4 duration-700">
         <h1 className="text-3xl font-semibold tracking-tight">Billing</h1>
         <p className="text-muted-foreground mt-1">Manage your subscription plan.</p>

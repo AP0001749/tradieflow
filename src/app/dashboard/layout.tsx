@@ -40,7 +40,7 @@ export default async function DashboardLayout({
             className="sticky top-0 z-10 border-b border-border/40 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/40 shadow-sm"
             data-print-hidden="true"
           >
-            <div className="container py-4">
+            <div className="container py-5 px-6">
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-sm font-medium">Dashboard</p>
@@ -62,7 +62,7 @@ export default async function DashboardLayout({
             </div>
           </div>
 
-          <div className="container py-8 min-w-0" data-layout-content>
+          <div className="container py-10 px-6 min-w-0" data-layout-content>
             {children}
           </div>
         </div>

@@ -80,7 +80,7 @@ export default async function InvoicesPage() {
   const rows: InvoiceWithJobClient[] = invoices || [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-in fade-in slide-in-from-top-4 duration-700">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Invoices</h1>

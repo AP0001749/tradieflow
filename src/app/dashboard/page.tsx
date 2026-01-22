@@ -135,7 +135,7 @@ export default async function DashboardPage() {
   const recentSales = (recentSalesResult.data || []) as unknown as RecentSale[];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="animate-in fade-in slide-in-from-top-4 duration-700">
         <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text">Command Center</h1>
         <p className="text-muted-foreground mt-1.5">
@@ -144,7 +144,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-5 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, index) => (
           <Card
             key={stat.title}
@@ -180,7 +180,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-7 animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
+      <div className="grid gap-6 lg:grid-cols-7 animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
         {/* Revenue Chart - Takes up more space */}
         <Card className="lg:col-span-4 border-border/60 bg-gradient-to-br from-card to-card/50 overflow-hidden">
           <CardHeader>
@@ -197,7 +197,7 @@ export default async function DashboardPage() {
             <CardTitle className="text-lg font-semibold">Recent Sales</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-5">
               {recentSalesResult.data && recentSalesResult.data.length > 0 ? (
                 recentSales.map((invoice) => {
                   const clientName = invoice.jobs?.clients?.name || "Unknown Client";
