@@ -106,15 +106,15 @@ export default async function DashboardPage() {
       title: "Total Revenue",
       value: `$${totalRevenue.toLocaleString()}`,
       icon: DollarSign,
-      change: "+12.5%",
-      changeType: "positive" as const,
+      change: "",
+      changeType: "neutral" as const,
     },
     {
       title: "Sales",
       value: paidInvoicesResult.data?.length || 0,
       icon: TrendingUp,
-      change: "+12%",
-      changeType: "positive" as const,
+      change: "",
+      changeType: "neutral" as const,
     },
     {
       title: "Active Jobs",
@@ -160,7 +160,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent">{stat.value}</div>
-              {stat.change && (
+              {stat.change && stat.changeType !== "neutral" && (
                 <p className="text-xs text-muted-foreground mt-1">
                   <span
                     className={
