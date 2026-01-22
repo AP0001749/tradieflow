@@ -97,7 +97,8 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
     }
 
     if (data.session) {
-      router.push("/dashboard");
+      // New signup with immediate session - redirect to welcome page for conversion tracking
+      router.push("/welcome");
       router.refresh();
       return;
     }
