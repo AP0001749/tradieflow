@@ -23,13 +23,19 @@ export default async function BillingPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("subscription_tier, stripe_customer_id")
+    .select("subscription_tier, stripe_customer_id, subscription_status, subscription_end_date")
     .eq("user_id", user.id)
     .maybeSingle();
 
   const tier =
     (profile as { subscription_tier?: string | null } | null)?.subscription_tier ??
     "free";
+  
+  const subscriptionStatus =
+    (profile as { subscription_status?: string | null } | null)?.subscription_status ?? null;
+  
+  const subscriptionEndDate =
+    (profile as { subscription_end_date?: string | null } | null)?.subscription_end_date ?? null;
 
   const priceId = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID;
 
@@ -139,13 +145,23 @@ export default async function BillingPage({
               <p className="text-muted-foreground mt-1">$29/month</p>
             </div>
             <Badge className="bg-emerald-500/15 text-emerald-300 border-transparent">
-              Active Pro Plan
+              {subscriptionStatus === "active" ? "Active" : subscriptionStatus === "past_due" ? "Payment Due" : "Pro"} Plan
             </Badge>
           </div>
 
           <p className="text-sm text-muted-foreground">
             You have full access to all Pro features.
           </p>
+
+          {subscriptionEndDate && (
+            <p className="text-xs text-muted-foreground">
+              Next billing date: {new Date(subscriptionEndDate).toLocaleDateString('en-AU', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </p>
+          )}
 
           <form action="/api/stripe/portal" method="post">
             <Button type="submit" variant="outline" className="w-full">

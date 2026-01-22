@@ -27,18 +27,21 @@ export async function checkSubscriptionLimits() {
   // Get user's subscription tier
   const { data: profile } = await supabase
     .from("profiles")
-    .select("subscription_tier")
+    .select("subscription_tier, subscription_status")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  const tier = (profile as { subscription_tier?: string | null } | null)?.subscription_tier ?? "free";
+  const tier = (profile as { subscription_tier?: string | null; subscription_status?: string | null } | null)?.subscription_tier ?? "free";
+  const status = (profile as { subscription_tier?: string | null; subscription_status?: string | null } | null)?.subscription_status ?? null;
   
-  // Pro users have no limits
-  if (tier === "pro") {
+  // Pro users with active or trialing subscriptions have no limits
+  // Also allow "past_due" to give users grace period to update payment
+  if (tier === "pro" && (!status || status === "active" || status === "trialing" || status === "past_due")) {
     return { 
       canProceed: true, 
       isPro: true,
-      tier: "pro"
+      tier: "pro",
+      status
     };
   }
 
