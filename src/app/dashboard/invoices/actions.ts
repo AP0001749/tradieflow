@@ -351,8 +351,8 @@ export async function sendInvoiceEmail(invoiceId: string) {
 
   const businessName = profile?.business_name || "TradieFlow";
   
-  // CRITICAL: Always use onboarding@resend.dev for testing
-  const fromEmail = "onboarding@resend.dev";
+  // Production verified domain
+  const fromEmail = "invoices@gettradieflow.com";
   
   console.log("✅ Business name:", businessName);
   console.log("✅ FROM address:", fromEmail);
@@ -443,8 +443,8 @@ export async function sendInvoiceEmail(invoiceId: string) {
     console.log("   Response:", JSON.stringify(data, null, 2));
     console.log("\n📬 NEXT STEPS:");
     console.log("   1. Check Resend Dashboard: https://resend.com/emails");
-    console.log("   2. Check your SPAM/PROMOTIONS folder");
-    console.log("   3. Test emails from onboarding@resend.dev often go to spam");
+    console.log("   2. Check client email inbox and spam folder");
+    console.log("   3. Verify domain status at https://resend.com/domains");
     console.log("\n=== 📧 DIAGNOSTIC END ===\n");
     
     return { success: true, data };
