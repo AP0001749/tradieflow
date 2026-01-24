@@ -16,7 +16,7 @@ const navItems = [
 export function DashboardSidebar({ email }: { email?: string | null }) {
   return (
     <aside
-      className="w-72 shrink-0 border-r border-border/40 bg-card/40 backdrop-blur-xl supports-[backdrop-filter]:bg-card/30 flex flex-col shadow-2xl shadow-black/5 dark:shadow-black/20 relative"
+      className="hidden md:flex md:w-72 shrink-0 border-r border-border/40 bg-card/40 backdrop-blur-xl supports-[backdrop-filter]:bg-card/30 flex-col shadow-2xl shadow-black/5 dark:shadow-black/20 relative"
       data-print-hidden="true"
     >
       {/* Subtle gradient overlay */}

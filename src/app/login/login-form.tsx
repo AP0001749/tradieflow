@@ -132,24 +132,24 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
               <Briefcase className="h-8 w-8 text-indigo-500 dark:text-indigo-400" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold tracking-tight">
+          <CardTitle className="text-2xl md:text-3xl font-bold tracking-tight">
             <span className="bg-gradient-to-br from-indigo-500 to-violet-600 bg-clip-text text-transparent">
               TradieFlow
             </span>
           </CardTitle>
-          <CardDescription className="text-muted-foreground text-base pt-1">
+          <CardDescription className="text-muted-foreground text-sm md:text-base pt-1">
             Business command center
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-5 px-6">
+        <CardContent className="space-y-5 px-4 md:px-6">
           {notice && (
-            <div className="p-3.5 text-sm text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-lg animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="p-3.5 text-sm text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-lg animate-in fade-in slide-in-from-top-2 duration-300 break-words">
               {notice}
             </div>
           )}
           {error && (
-            <div className="p-3.5 text-sm text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="p-3.5 text-sm text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg animate-in fade-in slide-in-from-top-2 duration-300 break-words">
               {error}
             </div>
           )}
@@ -255,18 +255,18 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
           </form>
         </CardContent>
 
-        <CardFooter className="flex-col space-y-2 px-6 pb-8 pt-4">
+        <CardFooter className="flex-col space-y-2 px-4 md:px-6 pb-8 pt-4">
           <Button
             type="button"
             variant="ghost"
-            className="w-full h-10 text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-all duration-200 disabled:opacity-50"
+            className="w-full h-10 text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-all duration-200 disabled:opacity-50 text-sm"
             onClick={handleSignUp}
             disabled={loading}
           >
             Don&apos;t have an account? <span className="ml-1.5 font-semibold text-zinc-300">Sign Up</span>
           </Button>
 
-          <p className="text-center text-xs leading-relaxed text-zinc-500">
+          <p className="text-center text-xs leading-relaxed text-zinc-500 px-2">
             By signing up, you agree to our{" "}
             <Link
               href="/legal/terms"
@@ -284,7 +284,7 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
             .
           </p>
 
-          <div className="flex items-center justify-center gap-3 pt-1 text-xs text-zinc-500">
+          <div className="flex items-center justify-center gap-3 pt-1 text-xs text-zinc-500 flex-wrap">
             <Link
               href="/legal/privacy"
               className="underline underline-offset-4 hover:text-zinc-300"

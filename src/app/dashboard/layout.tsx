@@ -24,7 +24,7 @@ export default async function DashboardLayout({
       <DashboardSidebar email={user.email} />
 
       {/* Main Content */}
-      <main className="relative flex-1 min-w-0 overflow-auto">
+      <main className="relative flex-1 min-w-0 overflow-auto w-full">
         {/* Gradient Background */}
         <div
           aria-hidden="true"
@@ -40,7 +40,7 @@ export default async function DashboardLayout({
             className="sticky top-0 z-10 border-b border-border/40 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/40 shadow-sm"
             data-print-hidden="true"
           >
-            <div className="container py-5 px-6">
+            <div className="container py-4 md:py-5 px-4 md:px-6">
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold tracking-wide bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Dashboard</p>
@@ -49,11 +49,11 @@ export default async function DashboardLayout({
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-2 md:gap-3 shrink-0">
                   <ThemeToggle />
                   <Link
                     href="/legal/privacy"
-                    className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors duration-200"
+                    className="hidden sm:block text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors duration-200"
                   >
                     Privacy Policy
                   </Link>
@@ -62,7 +62,7 @@ export default async function DashboardLayout({
             </div>
           </div>
 
-          <div className="container py-10 px-6 min-w-0" data-layout-content>
+          <div className="container py-6 md:py-10 px-4 md:px-6 min-w-0" data-layout-content>
             {children}
           </div>
         </div>
