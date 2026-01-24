@@ -1,7 +1,159 @@
-import { redirect } from "next/navigation";
+import Link from "next/link";
+import { CheckCircle, Clock, DollarSign, Smartphone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function Home() {
-  // Direct the user immediately to the application core.
-  // The Dashboard's protection logic will handle auth checks.
-  redirect("/dashboard");
+  return (
+    <div className="relative min-h-screen bg-background">
+      {/* Theme Toggle */}
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
+
+      {/* Hero Section */}
+      <div className="relative overflow-hidden">
+        {/* Gradient Background */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,_var(--tw-gradient-stops))] from-indigo-300/40 via-background to-background dark:from-indigo-900/40 dark:via-background" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,_var(--tw-gradient-stops))] from-violet-300/30 via-transparent to-transparent dark:from-violet-900/30" />
+        
+        <div className="relative container mx-auto px-4 pt-20 pb-24 md:pt-32 md:pb-32">
+          <div className="max-w-4xl mx-auto text-center space-y-8">
+            {/* Main Headline */}
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+              <span className="bg-gradient-to-r from-indigo-500 to-violet-600 bg-clip-text text-transparent">
+                The Simple Invoicing App
+              </span>
+              <br />
+              <span className="text-foreground">for Aussie Tradies</span>
+            </h1>
+
+            {/* Sub-Headline */}
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Stop doing paperwork at night. Create quotes, send invoices, and get paid from your phone in seconds.
+            </p>
+
+            {/* CTA Button */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
+              <Button 
+                asChild
+                size="lg"
+                className="w-full sm:w-auto text-lg h-14 px-8 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/30"
+              >
+                <Link href="/login">Start Invoicing Now - Free Trial</Link>
+              </Button>
+              <p className="text-sm text-muted-foreground">No credit card required</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Benefits Section */}
+      <div className="relative py-20 md:py-24 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {/* Benefit 1 */}
+            <Card className="p-6 text-center space-y-4 border-border/40 bg-card/60 backdrop-blur">
+              <div className="flex justify-center">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/30">
+                  <Smartphone className="h-8 w-8 text-indigo-500" />
+                </div>
+              </div>
+              <h3 className="text-xl font-semibold">Invoice From Your Phone</h3>
+              <p className="text-muted-foreground">
+                Finish the job, create the invoice on-site, and send it before you leave. No laptop needed.
+              </p>
+            </Card>
+
+            {/* Benefit 2 */}
+            <Card className="p-6 text-center space-y-4 border-border/40 bg-card/60 backdrop-blur">
+              <div className="flex justify-center">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-500/30">
+                  <DollarSign className="h-8 w-8 text-emerald-500" />
+                </div>
+              </div>
+              <h3 className="text-xl font-semibold">Get Paid Faster</h3>
+              <p className="text-muted-foreground">
+                Send professional invoices instantly. No more waiting weeks to do paperwork.
+              </p>
+            </Card>
+
+            {/* Benefit 3 */}
+            <Card className="p-6 text-center space-y-4 border-border/40 bg-card/60 backdrop-blur">
+              <div className="flex justify-center">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30">
+                  <Clock className="h-8 w-8 text-violet-500" />
+                </div>
+              </div>
+              <h3 className="text-xl font-semibold">Stop Working at Night</h3>
+              <p className="text-muted-foreground">
+                No more admin after dinner. Finish your paperwork in seconds, not hours.
+              </p>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Social Proof / Simple Features */}
+      <div className="relative py-20 md:py-24">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto space-y-12">
+            <div className="text-center space-y-4">
+              <h2 className="text-3xl md:text-4xl font-bold">Everything You Need. Nothing You Don't.</h2>
+              <p className="text-xl text-muted-foreground">Built for tradies, not accountants.</p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-6">
+              {[
+                "Create quotes & invoices in 30 seconds",
+                "Send invoices by email or SMS",
+                "Track which clients owe you money",
+                "Manage jobs & client contacts",
+                "Work on your phone, tablet, or laptop",
+                "Australian-friendly (GST ready)"
+              ].map((feature, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <CheckCircle className="h-6 w-6 text-emerald-500 shrink-0 mt-0.5" />
+                  <span className="text-lg text-muted-foreground">{feature}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Final CTA */}
+      <div className="relative py-20 md:py-24 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto text-center space-y-8">
+            <h2 className="text-3xl md:text-4xl font-bold">
+              Ready to Stop Doing Paperwork at Night?
+            </h2>
+            <Button 
+              asChild
+              size="lg"
+              className="text-lg h-14 px-8 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/30"
+            >
+              <Link href="/login">Start Your Free Trial</Link>
+            </Button>
+            <p className="text-sm text-muted-foreground">Join Aussie tradies who've ditched the late-night admin</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="relative py-8 border-t border-border/40">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
+            <div>© 2026 TradieFlow. Built for Australian tradies.</div>
+            <div className="flex gap-6">
+              <Link href="/legal/privacy" className="hover:text-foreground">Privacy</Link>
+              <Link href="/legal/terms" className="hover:text-foreground">Terms</Link>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
 }
