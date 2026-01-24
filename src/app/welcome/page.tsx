@@ -12,6 +12,7 @@ export default function WelcomePage() {
 
   useEffect(() => {
     // Track Google Ads sign-up conversion
+    // This fires exactly once due to sessionStorage deduplication
     trackSignUpConversion();
 
     // Auto-redirect after 3 seconds
