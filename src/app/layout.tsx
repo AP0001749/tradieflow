@@ -40,6 +40,22 @@ export default function RootLayout({
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', 'AW-17896188158');
+            
+            // Test function for console
+            window.testGoogleAdsConversion = function() {
+              if (!window.gtag) {
+                console.error('❌ Google Ads tag not loaded');
+                return;
+              }
+              console.log('✅ Google Ads tag loaded');
+              console.log('📊 Firing test conversion...');
+              gtag('event', 'conversion', {
+                'send_to': 'AW-17896188158/0fciCMj5wOobEP7RyNVC',
+                'value': 1.0,
+                'currency': 'AUD'
+              });
+              console.log('✅ Test conversion fired. Check Tag Assistant and Google Ads dashboard in 24-48 hours.');
+            };
           `}
         </Script>
 
