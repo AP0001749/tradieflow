@@ -5,19 +5,14 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, Briefcase } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { trackSignUpConversion } from "@/utils/gtag";
 
 export default function WelcomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Track Google Ads conversion with verified label
-    if (typeof window !== 'undefined' && window.gtag) {
-      window.gtag('event', 'conversion', {
-        'send_to': 'AW-17896188158/0fciCMj5wOobEP7RyNVC',
-        'value': 1.0,
-        'currency': 'AUD'
-      });
-    }
+    // Track Google Ads sign-up conversion
+    trackSignUpConversion();
 
     // Auto-redirect after 3 seconds
     const timer = setTimeout(() => {
