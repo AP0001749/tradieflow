@@ -22,7 +22,7 @@ function CardHeader({
   return (
     <div
       data-slot="card-header"
-      className={cn("flex flex-col gap-1.5 p-6", className)}
+      className={cn("flex flex-col gap-1.5 p-4 md:p-6", className)}
       {...props}
     />
   );
@@ -35,7 +35,7 @@ function CardTitle({
   return (
     <h3
       data-slot="card-title"
-      className={cn("text-lg font-semibold leading-none tracking-tight", className)}
+      className={cn("text-base md:text-lg font-semibold leading-none tracking-tight", className)}
       {...props}
     />
   );
@@ -48,7 +48,7 @@ function CardDescription({
   return (
     <p
       data-slot="card-description"
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn("text-xs md:text-sm text-muted-foreground", className)}
       {...props}
     />
   );
@@ -61,7 +61,7 @@ function CardContent({
   return (
     <div
       data-slot="card-content"
-      className={cn("px-6 pb-6", className)}
+      className={cn("px-4 pb-4 md:px-6 md:pb-6", className)}
       {...props}
     />
   );
@@ -74,7 +74,7 @@ function CardFooter({
   return (
     <div
       data-slot="card-footer"
-      className={cn("flex items-center p-6 pt-0", className)}
+      className={cn("flex items-center p-4 md:p-6 pt-0", className)}
       {...props}
     />
   );
