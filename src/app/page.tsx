@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { CheckCircle, Clock, DollarSign, Smartphone } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -36,13 +35,12 @@ export default function Home() {
 
             {/* CTA Button */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-              <Button 
-                asChild
-                size="lg"
-                className="w-full sm:w-auto text-lg h-14 px-8 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/30"
+              <Link 
+                href="/login"
+                className="inline-flex items-center justify-center w-full sm:w-auto text-lg h-14 px-8 rounded-md font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/30 transition-all"
               >
-                <Link href="/login">Start Invoicing Now - Free Trial</Link>
-              </Button>
+                Start Invoicing Now - Free Trial
+              </Link>
               <p className="text-sm text-muted-foreground">No credit card required</p>
             </div>
           </div>
@@ -130,13 +128,12 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl font-bold">
               Ready to Stop Doing Paperwork at Night?
             </h2>
-            <Button 
-              asChild
-              size="lg"
-              className="text-lg h-14 px-8 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/30"
+            <Link 
+              href="/login"
+              className="inline-flex items-center justify-center text-lg h-14 px-8 rounded-md font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/30 transition-all"
             >
-              <Link href="/login">Start Your Free Trial</Link>
-            </Button>
+              Start Your Free Trial
+            </Link>
             <p className="text-sm text-muted-foreground">Join Aussie tradies who've ditched the late-night admin</p>
           </div>
         </div>
