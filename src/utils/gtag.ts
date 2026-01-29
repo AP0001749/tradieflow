@@ -20,16 +20,22 @@ export const GOOGLE_ADS_CONFIG = {
 const CONVERSION_STORAGE_KEY = 'tradieflow_conversion_fired';
 
 /**
- * Fire Google Ads sign-up conversion
+ * Fire Google Ads sign-up conversion with Event Callback support
  * Called automatically on /welcome page for new user sign-ups
  * 
  * DEDUPLICATION: Uses sessionStorage to ensure conversion fires EXACTLY ONCE
  * even if user refreshes the success page. This aligns with Google Ads
  * recommended setting of "Count: One" for lead generation campaigns.
+ * 
+ * EVENT CALLBACK: Ensures conversion is logged before navigation occurs,
+ * preventing attribution loss on slow mobile connections.
+ * 
+ * @param callback - Optional function to execute after conversion is successfully logged
  */
-export function trackSignUpConversion() {
+export function trackSignUpConversion(callback?: () => void) {
   if (typeof window === 'undefined' || !window.gtag) {
     console.warn('[Google Ads] Tracking not available - window or gtag undefined');
+    if (callback) callback();
     return;
   }
 
@@ -38,17 +44,28 @@ export function trackSignUpConversion() {
     if (process.env.NODE_ENV === 'development') {
       console.log('[Google Ads] ⚠️ Conversion already fired this session - skipping duplicate');
     }
+    if (callback) callback();
     return;
   }
 
   const conversionLabel = `${GOOGLE_ADS_CONFIG.CONVERSION_ID}/${GOOGLE_ADS_CONFIG.SIGN_UP_LABEL}`;
+  const transactionId = generateTransactionId();
   
-  // Fire the conversion event
+  // Fire the conversion event with callback support
   window.gtag('event', 'conversion', {
     'send_to': conversionLabel,
     'value': 1.0,
     'currency': 'AUD',
-    'transaction_id': generateTransactionId(), // Unique ID for deduplication
+    'transaction_id': transactionId, // Unique ID for deduplication
+    'event_callback': () => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ [Google Ads] Callback triggered - conversion logged successfully');
+      }
+      if (callback) {
+        callback();
+      }
+    },
+    'event_timeout': 2000, // Force callback after 2s even if no response
   });
 
   // Mark conversion as fired
@@ -57,7 +74,7 @@ export function trackSignUpConversion() {
   // Debug logging
   if (process.env.NODE_ENV === 'development') {
     console.log('✅ [Google Ads] Sign-up conversion tracked:', conversionLabel);
-    console.log('[Google Ads] Transaction ID:', generateTransactionId());
+    console.log('[Google Ads] Transaction ID:', transactionId);
   }
 }
 

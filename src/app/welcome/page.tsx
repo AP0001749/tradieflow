@@ -11,16 +11,24 @@ export default function WelcomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Track Google Ads sign-up conversion
-    // This fires exactly once due to sessionStorage deduplication
-    trackSignUpConversion();
+    let redirected = false;
 
-    // Auto-redirect after 3 seconds
-    const timer = setTimeout(() => {
-      router.push("/dashboard");
-    }, 3000);
+    const handleRedirect = () => {
+      if (!redirected) {
+        redirected = true;
+        router.push("/dashboard");
+      }
+    };
 
-    return () => clearTimeout(timer);
+    // Track Google Ads sign-up conversion with callback-driven redirect
+    // This ensures conversion is logged before navigation
+    trackSignUpConversion(handleRedirect);
+
+    // Safety fallback: Force redirect after 5 seconds if callback fails
+    // (e.g., ad-blocker, network timeout, or gtag script error)
+    const safetyTimer = setTimeout(handleRedirect, 5000);
+
+    return () => clearTimeout(safetyTimer);
   }, [router]);
 
   return (
@@ -79,7 +87,7 @@ export default function WelcomePage() {
               Get Started
             </Button>
             <p className="text-xs text-center text-muted-foreground">
-              Redirecting automatically in 3 seconds...
+              Redirecting automatically...
             </p>
           </div>
         </CardContent>
