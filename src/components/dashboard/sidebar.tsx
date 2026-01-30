@@ -1,16 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Users, Briefcase, FileText, CreditCard, LogOut } from "lucide-react";
+import { Home, Users, Briefcase, FileText, CreditCard, LogOut, UserPlus, Settings } from "lucide-react";
 
 import { DashboardNavLink } from "@/components/dashboard/nav-link";
 
 const navItems = [
   { name: "Home", href: "/dashboard", icon: Home },
+  { name: "Leads", href: "/dashboard/leads", icon: UserPlus },
   { name: "Clients", href: "/dashboard/clients", icon: Users },
   { name: "Jobs", href: "/dashboard/jobs", icon: Briefcase },
   { name: "Invoices", href: "/dashboard/invoices", icon: FileText },
   { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
+  { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export function DashboardSidebar({ email }: { email?: string | null }) {

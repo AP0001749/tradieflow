@@ -1,0 +1,240 @@
+'use client';
+
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+export default function BookPage() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      name: formData.get('name') as string,
+      email: formData.get('email') as string,
+      phone: formData.get('phone') as string,
+      suburb: formData.get('suburb') as string,
+      postcode: formData.get('postcode') as string,
+      job_type: formData.get('job_type') as string,
+      preferred_date: formData.get('preferred_date') as string,
+      preferred_time_window: formData.get('preferred_time_window') as string,
+      notes: formData.get('notes') as string,
+    };
+
+    try {
+      const response = await fetch('/api/leads/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit request');
+      }
+
+      setIsSuccess(true);
+
+      // Fire Google Ads conversion if available
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        (window as any).gtag('event', 'conversion', {
+          send_to: 'AW-CONVERSION_ID/CONVERSION_LABEL',
+          value: 1.0,
+          currency: 'AUD',
+        });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">Request Received!</CardTitle>
+            <CardDescription className="text-center">
+              Thanks for your cleaning request. We'll get back to you within 24 hours.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-sm text-gray-600">
+              Check your email for a confirmation message.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-12 px-4">
+      <div className="max-w-2xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-2">Book Your Cleaning</h1>
+          <p className="text-lg text-gray-600">
+            Get more cleaning jobs automatically — without chasing leads.
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Request a Quote</CardTitle>
+            <CardDescription>
+              Fill in your details and we'll get back to you shortly
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name *</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    required
+                    placeholder="John Smith"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    placeholder="john@example.com"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone *</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    required
+                    placeholder="0400 000 000"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="job_type">Cleaning Type *</Label>
+                  <Select name="job_type" required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="end_of_lease">End of Lease</SelectItem>
+                      <SelectItem value="regular">Regular Cleaning</SelectItem>
+                      <SelectItem value="deep_clean">Deep Clean</SelectItem>
+                      <SelectItem value="spring_clean">Spring Clean</SelectItem>
+                      <SelectItem value="once_off">Once-Off Clean</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="suburb">Suburb *</Label>
+                  <Input
+                    id="suburb"
+                    name="suburb"
+                    required
+                    placeholder="Sydney"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="postcode">Postcode *</Label>
+                  <Input
+                    id="postcode"
+                    name="postcode"
+                    required
+                    placeholder="2000"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="preferred_date">Preferred Date</Label>
+                  <Input
+                    id="preferred_date"
+                    name="preferred_date"
+                    type="date"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="preferred_time_window">Preferred Time</Label>
+                  <Select name="preferred_time_window">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="morning">Morning (8am-12pm)</SelectItem>
+                      <SelectItem value="afternoon">Afternoon (12pm-5pm)</SelectItem>
+                      <SelectItem value="evening">Evening (5pm-8pm)</SelectItem>
+                      <SelectItem value="flexible">Flexible</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Additional Details</Label>
+                <Textarea
+                  id="notes"
+                  name="notes"
+                  placeholder="Number of bedrooms, bathrooms, any special requirements..."
+                  rows={4}
+                />
+              </div>
+
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Submitting...' : 'Request Quote'}
+              </Button>
+
+              <p className="text-xs text-gray-500 text-center">
+                By submitting this form, you agree to be contacted about your cleaning request.
+              </p>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
