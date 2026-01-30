@@ -121,10 +121,10 @@ export default function WelcomePage() {
               <Briefcase className="h-5 w-5 text-emerald-500 mt-0.5 flex-shrink-0" />
               <div className="space-y-1">
                 <p className="text-sm font-medium text-foreground">
-                  Manage Clients & Jobs
+                  Manage Customers & Cleaning Jobs
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Track jobs, create invoices, and grow your business
+                  Track cleaning jobs, create invoices, and grow your business
                 </p>
               </div>
             </div>

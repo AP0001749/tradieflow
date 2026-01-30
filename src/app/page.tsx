@@ -22,26 +22,26 @@ export default function Home() {
             {/* Main Headline */}
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
               <span className="bg-gradient-to-r from-indigo-500 to-violet-600 bg-clip-text text-transparent">
-                The Simple Invoicing App
+                Get more cleaning jobs automatically —
               </span>
               <br />
-              <span className="text-foreground">for Aussie Tradies</span>
+              <span className="text-foreground">capture leads, follow up instantly, reduce no-shows.</span>
             </h1>
 
             {/* Sub-Headline */}
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Stop doing paperwork at night. Create quotes, send invoices, and get paid from your phone in seconds.
+              Lead capture + booking + automated follow-ups for Australian cleaning businesses.
             </p>
 
             {/* CTA Button */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
               <Link 
-                href="/login"
+                href="/book"
                 className="inline-flex items-center justify-center w-full sm:w-auto text-lg h-14 px-8 rounded-md font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/30 transition-all"
               >
-                Start Invoicing Now - Free Trial
+                Get started — Book a demo / Try it now
               </Link>
-              <p className="text-sm text-muted-foreground">No credit card required</p>
+              <p className="text-sm text-muted-foreground">Free plan available — start receiving leads</p>
             </div>
           </div>
         </div>
@@ -99,17 +99,17 @@ export default function Home() {
           <div className="max-w-3xl mx-auto space-y-12">
             <div className="text-center space-y-4">
               <h2 className="text-3xl md:text-4xl font-bold">Everything You Need. Nothing You Don't.</h2>
-              <p className="text-xl text-muted-foreground">Built for tradies, not accountants.</p>
+                <p className="text-xl text-muted-foreground">Built for cleaning businesses, not accountants.</p>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-6">
               {[
-                "Create quotes & invoices in 30 seconds",
-                "Send invoices by email or SMS",
-                "Track which clients owe you money",
-                "Manage jobs & client contacts",
-                "Work on your phone, tablet, or laptop",
-                "Australian-friendly (GST ready)"
+                 "Create quotes & invoices for cleaning jobs in 30 seconds",
+                 "Send invoices by email",
+                 "Track which customers owe you money",
+                 "Manage cleaning jobs & customer contacts",
+                 "Work on your phone, tablet, or laptop",
+                 "Australian-friendly (GST ready)"
               ].map((feature, i) => (
                 <div key={i} className="flex items-start gap-3">
                   <CheckCircle className="h-6 w-6 text-emerald-500 shrink-0 mt-0.5" />
@@ -126,15 +126,15 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center space-y-8">
             <h2 className="text-3xl md:text-4xl font-bold">
-              Ready to Stop Doing Paperwork at Night?
+              Ready to Get More Cleaning Jobs?
             </h2>
             <Link 
-              href="/login"
+              href="/book"
               className="inline-flex items-center justify-center text-lg h-14 px-8 rounded-md font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/30 transition-all"
             >
-              Start Your Free Trial
+              Visit Booking Page
             </Link>
-            <p className="text-sm text-muted-foreground">Join Aussie tradies who've ditched the late-night admin</p>
+            <p className="text-sm text-muted-foreground">Join Australian cleaning businesses getting more paid jobs</p>
           </div>
         </div>
       </div>
@@ -143,7 +143,7 @@ export default function Home() {
       <footer className="relative py-8 border-t border-border/40">
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-            <div>© 2026 TradieFlow. Built for Australian tradies.</div>
+            <div>© 2026 TradieFlow. Built for Australian cleaning businesses.</div>
             <div className="flex gap-6">
               <Link href="/legal/privacy" className="hover:text-foreground">Privacy</Link>
               <Link href="/legal/terms" className="hover:text-foreground">Terms</Link>

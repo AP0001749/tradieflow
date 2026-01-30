@@ -138,7 +138,7 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
             </span>
           </CardTitle>
           <CardDescription className="text-muted-foreground text-sm md:text-base pt-1">
-            Get invoicing in under 60 seconds
+            Start billing cleaning jobs and capturing leads in under 60 seconds
           </CardDescription>
         </CardHeader>
 
@@ -193,7 +193,7 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
           </form>
 
           <p className="text-center text-xs text-muted-foreground">
-            One click. No credit card. Start invoicing immediately.
+            One click. No credit card. Start capturing cleaning leads and invoicing immediately.
           </p>
 
           <div className="relative py-3">
