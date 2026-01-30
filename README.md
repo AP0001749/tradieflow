@@ -134,8 +134,17 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 
 Test conversion tracking in the browser console:
 ```javascript
+// Test enhanced conversions with sample data
 window.testGoogleAdsConversion()
+
+// Check Google Ads status
+window.checkGoogleAds()
+
+// Reset conversion (testing only)
+window.resetConversion()
 ```
+
+**Enhanced Conversions:** Fully implemented with SHA-256 hashing for improved attribution. See [ENHANCED_CONVERSIONS_SETUP.md](./ENHANCED_CONVERSIONS_SETUP.md) for complete documentation.
 
 ---
 

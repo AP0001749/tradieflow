@@ -1,5 +1,5 @@
 /**
- * Google Ads Conversion Tracking Utilities
+ * Google Ads Conversion Tracking Utilities with Enhanced Conversions
  * 
  * Conversion ID: AW-17896188158
  * Sign-up Label: 0fciCMj5wOobEP7RyNVC
@@ -9,18 +9,23 @@
  * ✓ Trigger Logic: Fires on /welcome page view after successful signup
  * ✓ Deduplication: Session storage prevents duplicate conversions
  * ✓ Count Setting: Set to "One" per user (handled via deduplication)
+ * ✓ Enhanced Conversions: Sends hashed user data for improved attribution
  */
+
+import type { EnhancedConversionData } from './enhanced-conversions';
+import { getEnhancedConversionParams, debugEnhancedConversion } from './enhanced-conversions';
 
 export const GOOGLE_ADS_CONFIG = {
   CONVERSION_ID: 'AW-17896188158',
   SIGN_UP_LABEL: '0fciCMj5wOobEP7RyNVC',
+  SUBSCRIBE_LABEL: '', // Add your subscription conversion label here
 } as const;
 
 // Storage key for tracking fired conversions (prevents duplicates from page refreshes)
 const CONVERSION_STORAGE_KEY = 'tradieflow_conversion_fired';
 
 /**
- * Fire Google Ads sign-up conversion with Event Callback support
+ * Fire Google Ads sign-up conversion with Enhanced Conversions support
  * Called automatically on /welcome page for new user sign-ups
  * 
  * DEDUPLICATION: Uses sessionStorage to ensure conversion fires EXACTLY ONCE
@@ -30,9 +35,16 @@ const CONVERSION_STORAGE_KEY = 'tradieflow_conversion_fired';
  * EVENT CALLBACK: Ensures conversion is logged before navigation occurs,
  * preventing attribution loss on slow mobile connections.
  * 
+ * ENHANCED CONVERSIONS: Sends hashed first-party user data (email, name, etc.)
+ * to improve conversion attribution and measurement accuracy.
+ * 
+ * @param userData - Optional user data for enhanced conversions (email, name, phone)
  * @param callback - Optional function to execute after conversion is successfully logged
  */
-export function trackSignUpConversion(callback?: () => void) {
+export async function trackSignUpConversion(
+  userData?: EnhancedConversionData,
+  callback?: () => void
+) {
   if (typeof window === 'undefined' || !window.gtag) {
     console.warn('[Google Ads] Tracking not available - window or gtag undefined');
     if (callback) callback();
@@ -51,12 +63,12 @@ export function trackSignUpConversion(callback?: () => void) {
   const conversionLabel = `${GOOGLE_ADS_CONFIG.CONVERSION_ID}/${GOOGLE_ADS_CONFIG.SIGN_UP_LABEL}`;
   const transactionId = generateTransactionId();
   
-  // Fire the conversion event with callback support
-  window.gtag('event', 'conversion', {
+  // Prepare conversion parameters
+  const conversionParams: Record<string, any> = {
     'send_to': conversionLabel,
     'value': 1.0,
     'currency': 'AUD',
-    'transaction_id': transactionId, // Unique ID for deduplication
+    'transaction_id': transactionId,
     'event_callback': () => {
       if (process.env.NODE_ENV === 'development') {
         console.log('✅ [Google Ads] Callback triggered - conversion logged successfully');
@@ -65,8 +77,24 @@ export function trackSignUpConversion(callback?: () => void) {
         callback();
       }
     },
-    'event_timeout': 2000, // Force callback after 2s even if no response
-  });
+    'event_timeout': 2000,
+  };
+
+  // Add enhanced conversion data if provided
+  if (userData) {
+    const enhancedParams = await getEnhancedConversionParams(userData);
+    if (enhancedParams) {
+      Object.assign(conversionParams, enhancedParams);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔐 [Google Ads] Enhanced conversions enabled for this conversion');
+        await debugEnhancedConversion(userData);
+      }
+    }
+  }
+
+  // Fire the conversion event
+  window.gtag('event', 'conversion', conversionParams);
 
   // Mark conversion as fired
   markConversionFired();
@@ -75,6 +103,77 @@ export function trackSignUpConversion(callback?: () => void) {
   if (process.env.NODE_ENV === 'development') {
     console.log('✅ [Google Ads] Sign-up conversion tracked:', conversionLabel);
     console.log('[Google Ads] Transaction ID:', transactionId);
+    console.log('[Google Ads] Enhanced conversions:', userData ? '✅ Enabled' : '⚪ Not provided');
+  }
+}
+
+/**
+ * Fire Google Ads subscription conversion with Enhanced Conversions support
+ * Called when a user successfully subscribes to a paid plan
+ * 
+ * @param userData - Optional user data for enhanced conversions
+ * @param value - Transaction value (subscription amount)
+ * @param callback - Optional function to execute after conversion is logged
+ */
+export async function trackSubscriptionConversion(
+  userData?: EnhancedConversionData,
+  value?: number,
+  callback?: () => void
+) {
+  if (typeof window === 'undefined' || !window.gtag) {
+    console.warn('[Google Ads] Tracking not available - window or gtag undefined');
+    if (callback) callback();
+    return;
+  }
+
+  if (!GOOGLE_ADS_CONFIG.SUBSCRIBE_LABEL) {
+    console.warn('[Google Ads] Subscription conversion label not configured');
+    if (callback) callback();
+    return;
+  }
+
+  const conversionLabel = `${GOOGLE_ADS_CONFIG.CONVERSION_ID}/${GOOGLE_ADS_CONFIG.SUBSCRIBE_LABEL}`;
+  const transactionId = generateTransactionId();
+  
+  // Prepare conversion parameters
+  const conversionParams: Record<string, any> = {
+    'send_to': conversionLabel,
+    'value': value || 0,
+    'currency': 'AUD',
+    'transaction_id': transactionId,
+    'event_callback': () => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ [Google Ads] Subscription conversion callback triggered');
+      }
+      if (callback) {
+        callback();
+      }
+    },
+    'event_timeout': 2000,
+  };
+
+  // Add enhanced conversion data if provided
+  if (userData) {
+    const enhancedParams = await getEnhancedConversionParams(userData);
+    if (enhancedParams) {
+      Object.assign(conversionParams, enhancedParams);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔐 [Google Ads] Enhanced conversions enabled for subscription');
+        await debugEnhancedConversion(userData);
+      }
+    }
+  }
+
+  // Fire the conversion event
+  window.gtag('event', 'conversion', conversionParams);
+
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('✅ [Google Ads] Subscription conversion tracked:', conversionLabel);
+    console.log('[Google Ads] Transaction ID:', transactionId);
+    console.log('[Google Ads] Value:', value, 'AUD');
+    console.log('[Google Ads] Enhanced conversions:', userData ? '✅ Enabled' : '⚪ Not provided');
   }
 }
 
@@ -149,11 +248,11 @@ export function resetConversionTracking() {
 }
 
 /**
- * Test conversion tracking in browser console
+ * Test conversion tracking in browser console with Enhanced Conversions
  * Usage: window.testGoogleAdsConversion()
  */
 if (typeof window !== 'undefined') {
-  (window as any).testGoogleAdsConversion = () => {
+  (window as any).testGoogleAdsConversion = async () => {
     console.log('🧪 [Google Ads] Running tracking verification...\n');
     
     const status = getTrackingStatus();
@@ -178,11 +277,20 @@ if (typeof window !== 'undefined') {
     }
 
     console.log('✅ Google Ads tag loaded correctly');
-    console.log('📊 Firing test conversion...');
-    trackSignUpConversion();
-    console.log('\n✅ Test conversion fired successfully!');
+    console.log('📊 Firing test conversion with enhanced conversions...');
+    
+    // Test with sample enhanced conversion data
+    const testUserData = {
+      email: 'test@example.com',
+      first_name: 'Test',
+      last_name: 'User',
+    };
+    
+    await trackSignUpConversion(testUserData);
+    console.log('\n✅ Test conversion fired successfully with enhanced conversions!');
     console.log('📈 Check Google Ads > Tools > Conversions in 3-24 hours');
     console.log('🔍 Look for: "Sign Up" conversion event');
+    console.log('🔐 Enhanced conversions data was included (check diagnostics report)');
   };
 
   // Helper to reset for testing

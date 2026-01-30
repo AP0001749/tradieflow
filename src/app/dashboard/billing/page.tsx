@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SubscribeButton } from "./subscribe-button";
+import { SubscriptionSuccessTracker } from "./subscription-success-tracker";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { checkSubscriptionLimits } from "@/lib/subscription";
 
@@ -23,7 +24,7 @@ export default async function BillingPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("subscription_tier, stripe_customer_id, subscription_status, subscription_end_date")
+    .select("subscription_tier, stripe_customer_id, subscription_status, subscription_end_date, full_name")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -36,6 +37,9 @@ export default async function BillingPage({
   
   const subscriptionEndDate =
     (profile as { subscription_end_date?: string | null } | null)?.subscription_end_date ?? null;
+  
+  const fullName =
+    (profile as { full_name?: string | null } | null)?.full_name ?? null;
 
   const priceId = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID;
 
@@ -43,7 +47,14 @@ export default async function BillingPage({
 
   // Get current usage for free tier users
   const usage = tier === "free" ? await checkSubscriptionLimits() : null;
+{/* Track subscription conversion on success */}
+      <SubscriptionSuccessTracker 
+        userEmail={user.email}
+        userName={fullName}
+        subscriptionValue={29}
+      />
 
+      
   return (
     <div className="space-y-8">
       <div className="animate-in fade-in slide-in-from-top-4 duration-700">

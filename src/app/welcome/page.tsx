@@ -1,14 +1,56 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Briefcase } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { trackSignUpConversion } from "@/utils/gtag";
+import { createClient } from "@/lib/supabase/client";
+import type { EnhancedConversionData } from "@/utils/enhanced-conversions";
 
 export default function WelcomePage() {
   const router = useRouter();
+  const [userData, setUserData] = useState<EnhancedConversionData | undefined>();
+
+  useEffect(() => {
+    // Fetch user data for enhanced conversions
+    async function fetchUserData() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // Prepare enhanced conversion data from available user info
+        const enhancedData: EnhancedConversionData = {
+          email: user.email,
+        };
+
+        // Extract name from user_metadata if available (from Google OAuth or signup form)
+        if (user.user_metadata?.full_name) {
+          const nameParts = user.user_metadata.full_name.split(' ');
+          enhancedData.first_name = nameParts[0];
+          if (nameParts.length > 1) {
+            enhancedData.last_name = nameParts.slice(1).join(' ');
+          }
+        } else if (user.user_metadata?.name) {
+          const nameParts = user.user_metadata.name.split(' ');
+          enhancedData.first_name = nameParts[0];
+          if (nameParts.length > 1) {
+            enhancedData.last_name = nameParts.slice(1).join(' ');
+          }
+        }
+
+        // Add phone if available
+        if (user.phone) {
+          enhancedData.phone_number = user.phone;
+        }
+
+        setUserData(enhancedData);
+      }
+    }
+
+    fetchUserData();
+  }, []);
 
   useEffect(() => {
     let redirected = false;
@@ -20,16 +62,21 @@ export default function WelcomePage() {
       }
     };
 
-    // Track Google Ads sign-up conversion with callback-driven redirect
+    // Track Google Ads sign-up conversion with enhanced conversions
     // This ensures conversion is logged before navigation
-    trackSignUpConversion(handleRedirect);
+    if (userData) {
+      trackSignUpConversion(userData, handleRedirect);
+    } else {
+      // Fallback: track without enhanced data if user data isn't available
+      trackSignUpConversion(undefined, handleRedirect);
+    }
 
     // Safety fallback: Force redirect after 5 seconds if callback fails
     // (e.g., ad-blocker, network timeout, or gtag script error)
     const safetyTimer = setTimeout(handleRedirect, 5000);
 
     return () => clearTimeout(safetyTimer);
-  }, [router]);
+  }, [router, userData]);
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-12 overflow-hidden">
