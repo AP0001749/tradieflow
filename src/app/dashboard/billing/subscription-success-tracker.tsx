@@ -26,26 +26,30 @@ export function SubscriptionSuccessTracker({
   useEffect(() => {
     // Only fire on successful payment
     if (success === "true") {
-      // Prepare enhanced conversion data
-      const userData: EnhancedConversionData = {};
+      async function fireConversion() {
+        // Prepare enhanced conversion data
+        const userData: EnhancedConversionData = {};
 
-      if (userEmail) {
-        userData.email = userEmail;
-      }
-
-      if (userName) {
-        const nameParts = userName.split(' ');
-        userData.first_name = nameParts[0];
-        if (nameParts.length > 1) {
-          userData.last_name = nameParts.slice(1).join(' ');
+        if (userEmail) {
+          userData.email = userEmail;
         }
+
+        if (userName) {
+          const nameParts = userName.split(' ');
+          userData.first_name = nameParts[0];
+          if (nameParts.length > 1) {
+            userData.last_name = nameParts.slice(1).join(' ');
+          }
+        }
+
+        // Track subscription conversion with enhanced conversions
+        await trackSubscriptionConversion(
+          Object.keys(userData).length > 0 ? userData : undefined,
+          subscriptionValue
+        );
       }
 
-      // Track subscription conversion with enhanced conversions
-      trackSubscriptionConversion(
-        Object.keys(userData).length > 0 ? userData : undefined,
-        subscriptionValue
-      );
+      fireConversion();
     }
   }, [success, userEmail, userName, subscriptionValue]);
 

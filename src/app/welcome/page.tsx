@@ -63,13 +63,17 @@ export default function WelcomePage() {
     };
 
     // Track Google Ads sign-up conversion with enhanced conversions
-    // This ensures conversion is logged before navigation
-    if (userData) {
-      trackSignUpConversion(userData, handleRedirect);
-    } else {
-      // Fallback: track without enhanced data if user data isn't available
-      trackSignUpConversion(undefined, handleRedirect);
+    // Must be async to properly hash user data before sending
+    async function fireConversion() {
+      if (userData) {
+        await trackSignUpConversion(userData, handleRedirect);
+      } else {
+        // Fallback: track without enhanced data if user data isn't available
+        await trackSignUpConversion(undefined, handleRedirect);
+      }
     }
+
+    fireConversion();
 
     // Safety fallback: Force redirect after 5 seconds if callback fails
     // (e.g., ad-blocker, network timeout, or gtag script error)
