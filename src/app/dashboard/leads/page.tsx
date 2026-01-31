@@ -21,28 +21,31 @@ export default async function LeadsPage() {
   const leads = profile ? await getLeads() : [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Leads</h1>
-          <p className="text-gray-600 mt-1">
-            Manage your cleaning job leads and follow-ups
+    <div className="space-y-8">
+      <section className="section-panel">
+        <div className="section-heading">
+          <span className="text-xs uppercase tracking-[0.35em] text-muted-foreground">Dashboard</span>
+          <h1>Leads</h1>
+          <p className="text-muted-foreground">
+            Manage your cleaning job leads, automate follow-ups, and convert requests into paid work.
           </p>
         </div>
-      </div>
+      </section>
 
       {!profile && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <section className="section-card">
           <p className="text-sm text-yellow-800">
             You need to set up your business profile first.{' '}
             <a href="/dashboard/settings" className="underline font-medium">
               Go to Settings
             </a>
           </p>
-        </div>
+        </section>
       )}
 
-      <LeadsTable leads={leads} />
+      <section className="section-card">
+        <LeadsTable leads={leads} />
+      </section>
     </div>
   );
 }
