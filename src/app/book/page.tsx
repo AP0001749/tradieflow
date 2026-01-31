@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectItem } from '@/components/ui/select';
+import { Select } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function BookPage() {
@@ -19,16 +19,30 @@ export default function BookPage() {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
+    const businessName = (formData.get('business_name') as string) || '';
+    const yourName = (formData.get('your_name') as string) || '';
+    const mobile = (formData.get('mobile') as string) || '';
+    const email = (formData.get('email') as string) || '';
+    const serviceArea = (formData.get('service_area') as string) || '';
+    const serviceType = (formData.get('service_type') as string) || '';
+    const abn = (formData.get('abn') as string) || '';
+    const notes = (formData.get('notes') as string) || '';
+
+    if (!yourName || !email || !mobile || !serviceArea || !serviceType) {
+      setError('Please fill in all required fields');
+      setIsSubmitting(false);
+      return;
+    }
+
     const data = {
-      name: formData.get('name') as string,
-      email: formData.get('email') as string,
-      phone: formData.get('phone') as string,
-      suburb: formData.get('suburb') as string,
-      postcode: formData.get('postcode') as string,
-      job_type: formData.get('job_type') as string,
-      preferred_date: formData.get('preferred_date') as string,
-      preferred_time_window: formData.get('preferred_time_window') as string,
-      notes: formData.get('notes') as string,
+      business_name: businessName,
+      your_name: yourName,
+      mobile,
+      email,
+      service_area: serviceArea,
+      service_type: serviceType,
+      abn,
+      notes,
     };
 
     try {
@@ -129,6 +143,13 @@ export default function BookPage() {
                   required
                   placeholder="e.g. Tarneit, Point Cook, Werribee"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="abn">ABN (optional)</Label>
+                <Input id="abn" name="abn" placeholder="11 digits" />
+                <p className="text-xs text-muted-foreground">
+                  Include your ABN so we can prefill your first invoice without chasing paperwork.
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="service_type">Cleaning service type *</Label>

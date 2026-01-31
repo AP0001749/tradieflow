@@ -5,19 +5,18 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
-      name,
+      business_name,
+      your_name,
+      mobile,
       email,
-      phone,
-      suburb,
-      postcode,
-      job_type,
-      preferred_date,
-      preferred_time_window,
+      service_area,
+      service_type,
+      abn,
       notes,
     } = body;
 
     // Validate required fields
-    if (!name || !email || !phone || !suburb || !postcode || !job_type) {
+    if (!your_name || !email || !mobile || !service_area || !service_type) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -46,21 +45,30 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert lead
+    const combinedNotes = [
+      business_name ? `Business: ${business_name}` : null,
+      abn ? `ABN: ${abn}` : null,
+      notes?.trim() ? notes.trim() : null,
+    ]
+      .filter(Boolean)
+      .join(' | ')
+      .trim() || null;
+
     const { data: lead, error: leadError } = await supabase
       .from('leads')
       .insert({
         business_id: businessProfile.id,
         source: 'book_page',
         status: 'new',
-        name,
+        name: your_name,
         email,
-        phone,
-        suburb,
-        postcode,
-        job_type,
-        preferred_date: preferred_date || null,
-        preferred_time_window: preferred_time_window || null,
-        notes: notes || null,
+        phone: mobile,
+        suburb: service_area,
+        postcode: null,
+        job_type: service_type,
+        preferred_date: null,
+        preferred_time_window: null,
+        notes: combinedNotes,
       })
       .select()
       .single();
