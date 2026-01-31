@@ -24,6 +24,9 @@
     --border: 220 13% 88%;
     --input: 220 13% 91%;
     --ring: 263 70% 50%;
+    --surface: 221 38% 14%;
+    --surface-soft: 218 70% 14%;
+    --glossy-edge: 263 60% 60%;
     --radius: 0.75rem;
 
     /* Printable / document surfaces (stay light even in dark mode) */
@@ -208,6 +211,66 @@
 .primary-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 15px 30px rgba(99, 102, 241, 0.25);
+}
+
+@layer utilities {
+  .section-panel {
+    border-radius: 32px;
+    background: linear-gradient(150deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0));
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 35px 90px rgba(2, 6, 23, 0.35);
+    padding: 3rem;
+    backdrop-filter: blur(36px);
+  }
+
+  .section-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .section-heading h2 {
+    font-size: clamp(2rem, 3vw, 3rem);
+    font-weight: 700;
+    letter-spacing: -0.05em;
+  }
+
+  .section-heading p {
+    color: hsl(var(--muted-foreground));
+  }
+
+  .section-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .section-card {
+    border-radius: 28px;
+    padding: 1.75rem;
+    border: 1px solid hsla(var(--border), 0.35);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.25));
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.15);
+    backdrop-filter: blur(20px);
+  }
+
+  .section-card h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .hero-gradient {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-gradient::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.25), transparent 60%);
+    pointer-events: none;
+  }
 }
 
 @media print {
