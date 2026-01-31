@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
         preferred_time_window,
         notes,
         followup_step,
+        status,
         business_profile!inner (
           business_name,
           reply_to_email

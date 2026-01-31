@@ -5,13 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function BookPage() {
@@ -141,17 +135,13 @@ export default function BookPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="job_type">Cleaning Type *</Label>
-                  <Select name="job_type" required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="end_of_lease">End of Lease</SelectItem>
-                      <SelectItem value="regular">Regular Cleaning</SelectItem>
-                      <SelectItem value="deep_clean">Deep Clean</SelectItem>
-                      <SelectItem value="spring_clean">Spring Clean</SelectItem>
-                      <SelectItem value="once_off">Once-Off Clean</SelectItem>
-                    </SelectContent>
+                  <Select id="job_type" name="job_type" required>
+                    <option value="">Select type</option>
+                    <option value="end_of_lease">End of Lease</option>
+                    <option value="regular">Regular Cleaning</option>
+                    <option value="deep_clean">Deep Clean</option>
+                    <option value="spring_clean">Spring Clean</option>
+                    <option value="once_off">Once-Off Clean</option>
                   </Select>
                 </div>
               </div>
@@ -190,16 +180,12 @@ export default function BookPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="preferred_time_window">Preferred Time</Label>
-                  <Select name="preferred_time_window">
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select time" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="morning">Morning (8am-12pm)</SelectItem>
-                      <SelectItem value="afternoon">Afternoon (12pm-5pm)</SelectItem>
-                      <SelectItem value="evening">Evening (5pm-8pm)</SelectItem>
-                      <SelectItem value="flexible">Flexible</SelectItem>
-                    </SelectContent>
+                  <Select id="preferred_time_window" name="preferred_time_window">
+                    <option value="">Select time</option>
+                    <option value="morning">Morning (8am-12pm)</option>
+                    <option value="afternoon">Afternoon (12pm-5pm)</option>
+                    <option value="evening">Evening (5pm-8pm)</option>
+                    <option value="flexible">Flexible</option>
                   </Select>
                 </div>
               </div>
