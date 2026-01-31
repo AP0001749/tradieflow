@@ -80,147 +80,120 @@ export default function BookPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2">Book Your Cleaning</h1>
-          <p className="text-lg text-gray-600">
-            Get more cleaning jobs automatically — without chasing leads.
-          </p>
-        </div>
+    <div className="page-shell space-y-8">
+      <div className="text-center space-y-3">
+        <p className="hero-pill">Book Your Cleaning</p>
+        <h1 className="text-4xl md:text-5xl">Get booked faster than ever before</h1>
+        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+          Capture jobs, confirm availability, and let TradieFlow automate the follow-up so
+          you can keep cleaning instead of chasing leads.
+        </p>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Request a Quote</CardTitle>
-            <CardDescription>
-              Fill in your details and we'll get back to you shortly
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name *</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    required
-                    placeholder="John Smith"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    placeholder="john@example.com"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone *</Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    required
-                    placeholder="0400 000 000"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="job_type">Cleaning Type *</Label>
-                  <Select id="job_type" name="job_type" required>
-                    <option value="">Select type</option>
-                    <option value="end_of_lease">End of Lease</option>
-                    <option value="regular">Regular Cleaning</option>
-                    <option value="deep_clean">Deep Clean</option>
-                    <option value="spring_clean">Spring Clean</option>
-                    <option value="once_off">Once-Off Clean</option>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="suburb">Suburb *</Label>
-                  <Input
-                    id="suburb"
-                    name="suburb"
-                    required
-                    placeholder="Sydney"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="postcode">Postcode *</Label>
-                  <Input
-                    id="postcode"
-                    name="postcode"
-                    required
-                    placeholder="2000"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="preferred_date">Preferred Date</Label>
-                  <Input
-                    id="preferred_date"
-                    name="preferred_date"
-                    type="date"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="preferred_time_window">Preferred Time</Label>
-                  <Select id="preferred_time_window" name="preferred_time_window">
-                    <option value="">Select time</option>
-                    <option value="morning">Morning (8am-12pm)</option>
-                    <option value="afternoon">Afternoon (12pm-5pm)</option>
-                    <option value="evening">Evening (5pm-8pm)</option>
-                    <option value="flexible">Flexible</option>
-                  </Select>
-                </div>
-              </div>
-
+      <Card className="glass-card w-full">
+        <CardHeader className="space-y-2">
+          <CardTitle className="text-2xl">Request a Quote</CardTitle>
+          <CardDescription>
+            Tell us the essentials and we’ll email you a fast reply within 24 hours.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="form-grid">
               <div className="space-y-2">
-                <Label htmlFor="notes">Additional Details</Label>
-                <Textarea
-                  id="notes"
-                  name="notes"
-                  placeholder="Number of bedrooms, bathrooms, any special requirements..."
-                  rows={4}
+                <Label htmlFor="name">Full Name *</Label>
+                <Input id="name" name="name" required placeholder="John Smith" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="john@example.com"
                 />
               </div>
+            </div>
 
-              {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                  <p className="text-sm text-red-600">{error}</p>
-                </div>
-              )}
+            <div className="form-grid">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone *</Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  required
+                  placeholder="0400 000 000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="job_type">Cleaning Type *</Label>
+                <Select id="job_type" name="job_type" required>
+                  <option value="">Select type</option>
+                  <option value="end_of_lease">End of Lease</option>
+                  <option value="regular">Regular Cleaning</option>
+                  <option value="deep_clean">Deep Clean</option>
+                  <option value="spring_clean">Spring Clean</option>
+                  <option value="once_off">Once-Off Clean</option>
+                </Select>
+              </div>
+            </div>
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Submitting...' : 'Request Quote'}
-              </Button>
+            <div className="form-grid">
+              <div className="space-y-2">
+                <Label htmlFor="suburb">Suburb *</Label>
+                <Input id="suburb" name="suburb" required placeholder="Sydney" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="postcode">Postcode *</Label>
+                <Input id="postcode" name="postcode" required placeholder="2000" />
+              </div>
+            </div>
 
-              <p className="text-xs text-gray-500 text-center">
-                By submitting this form, you agree to be contacted about your cleaning request.
-              </p>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+            <div className="form-grid">
+              <div className="space-y-2">
+                <Label htmlFor="preferred_date">Preferred Date</Label>
+                <Input id="preferred_date" name="preferred_date" type="date" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="preferred_time_window">Preferred Time</Label>
+                <Select id="preferred_time_window" name="preferred_time_window">
+                  <option value="">Select time</option>
+                  <option value="morning">Morning (8am-12pm)</option>
+                  <option value="afternoon">Afternoon (12pm-5pm)</option>
+                  <option value="evening">Evening (5pm-8pm)</option>
+                  <option value="flexible">Flexible</option>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Additional Details</Label>
+              <Textarea
+                id="notes"
+                name="notes"
+                placeholder="Number of bedrooms, bathrooms, any special requirements..."
+                rows={4}
+              />
+            </div>
+
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
+
+            <Button type="submit" className="primary-btn w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Submitting..." : "Request Quote"}
+            </Button>
+
+            <p className="form-note text-center">
+              By submitting this form, you agree to be contacted about your cleaning request.
+            </p>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

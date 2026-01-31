@@ -29,23 +29,27 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background text-foreground antialiased overflow-x-hidden`}
       >
-        {/* Google Ads Conversion Tracking with Enhanced Conversions */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=AW-17896188158"
-          strategy="afterInteractive"
-        />
-        <Script id="google-ads-config" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'AW-17896188158', {
-              'allow_enhanced_conversions': true
-            });
-          `}
-        </Script>
+        <div className="app-shell">
+          {/* Google Ads Conversion Tracking with Enhanced Conversions */}
+          <Script
+            src="https://www.googletagmanager.com/gtag/js?id=AW-17896188158"
+            strategy="afterInteractive"
+          />
+          <Script id="google-ads-config" strategy="afterInteractive">
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'AW-17896188158', {
+                'allow_enhanced_conversions': true
+              });
+            `}
+          </Script>
 
-        <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <main className="content-shell">{children}</main>
+          </ThemeProvider>
+        </div>
       </body>
     </html>
   );
