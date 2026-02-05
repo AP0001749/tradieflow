@@ -99,7 +99,7 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
               defaultValue={profile?.reply_to_email || ''}
               placeholder="hello@yourcompany.com"
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Leads will reply to this email address
             </p>
           </div>
@@ -113,7 +113,7 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
               defaultValue={profile?.google_review_url || ''}
               placeholder="https://g.page/r/..."
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               This will be sent to clients after job completion (future feature)
             </p>
           </div>
@@ -136,7 +136,7 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
               defaultValue={profile?.service_area_postcodes?.join(', ') || ''}
               placeholder="2000, 2010, 2015"
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Comma-separated list of postcodes (future: can be used for lead filtering)
             </p>
           </div>
@@ -149,7 +149,7 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
               defaultValue={profile?.default_job_types?.join(', ') || 'end_of_lease, regular, deep_clean'}
               placeholder="end_of_lease, regular, deep_clean"
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Comma-separated list of job types you offer
             </p>
           </div>
@@ -181,21 +181,21 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
               Copy
             </Button>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-muted-foreground mt-2">
             Use this URL in your Google Ads campaigns and website
           </p>
         </CardContent>
       </Card>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{error}</p>
+        <div className="p-3 rounded-md border border-destructive/30 bg-destructive/10">
+          <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
 
       {success && (
-        <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-          <p className="text-sm text-green-600">Settings saved successfully!</p>
+        <div className="p-3 rounded-md border border-emerald-500/30 bg-emerald-500/10">
+          <p className="text-sm text-emerald-700 dark:text-emerald-200">Settings saved successfully!</p>
         </div>
       )}
 

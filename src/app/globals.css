@@ -16,7 +16,8 @@
     --secondary: 204 25% 95%;
     --secondary-foreground: 222 44% 12%;
     --muted: 204 25% 95%;
-    --muted-foreground: 215 16% 40%;
+    /* Slightly darker for better contrast on white */
+    --muted-foreground: 215 16% 34%;
     --accent: 32 96% 90%;
     --accent-foreground: 24 85% 28%;
     --destructive: 0 84% 60%;
@@ -50,7 +51,7 @@
     --secondary: 210 22% 18%;
     --secondary-foreground: 210 40% 96%;
     --muted: 210 22% 18%;
-    --muted-foreground: 215 20% 70%;
+    --muted-foreground: 215 20% 72%;
     --accent: 199 32% 18%;
     --accent-foreground: 210 40% 96%;
     --destructive: 0 63% 50%;
@@ -71,20 +72,30 @@
     scroll-behavior: smooth;
   }
 
+  :root {
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     font-family: var(--font-body), system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
     font-feature-settings: "rlig" 1, "calt" 1;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
     background-image:
-      radial-gradient(circle at 8% -10%, rgba(14, 165, 233, 0.25), transparent 45%),
-      radial-gradient(circle at 82% 12%, rgba(34, 197, 94, 0.2), transparent 50%),
-      radial-gradient(circle at 60% 72%, rgba(245, 158, 11, 0.18), transparent 55%),
-      radial-gradient(circle at 18% 68%, rgba(6, 182, 212, 0.2), transparent 50%);
+      radial-gradient(circle at 8% -10%, rgba(14, 165, 233, 0.16), transparent 45%),
+      radial-gradient(circle at 82% 12%, rgba(34, 197, 94, 0.14), transparent 50%),
+      radial-gradient(circle at 60% 72%, rgba(245, 158, 11, 0.12), transparent 55%),
+      radial-gradient(circle at 18% 68%, rgba(6, 182, 212, 0.14), transparent 50%);
     background-repeat: no-repeat;
     background-attachment: fixed;
   }
@@ -92,6 +103,11 @@
   h1,
   h2,
   h3 {
+    letter-spacing: -0.01em;
+  }
+
+  /* Opt-in display type for big marketing headlines only. */
+  .tf-display {
     font-family: var(--font-display), Georgia, "Times New Roman", serif;
     letter-spacing: -0.02em;
   }
@@ -102,6 +118,12 @@
 
   a {
     transition: color 0.2s ease, opacity 0.2s ease;
+  }
+
+  a:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 3px;
+    border-radius: 6px;
   }
 
   /* Custom scrollbar */
@@ -121,6 +143,20 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground) / 0.5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
 
@@ -174,7 +210,7 @@
 }
 
 .glass-card {
-  background-color: hsla(var(--card), 0.92);
+  background-color: hsla(var(--card), 0.965);
   border: 1px solid hsla(var(--border), 0.6);
   border-radius: 32px;
   box-shadow:
@@ -239,7 +275,7 @@
 @layer utilities {
   .section-panel {
     border-radius: 32px;
-    background: linear-gradient(150deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0));
+    background: linear-gradient(150deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0));
     border: 1px solid rgba(255, 255, 255, 0.3);
     box-shadow: 0 35px 90px rgba(2, 15, 23, 0.28);
     padding: 3rem;
@@ -272,7 +308,7 @@
     border-radius: 28px;
     padding: 1.75rem;
     border: 1px solid hsla(var(--border), 0.35);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.25));
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.35));
     box-shadow: 0 20px 45px rgba(7, 23, 38, 0.15);
     backdrop-filter: blur(20px);
   }

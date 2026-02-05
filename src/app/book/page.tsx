@@ -97,9 +97,9 @@ export default function BookPage() {
     <div className="page-shell space-y-8">
       <div className="text-center space-y-3">
         <p className="hero-pill">TradieFlow for cleaners</p>
-        <h1 className="text-4xl md:text-5xl">Get more cleaning jobs -- without chasing leads</h1>
+        <h1 className="tf-display text-4xl md:text-5xl">Get more cleaning jobs - without chasing leads</h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Capture new enquiries, confirm availability, and let TradieFlow follow up automatically --
+          Capture new enquiries, confirm availability, and let TradieFlow follow up automatically -
           so your cleaning business can focus on the work, not the admin. Local launch for Melbourne cleaning businesses.
         </p>
         <p className="text-sm text-muted-foreground">Set up in minutes. No lock-in. Built specifically for independent cleaners and small teams.</p>

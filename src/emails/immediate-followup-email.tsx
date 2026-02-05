@@ -24,9 +24,9 @@ export const ImmediateFollowupEmail = ({
   jobType,
 }: ImmediateFollowupEmailProps) => {
   return (
-    <Html>
+      <Html>
       <Head />
-      <Preview>Got your cleaning request -- quick question</Preview>
+      <Preview>Got your cleaning request - quick question</Preview>
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>Thanks for your cleaning request!</Heading>

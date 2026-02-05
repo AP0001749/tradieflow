@@ -20,9 +20,9 @@ export default function Home() {
         <div className="relative container mx-auto px-4 pt-20 pb-24 md:pt-32 md:pb-32">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             {/* Main Headline */}
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+            <h1 className="tf-display text-4xl md:text-6xl font-bold tracking-tight">
               <span className="bg-gradient-to-r from-sky-500 to-emerald-500 bg-clip-text text-transparent">
-                Get more cleaning jobs automatically --
+                Get more cleaning jobs automatically -
               </span>
               <br />
               <span className="text-foreground">capture leads, follow up instantly, reduce no-shows.</span>
@@ -39,9 +39,9 @@ export default function Home() {
                 href="/book"
                 className="inline-flex items-center justify-center w-full sm:w-auto text-lg h-14 px-8 rounded-md font-semibold bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-500 hover:to-emerald-500 text-white shadow-lg shadow-sky-500/25 transition-all"
               >
-                Get started -- Book a demo / Try it now
+                Get started - Book a demo / Try it now
               </Link>
-              <p className="text-sm text-muted-foreground">Free plan available -- start receiving leads</p>
+              <p className="text-sm text-muted-foreground">Free plan available - start receiving leads</p>
             </div>
           </div>
         </div>
@@ -98,7 +98,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto space-y-12">
             <div className="text-center space-y-4">
-              <h2 className="text-3xl md:text-4xl font-bold">Everything You Need. Nothing You Don't.</h2>
+              <h2 className="tf-display text-3xl md:text-4xl font-bold">Everything You Need. Nothing You Don't.</h2>
                 <p className="text-xl text-muted-foreground">Built for cleaning businesses, not accountants.</p>
             </div>
 
@@ -125,7 +125,7 @@ export default function Home() {
       <div className="relative py-20 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center space-y-8">
-            <h2 className="text-3xl md:text-4xl font-bold">
+            <h2 className="tf-display text-3xl md:text-4xl font-bold">
               Ready to Get More Cleaning Jobs?
             </h2>
             <Link 

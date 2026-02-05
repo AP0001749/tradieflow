@@ -21,9 +21,9 @@ export const TwentyFourHourFollowupEmail = ({
   jobType,
 }: TwentyFourHourFollowupEmailProps) => {
   return (
-    <Html>
+      <Html>
       <Head />
-      <Preview>Quick follow-up -- still need help with this clean?</Preview>
+      <Preview>Quick follow-up - still need help with this clean?</Preview>
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>Quick follow-up</Heading>
@@ -39,7 +39,7 @@ export const TwentyFourHourFollowupEmail = ({
           </Text>
 
           <Text style={text}>
-            If you've already booked or found another cleaner, no worries -- just let me know so I can close this request.
+            If you've already booked or found another cleaner, no worries - just let me know so I can close this request.
           </Text>
 
           <Hr style={hr} />

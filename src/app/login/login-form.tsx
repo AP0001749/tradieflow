@@ -271,18 +271,18 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
         </CardContent>
 
         <CardFooter className="flex-col space-y-2 px-4 md:px-6 pb-8 pt-2">
-          <p className="text-center text-xs leading-relaxed text-zinc-500 px-2">
+          <p className="text-center text-xs leading-relaxed text-muted-foreground px-2">
             By signing up, you agree to our{" "}
             <Link
               href="/legal/terms"
-              className="underline underline-offset-4 hover:text-zinc-300"
+              className="underline underline-offset-4 hover:text-foreground transition-colors"
             >
               Terms
             </Link>
             {" "}and{" "}
             <Link
               href="/legal/privacy"
-              className="underline underline-offset-4 hover:text-zinc-300"
+              className="underline underline-offset-4 hover:text-foreground transition-colors"
             >
               Privacy Policy
             </Link>

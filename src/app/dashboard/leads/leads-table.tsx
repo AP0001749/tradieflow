@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { updateLeadStatus, convertLeadToJob } from './actions';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 interface Lead {
   id: string;
@@ -67,13 +68,20 @@ export default function LeadsTable({ leads }: LeadsTableProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'new': return 'bg-blue-100 text-blue-800';
-      case 'contacted': return 'bg-amber-100 text-amber-800';
-      case 'booked': return 'bg-green-100 text-green-800';
-      case 'won': return 'bg-emerald-100 text-emerald-800';
-      case 'lost': return 'bg-gray-100 text-gray-800';
-      case 'stale': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'new':
+        return 'border-transparent bg-sky-500/15 text-sky-700 dark:bg-sky-500/15 dark:text-sky-200';
+      case 'contacted':
+        return 'border-transparent bg-amber-500/15 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200';
+      case 'booked':
+        return 'border-transparent bg-emerald-500/15 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200';
+      case 'won':
+        return 'border-transparent bg-emerald-500/15 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200';
+      case 'lost':
+        return 'border-transparent bg-muted text-muted-foreground';
+      case 'stale':
+        return 'border-transparent bg-orange-500/15 text-orange-800 dark:bg-orange-500/15 dark:text-orange-200';
+      default:
+        return 'border-transparent bg-muted text-muted-foreground';
     }
   };
 
@@ -87,9 +95,9 @@ export default function LeadsTable({ leads }: LeadsTableProps) {
 
   if (leads.length === 0) {
     return (
-      <div className="bg-white rounded-lg border p-12 text-center">
-        <p className="text-gray-600">No leads yet. Share your booking page to start receiving leads!</p>
-        <p className="text-sm text-gray-500 mt-2">
+      <div className="rounded-2xl border border-border/60 bg-card/70 backdrop-blur-xl p-12 text-center shadow-sm">
+        <p className="text-muted-foreground">No leads yet. Share your booking page to start receiving leads!</p>
+        <p className="text-sm text-muted-foreground/80 mt-2">
           Your booking URL: <span className="font-mono">/book</span>
         </p>
       </div>
@@ -97,7 +105,7 @@ export default function LeadsTable({ leads }: LeadsTableProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg border">
+    <div className="rounded-2xl border border-border/60 bg-card/70 backdrop-blur-xl shadow-sm">
       <Table>
         <TableHeader>
           <TableRow>
@@ -114,13 +122,13 @@ export default function LeadsTable({ leads }: LeadsTableProps) {
         <TableBody>
           {leads.map((lead) => (
             <TableRow key={lead.id}>
-              <TableCell className="text-sm text-gray-600">
+              <TableCell className="text-sm text-muted-foreground">
                 {formatDate(lead.created_at)}
               </TableCell>
               <TableCell className="font-medium">{lead.name}</TableCell>
               <TableCell className="text-sm">
                 <div>{lead.email}</div>
-                <div className="text-gray-600">{lead.phone}</div>
+                <div className="text-muted-foreground">{lead.phone}</div>
               </TableCell>
               <TableCell className="text-sm">
                 {lead.suburb} {lead.postcode}
@@ -129,20 +137,20 @@ export default function LeadsTable({ leads }: LeadsTableProps) {
                 {lead.job_type?.replace('_', ' ')}
               </TableCell>
               <TableCell>
-                <Badge className={getStatusColor(lead.status)}>
+                <Badge className={cn(getStatusColor(lead.status), "capitalize")}>
                   {lead.status}
                 </Badge>
               </TableCell>
-              <TableCell className="text-sm text-gray-600">
+              <TableCell className="text-sm text-muted-foreground">
                 {lead.next_followup_at ? (
                   <>
                     {formatDate(lead.next_followup_at)}
-                    <span className="text-xs block text-gray-500">
+                    <span className="text-xs block text-muted-foreground/80">
                       Step {lead.followup_step}
                     </span>
                   </>
                 ) : (
-                  <span className="text-gray-400">--</span>
+                  <span className="text-muted-foreground/70">--</span>
                 )}
               </TableCell>
               <TableCell className="text-right space-x-2">
