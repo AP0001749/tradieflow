@@ -68,7 +68,7 @@ export default function LeadsTable({ leads }: LeadsTableProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'new': return 'bg-blue-100 text-blue-800';
-      case 'contacted': return 'bg-purple-100 text-purple-800';
+      case 'contacted': return 'bg-amber-100 text-amber-800';
       case 'booked': return 'bg-green-100 text-green-800';
       case 'won': return 'bg-emerald-100 text-emerald-800';
       case 'lost': return 'bg-gray-100 text-gray-800';
@@ -142,7 +142,7 @@ export default function LeadsTable({ leads }: LeadsTableProps) {
                     </span>
                   </>
                 ) : (
-                  <span className="text-gray-400">—</span>
+                  <span className="text-gray-400">--</span>
                 )}
               </TableCell>
               <TableCell className="text-right space-x-2">

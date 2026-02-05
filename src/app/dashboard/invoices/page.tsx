@@ -129,11 +129,11 @@ export default async function InvoicesPage() {
                   <TableRow key={invoice.id}>
                     <TableCell className="font-mono text-xs">{shortId}</TableCell>
                     <TableCell className="font-medium">
-                      {invoice.job?.title || "—"}
+                      {invoice.job?.title || "--"}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="font-medium">{invoice.job?.client?.name || "—"}</span>
+                        <span className="font-medium">{invoice.job?.client?.name || "--"}</span>
                         {invoice.job?.client?.email && (
                           <span className="text-xs text-muted-foreground mt-0.5">
                             {invoice.job.client.email}
@@ -150,7 +150,7 @@ export default async function InvoicesPage() {
                     <TableCell className="text-muted-foreground">
                       {invoice.due_date
                         ? new Date(invoice.due_date).toLocaleDateString()
-                        : "—"}
+                        : "--"}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">

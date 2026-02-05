@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         // Determine which email to send
         switch (lead.followup_step) {
           case 0: // Immediate
-            subject = `Got your cleaning request — quick question`;
+            subject = `Got your cleaning request -- quick question`;
             emailComponent = ImmediateFollowupEmail({
               name: lead.name,
               businessName,
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
             break;
 
           case 1: // 24h follow-up
-            subject = `Quick follow-up — still need help with this clean?`;
+            subject = `Quick follow-up -- still need help with this clean?`;
             emailComponent = TwentyFourHourFollowupEmail({
               name: lead.name,
               businessName,
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
             break;
 
           case 2: // 48h follow-up (last)
-            subject = `Last check-in — should I close this request?`;
+            subject = `Last check-in -- should I close this request?`;
             emailComponent = FortyEightHourFollowupEmail({
               name: lead.name,
               businessName,

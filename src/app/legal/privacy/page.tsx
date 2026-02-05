@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Privacy Policy | TradieFlow",
   description:
-    "Privacy Policy for TradieFlow (Australia) – how we collect, use, and disclose personal information.",
+    "Privacy Policy for TradieFlow (Australia) - how we collect, use, and disclose personal information.",
 };
 
 export default function PrivacyPolicyPage() {
@@ -170,7 +170,7 @@ export default function PrivacyPolicyPage() {
           <h2>11. Changes</h2>
           <p>
             We may update this Privacy Policy from time to time. The updated
-            version will be published on this page with a new “Last updated”
+            version will be published on this page with a new "Last updated"
             date.
           </p>
         </article>

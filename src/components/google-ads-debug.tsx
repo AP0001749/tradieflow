@@ -37,17 +37,17 @@ export function GoogleAdsDebug() {
       {/* Toggle Button */}
       <button
         onClick={() => setIsVisible(!isVisible)}
-        className="fixed bottom-4 right-4 z-50 bg-purple-600 hover:bg-purple-700 text-white text-xs font-mono px-3 py-2 rounded-lg shadow-lg transition-all"
+        className="fixed bottom-4 right-4 z-50 bg-amber-600 hover:bg-amber-700 text-white text-xs font-mono px-3 py-2 rounded-lg shadow-lg transition-all"
         title="Toggle Google Ads Debug Panel"
       >
-        {isVisible ? '✕' : '📊'} Google Ads
+        {isVisible ? 'x' : 'chart'} Google Ads
       </button>
 
       {/* Debug Panel */}
       {isVisible && (
-        <div className="fixed bottom-16 right-4 z-50 bg-gray-900 text-gray-100 p-4 rounded-lg shadow-2xl border border-purple-500/50 max-w-sm text-xs font-mono">
+        <div className="fixed bottom-16 right-4 z-50 bg-gray-900 text-gray-100 p-4 rounded-lg shadow-2xl border border-amber-500/50 max-w-sm text-xs font-mono">
           <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-700">
-            <h3 className="font-bold text-purple-400">Google Ads Tracking</h3>
+            <h3 className="font-bold text-amber-400">Google Ads Tracking</h3>
             <span className={`px-2 py-0.5 rounded text-[10px] ${
               status.status === 'ready' 
                 ? 'bg-green-900/50 text-green-300' 
@@ -72,12 +72,12 @@ export function GoogleAdsDebug() {
             </div>
             <div className="flex items-start pt-2 border-t border-gray-700">
               <span className="text-gray-400 w-24 shrink-0">ID:</span>
-              <span className="text-purple-400">{status.conversionId}</span>
+              <span className="text-amber-400">{status.conversionId}</span>
             </div>
           </div>
 
           <div className="mt-4 pt-3 border-t border-gray-700 space-y-1">
-            <p className="text-[10px] text-gray-400">🧪 Browser Console Commands:</p>
+            <p className="text-[10px] text-gray-400">tests Browser Console Commands:</p>
             <code className="block text-[10px] text-green-300">window.testGoogleAdsConversion()</code>
             <code className="block text-[10px] text-blue-300">window.checkGoogleAds()</code>
             <code className="block text-[10px] text-yellow-300">window.resetConversion()</code>

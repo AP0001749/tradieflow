@@ -186,18 +186,18 @@ export async function getEnhancedConversionParams(
 export async function debugEnhancedConversion(userData: EnhancedConversionData) {
   if (process.env.NODE_ENV !== 'development') return;
 
-  console.log('🔐 [Enhanced Conversions] Raw user data (will be hashed):');
-  console.log('   • Email:', userData.email ? '✅ Present' : '❌ Missing');
-  console.log('   • Phone:', userData.phone_number ? '✅ Present' : '❌ Missing');
-  console.log('   • First name:', userData.first_name ? '✅ Present' : '❌ Missing');
-  console.log('   • Last name:', userData.last_name ? '✅ Present' : '❌ Missing');
-  console.log('   • Address:', userData.address ? '✅ Present' : '❌ Missing');
+  console.log('SECURE [Enhanced Conversions] Raw user data (will be hashed):');
+  console.log('   * Email:', userData.email ? 'OK Present' : 'ERROR Missing');
+  console.log('   * Phone:', userData.phone_number ? 'OK Present' : 'ERROR Missing');
+  console.log('   * First name:', userData.first_name ? 'OK Present' : 'ERROR Missing');
+  console.log('   * Last name:', userData.last_name ? 'OK Present' : 'ERROR Missing');
+  console.log('   * Address:', userData.address ? 'OK Present' : 'ERROR Missing');
 
   if (hasValidEnhancedConversionData(userData)) {
     const params = await getEnhancedConversionParams(userData);
-    console.log('\n🔒 [Enhanced Conversions] Hashed data ready to send:');
+    console.log('\nSECURE [Enhanced Conversions] Hashed data ready to send:');
     console.log(JSON.stringify(params, null, 2));
   } else {
-    console.warn('\n⚠️ [Enhanced Conversions] Insufficient data for enhanced conversions');
+    console.warn('\nWARN [Enhanced Conversions] Insufficient data for enhanced conversions');
   }
 }

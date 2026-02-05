@@ -67,9 +67,9 @@ export default async function ClientsPage() {
               {clients.map((client: Client) => (
                 <TableRow key={client.id} className="group cursor-default">
                   <TableCell className="font-medium">{client.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{client.email || "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{client.phone || "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{client.address || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{client.email || "--"}</TableCell>
+                  <TableCell className="text-muted-foreground">{client.phone || "--"}</TableCell>
+                  <TableCell className="text-muted-foreground">{client.address || "--"}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {new Date(client.created_at).toLocaleDateString()}
                   </TableCell>

@@ -21,7 +21,7 @@ export const FortyEightHourFollowupEmail = ({
   return (
     <Html>
       <Head />
-      <Preview>Last check-in — should I close this request?</Preview>
+      <Preview>Last check-in -- should I close this request?</Preview>
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>Last check-in</Heading>
@@ -33,7 +33,7 @@ export const FortyEightHourFollowupEmail = ({
           </Text>
 
           <Text style={text}>
-            <strong>Reply "YES" if you still need this clean</strong> — otherwise I'll close this request.
+            <strong>Reply "YES" if you still need this clean</strong> -- otherwise I'll close this request.
           </Text>
 
           <Text style={text}>

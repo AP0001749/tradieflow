@@ -50,7 +50,7 @@ export function SubscribeButton({
   return (
     <div className="space-y-2">
       <Button onClick={handleSubscribe} disabled={loading} className="w-full">
-        {loading ? "Redirecting…" : "Upgrade Now"}
+        {loading ? "Redirecting..." : "Upgrade Now"}
       </Button>
 
       <p className="text-xs text-muted-foreground">

@@ -97,7 +97,7 @@ export default async function JobsPage() {
                   <TableRow key={job.id}>
                     <TableCell className="font-medium">{job.title}</TableCell>
                     <TableCell className="text-muted-foreground">
-                      {job.clients?.name || "—"}
+                      {job.clients?.name || "--"}
                     </TableCell>
                     <TableCell>
                       <Badge variant={statusInfo.variant}>
@@ -105,12 +105,12 @@ export default async function JobsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {job.price ? `$${job.price.toLocaleString()}` : "—"}
+                      {job.price ? `$${job.price.toLocaleString()}` : "--"}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {job.start_date
                         ? new Date(job.start_date).toLocaleDateString()
-                        : "—"}
+                        : "--"}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
@@ -118,7 +118,7 @@ export default async function JobsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-indigo-300 hover:text-indigo-200"
+                            className="text-sky-300 hover:text-sky-200"
                           >
                             View
                           </Button>

@@ -22,12 +22,12 @@ export function DashboardSidebar({ email }: { email?: string | null }) {
       data-print-hidden="true"
     >
       {/* Subtle gradient overlay */}
-      <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none" />
+      <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-sky-500/5 to-transparent pointer-events-none" />
       
       <div className="relative p-8 border-b border-border/40 backdrop-blur-sm">
         <Link href="/dashboard" className="block">
           <h1 className="text-2xl font-semibold tracking-tight">
-            <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-sky-400 to-emerald-400 bg-clip-text text-transparent">
               TradieFlow
             </span>
           </h1>

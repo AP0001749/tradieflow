@@ -129,7 +129,7 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
               <Upload className="w-6 h-6 text-blue-300" />
             </div>
             {isDragActive ? (
-              <p className="text-foreground font-medium">Drop the images here…</p>
+              <p className="text-foreground font-medium">Drop the images here...</p>
             ) : (
               <>
                 <div>
@@ -150,7 +150,7 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
           {uploading ? (
             <div className="mt-5 mx-auto max-w-sm">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Uploading…</span>
+                <span>Uploading...</span>
                 <span>
                   {Math.min(uploadCompleted + 1, uploadTotal)}/{uploadTotal}
                 </span>

@@ -138,7 +138,7 @@ export function CreateInvoiceDialog() {
                 <option value="">Select a job</option>
                 {jobs.map((job) => (
                   <SelectItem key={job.id} value={job.id}>
-                    {job.title} {job.client?.name ? `— ${job.client.name}` : ""}
+                    {job.title} {job.client?.name ? `-- ${job.client.name}` : ""}
                   </SelectItem>
                 ))}
               </Select>

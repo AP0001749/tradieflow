@@ -92,7 +92,7 @@ export default async function InvoiceViewPage({
   const issuedDate = new Date(invoice.created_at).toLocaleDateString();
   const dueDate = invoice.due_date
     ? new Date(invoice.due_date).toLocaleDateString()
-    : "—";
+    : "--";
 
   const status = statusConfig[invoice.status] ?? statusConfig.unpaid;
 
@@ -163,7 +163,7 @@ export default async function InvoiceViewPage({
             <div className="text-sm font-semibold">Bill To</div>
             <div className="mt-2 text-sm text-[hsl(var(--paper-muted-foreground))]">
               <div className="font-medium text-[hsl(var(--paper-foreground))]">
-                {invoice.job?.client?.name || "—"}
+                {invoice.job?.client?.name || "--"}
               </div>
               {invoice.job?.client?.address ? (
                 <div className="mt-1 whitespace-pre-line">
@@ -180,7 +180,7 @@ export default async function InvoiceViewPage({
             <div className="text-sm font-semibold">Details</div>
             <div className="mt-2 space-y-1 text-sm text-[hsl(var(--paper-muted-foreground))]">
               <div>
-                <span className="font-medium text-[hsl(var(--paper-foreground))]">Job</span>: {invoice.job?.title || "—"}
+                <span className="font-medium text-[hsl(var(--paper-foreground))]">Job</span>: {invoice.job?.title || "--"}
               </div>
               <div>
                 <span className="font-medium text-[hsl(var(--paper-foreground))]">Status</span>: {status.label}

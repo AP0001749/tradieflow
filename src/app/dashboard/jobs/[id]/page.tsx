@@ -111,7 +111,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
               <div>
                 <p className="text-sm text-muted-foreground">Client</p>
                 <p className="font-medium">
-                  {job.clients?.name || "—"}
+                  {job.clients?.name || "--"}
                 </p>
               </div>
             </div>
@@ -131,8 +131,8 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
 
             {/* Start Date */}
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-violet-500/15 flex items-center justify-center flex-shrink-0">
-                <Calendar className="w-5 h-5 text-violet-300" />
+              <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-5 h-5 text-emerald-300" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Start Date</p>
@@ -146,8 +146,8 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
 
             {/* End Date */}
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-violet-500/15 flex items-center justify-center flex-shrink-0">
-                <Calendar className="w-5 h-5 text-violet-300" />
+              <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-5 h-5 text-emerald-300" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">End Date</p>

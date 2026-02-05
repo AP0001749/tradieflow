@@ -26,7 +26,7 @@ export const ImmediateFollowupEmail = ({
   return (
     <Html>
       <Head />
-      <Preview>Got your cleaning request — quick question</Preview>
+      <Preview>Got your cleaning request -- quick question</Preview>
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>Thanks for your cleaning request!</Heading>
@@ -42,10 +42,10 @@ export const ImmediateFollowupEmail = ({
           </Text>
 
           <Section style={list}>
-            <Text style={listItem}>• Full address (street, suburb, postcode)</Text>
-            <Text style={listItem}>• Number of bedrooms and bathrooms</Text>
-            <Text style={listItem}>• Preferred date and time</Text>
-            <Text style={listItem}>• Any special requirements</Text>
+            <Text style={listItem}>* Full address (street, suburb, postcode)</Text>
+            <Text style={listItem}>* Number of bedrooms and bathrooms</Text>
+            <Text style={listItem}>* Preferred date and time</Text>
+            <Text style={listItem}>* Any special requirements</Text>
           </Section>
 
           <Text style={text}>

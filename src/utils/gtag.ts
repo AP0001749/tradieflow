@@ -5,11 +5,11 @@
  * Sign-up Label: 0fciCMj5wOobEP7RyNVC
  * 
  * CHECKLIST COMPLIANCE:
- * ✓ Tag Implementation: Global tag loads in layout.tsx on all pages
- * ✓ Trigger Logic: Fires on /welcome page view after successful signup
- * ✓ Deduplication: Session storage prevents duplicate conversions
- * ✓ Count Setting: Set to "One" per user (handled via deduplication)
- * ✓ Enhanced Conversions: Sends hashed user data for improved attribution
+ * OK Tag Implementation: Global tag loads in layout.tsx on all pages
+ * OK Trigger Logic: Fires on /welcome page view after successful signup
+ * OK Deduplication: Session storage prevents duplicate conversions
+ * OK Count Setting: Set to "One" per user (handled via deduplication)
+ * OK Enhanced Conversions: Sends hashed user data for improved attribution
  */
 
 import type { EnhancedConversionData } from './enhanced-conversions';
@@ -54,7 +54,7 @@ export async function trackSignUpConversion(
   // DEDUPLICATION CHECK: Prevent duplicate conversions from page refreshes
   if (hasConversionFired()) {
     if (process.env.NODE_ENV === 'development') {
-      console.log('[Google Ads] ⚠️ Conversion already fired this session - skipping duplicate');
+      console.log('[Google Ads] WARN Conversion already fired this session - skipping duplicate');
     }
     if (callback) callback();
     return;
@@ -71,7 +71,7 @@ export async function trackSignUpConversion(
     'transaction_id': transactionId,
     'event_callback': () => {
       if (process.env.NODE_ENV === 'development') {
-        console.log('✅ [Google Ads] Callback triggered - conversion logged successfully');
+        console.log('OK [Google Ads] Callback triggered - conversion logged successfully');
       }
       if (callback) {
         callback();
@@ -87,7 +87,7 @@ export async function trackSignUpConversion(
       Object.assign(conversionParams, enhancedParams);
       
       if (process.env.NODE_ENV === 'development') {
-        console.log('🔐 [Google Ads] Enhanced conversions enabled for this conversion');
+        console.log('SECURE [Google Ads] Enhanced conversions enabled for this conversion');
         await debugEnhancedConversion(userData);
       }
     }
@@ -101,9 +101,9 @@ export async function trackSignUpConversion(
 
   // Debug logging
   if (process.env.NODE_ENV === 'development') {
-    console.log('✅ [Google Ads] Sign-up conversion tracked:', conversionLabel);
+    console.log('OK [Google Ads] Sign-up conversion tracked:', conversionLabel);
     console.log('[Google Ads] Transaction ID:', transactionId);
-    console.log('[Google Ads] Enhanced conversions:', userData ? '✅ Enabled' : '⚪ Not provided');
+    console.log('[Google Ads] Enhanced conversions:', userData ? 'OK Enabled' : 'NOT Not provided');
   }
 }
 
@@ -143,7 +143,7 @@ export async function trackSubscriptionConversion(
     'transaction_id': transactionId,
     'event_callback': () => {
       if (process.env.NODE_ENV === 'development') {
-        console.log('✅ [Google Ads] Subscription conversion callback triggered');
+        console.log('OK [Google Ads] Subscription conversion callback triggered');
       }
       if (callback) {
         callback();
@@ -159,7 +159,7 @@ export async function trackSubscriptionConversion(
       Object.assign(conversionParams, enhancedParams);
       
       if (process.env.NODE_ENV === 'development') {
-        console.log('🔐 [Google Ads] Enhanced conversions enabled for subscription');
+        console.log('SECURE [Google Ads] Enhanced conversions enabled for subscription');
         await debugEnhancedConversion(userData);
       }
     }
@@ -170,10 +170,10 @@ export async function trackSubscriptionConversion(
 
   // Debug logging
   if (process.env.NODE_ENV === 'development') {
-    console.log('✅ [Google Ads] Subscription conversion tracked:', conversionLabel);
+    console.log('OK [Google Ads] Subscription conversion tracked:', conversionLabel);
     console.log('[Google Ads] Transaction ID:', transactionId);
     console.log('[Google Ads] Value:', value, 'AUD');
-    console.log('[Google Ads] Enhanced conversions:', userData ? '✅ Enabled' : '⚪ Not provided');
+    console.log('[Google Ads] Enhanced conversions:', userData ? 'OK Enabled' : 'NOT Not provided');
   }
 }
 
@@ -229,9 +229,9 @@ export function getTrackingStatus() {
 
   return {
     status: hasGtag && hasDataLayer ? 'ready' : 'not-loaded',
-    gtag: hasGtag ? '✅ Loaded' : '❌ Not loaded',
-    dataLayer: hasDataLayer ? `✅ Initialized (${window.dataLayer?.length || 0} events)` : '❌ Not initialized',
-    conversion: hasFired ? '✅ Already fired this session' : '⚪ Not fired yet',
+    gtag: hasGtag ? 'OK Loaded' : 'ERROR Not loaded',
+    dataLayer: hasDataLayer ? `OK Initialized (${window.dataLayer?.length || 0} events)` : 'ERROR Not initialized',
+    conversion: hasFired ? 'OK Already fired this session' : 'NOT Not fired yet',
     conversionId: GOOGLE_ADS_CONFIG.CONVERSION_ID,
     conversionLabel: `${GOOGLE_ADS_CONFIG.CONVERSION_ID}/${GOOGLE_ADS_CONFIG.SIGN_UP_LABEL}`,
   };
@@ -244,7 +244,7 @@ export function getTrackingStatus() {
 export function resetConversionTracking() {
   if (typeof window === 'undefined') return;
   window.sessionStorage.removeItem(CONVERSION_STORAGE_KEY);
-  console.log('🔄 [Google Ads] Conversion tracking reset - you can fire another test conversion');
+  console.log('RESET [Google Ads] Conversion tracking reset - you can fire another test conversion');
 }
 
 /**
@@ -253,31 +253,31 @@ export function resetConversionTracking() {
  */
 if (typeof window !== 'undefined') {
   (window as any).testGoogleAdsConversion = async () => {
-    console.log('🧪 [Google Ads] Running tracking verification...\n');
+    console.log('TEST [Google Ads] Running tracking verification...\n');
     
     const status = getTrackingStatus();
-    console.log('📊 Tracking Status:');
-    console.log(`   • Overall: ${status.status}`);
-    console.log(`   • gtag.js: ${status.gtag}`);
-    console.log(`   • DataLayer: ${status.dataLayer}`);
-    console.log(`   • Conversion: ${status.conversion}`);
-    console.log(`   • Conversion ID: ${status.conversionId}`);
-    console.log(`   • Full Label: ${status.conversionLabel}\n`);
+    console.log('STATS Tracking Status:');
+    console.log(`   * Overall: ${status.status}`);
+    console.log(`   * gtag.js: ${status.gtag}`);
+    console.log(`   * DataLayer: ${status.dataLayer}`);
+    console.log(`   * Conversion: ${status.conversion}`);
+    console.log(`   * Conversion ID: ${status.conversionId}`);
+    console.log(`   * Full Label: ${status.conversionLabel}\n`);
 
     if (!isGoogleAdsLoaded()) {
-      console.error('❌ Google Ads tag not loaded properly');
-      console.log('💡 Make sure you\'re testing on a live page, not a static HTML file');
+      console.error('ERROR Google Ads tag not loaded properly');
+      console.log('TIP Make sure you\'re testing on a live page, not a static HTML file');
       return;
     }
     
     if (hasConversionFired()) {
-      console.warn('⚠️  Conversion already fired this session');
-      console.log('💡 To test again, run: window.resetConversion()');
+      console.warn('WARN  Conversion already fired this session');
+      console.log('TIP To test again, run: window.resetConversion()');
       return;
     }
 
-    console.log('✅ Google Ads tag loaded correctly');
-    console.log('📊 Firing test conversion with enhanced conversions...');
+    console.log('OK Google Ads tag loaded correctly');
+    console.log('STATS Firing test conversion with enhanced conversions...');
     
     // Test with sample enhanced conversion data
     const testUserData = {
@@ -287,10 +287,10 @@ if (typeof window !== 'undefined') {
     };
     
     await trackSignUpConversion(testUserData);
-    console.log('\n✅ Test conversion fired successfully with enhanced conversions!');
-    console.log('📈 Check Google Ads > Tools > Conversions in 3-24 hours');
-    console.log('🔍 Look for: "Sign Up" conversion event');
-    console.log('🔐 Enhanced conversions data was included (check diagnostics report)');
+    console.log('\nOK Test conversion fired successfully with enhanced conversions!');
+    console.log('CHART Check Google Ads > Tools > Conversions in 3-24 hours');
+    console.log('DEBUG Look for: "Sign Up" conversion event');
+    console.log('SECURE Enhanced conversions data was included (check diagnostics report)');
   };
 
   // Helper to reset for testing

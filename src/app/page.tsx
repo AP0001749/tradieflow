@@ -14,15 +14,15 @@ export default function Home() {
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         {/* Gradient Background */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,_var(--tw-gradient-stops))] from-indigo-300/40 via-background to-background dark:from-indigo-900/40 dark:via-background" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,_var(--tw-gradient-stops))] from-violet-300/30 via-transparent to-transparent dark:from-violet-900/30" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,_var(--tw-gradient-stops))] from-sky-300/40 via-background to-background dark:from-sky-900/40 dark:via-background" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,_var(--tw-gradient-stops))] from-emerald-300/30 via-transparent to-transparent dark:from-emerald-900/30" />
         
         <div className="relative container mx-auto px-4 pt-20 pb-24 md:pt-32 md:pb-32">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             {/* Main Headline */}
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-              <span className="bg-gradient-to-r from-indigo-500 to-violet-600 bg-clip-text text-transparent">
-                Get more cleaning jobs automatically —
+              <span className="bg-gradient-to-r from-sky-500 to-emerald-500 bg-clip-text text-transparent">
+                Get more cleaning jobs automatically --
               </span>
               <br />
               <span className="text-foreground">capture leads, follow up instantly, reduce no-shows.</span>
@@ -37,11 +37,11 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
               <Link 
                 href="/book"
-                className="inline-flex items-center justify-center w-full sm:w-auto text-lg h-14 px-8 rounded-md font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/30 transition-all"
+                className="inline-flex items-center justify-center w-full sm:w-auto text-lg h-14 px-8 rounded-md font-semibold bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-500 hover:to-emerald-500 text-white shadow-lg shadow-sky-500/25 transition-all"
               >
-                Get started — Book a demo / Try it now
+                Get started -- Book a demo / Try it now
               </Link>
-              <p className="text-sm text-muted-foreground">Free plan available — start receiving leads</p>
+              <p className="text-sm text-muted-foreground">Free plan available -- start receiving leads</p>
             </div>
           </div>
         </div>
@@ -54,8 +54,8 @@ export default function Home() {
             {/* Benefit 1 */}
             <Card className="p-6 text-center space-y-4 border-border/40 bg-card/60 backdrop-blur">
               <div className="flex justify-center">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/30">
-                  <Smartphone className="h-8 w-8 text-indigo-500" />
+                <div className="p-3 rounded-xl bg-gradient-to-br from-sky-500/20 to-emerald-500/20 border border-sky-500/30">
+                  <Smartphone className="h-8 w-8 text-sky-500" />
                 </div>
               </div>
               <h3 className="text-xl font-semibold">Invoice From Your Phone</h3>
@@ -67,8 +67,8 @@ export default function Home() {
             {/* Benefit 2 */}
             <Card className="p-6 text-center space-y-4 border-border/40 bg-card/60 backdrop-blur">
               <div className="flex justify-center">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-500/30">
-                  <DollarSign className="h-8 w-8 text-emerald-500" />
+                <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30">
+                  <DollarSign className="h-8 w-8 text-amber-500" />
                 </div>
               </div>
               <h3 className="text-xl font-semibold">Get Paid Faster</h3>
@@ -80,8 +80,8 @@ export default function Home() {
             {/* Benefit 3 */}
             <Card className="p-6 text-center space-y-4 border-border/40 bg-card/60 backdrop-blur">
               <div className="flex justify-center">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30">
-                  <Clock className="h-8 w-8 text-violet-500" />
+                <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30">
+                  <Clock className="h-8 w-8 text-emerald-500" />
                 </div>
               </div>
               <h3 className="text-xl font-semibold">Stop Working at Night</h3>
@@ -112,7 +112,7 @@ export default function Home() {
                  "Australian-friendly (GST ready)"
               ].map((feature, i) => (
                 <div key={i} className="flex items-start gap-3">
-                  <CheckCircle className="h-6 w-6 text-emerald-500 shrink-0 mt-0.5" />
+                  <CheckCircle className="h-6 w-6 text-amber-500 shrink-0 mt-0.5" />
                   <span className="text-lg text-muted-foreground">{feature}</span>
                 </div>
               ))}
@@ -130,7 +130,7 @@ export default function Home() {
             </h2>
             <Link 
               href="/book"
-              className="inline-flex items-center justify-center text-lg h-14 px-8 rounded-md font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/30 transition-all"
+              className="inline-flex items-center justify-center text-lg h-14 px-8 rounded-md font-semibold bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-500 hover:to-emerald-500 text-white shadow-lg shadow-sky-500/25 transition-all"
             >
               Visit Booking Page
             </Link>
@@ -143,7 +143,7 @@ export default function Home() {
       <footer className="relative py-8 border-t border-border/40">
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-            <div>© 2026 TradieFlow. Built for Australian cleaning businesses.</div>
+            <div>(c) 2026 TradieFlow. Built for Australian cleaning businesses.</div>
             <div className="flex gap-6">
               <Link href="/legal/privacy" className="hover:text-foreground">Privacy</Link>
               <Link href="/legal/terms" className="hover:text-foreground">Terms</Link>

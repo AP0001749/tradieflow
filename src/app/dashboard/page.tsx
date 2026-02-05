@@ -160,8 +160,8 @@ export default async function DashboardPage() {
               <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground">
                 {stat.title}
               </CardTitle>
-              <div className="p-2 md:p-2.5 bg-gradient-to-br from-indigo-500/10 to-violet-500/10 rounded-lg md:rounded-xl group-hover:from-indigo-500/20 group-hover:to-violet-500/20 group-hover:shadow-lg group-hover:shadow-indigo-500/20 transition-all duration-500">
-                <stat.icon className="w-4 h-4 text-indigo-500 dark:text-indigo-400 group-hover:scale-125 group-hover:rotate-12 transition-all duration-500" />
+              <div className="p-2 md:p-2.5 bg-gradient-to-br from-sky-500/10 to-emerald-500/10 rounded-lg md:rounded-xl group-hover:from-sky-500/20 group-hover:to-emerald-500/20 group-hover:shadow-lg group-hover:shadow-sky-500/20 transition-all duration-500">
+                <stat.icon className="w-4 h-4 text-sky-500 dark:text-sky-400 group-hover:scale-125 group-hover:rotate-12 transition-all duration-500" />
               </div>
             </CardHeader>
             <CardContent className="p-4 md:p-6 pt-0">
@@ -191,7 +191,7 @@ export default async function DashboardPage() {
         <Card className="lg:col-span-4 border-border/60 bg-gradient-to-br from-card to-card/50 overflow-hidden">
           <CardHeader className="p-4 md:p-6">
             <CardTitle className="text-base md:text-lg font-semibold flex items-center gap-2">
-              <span className="w-1 h-5 bg-gradient-to-b from-indigo-500 to-violet-500 rounded-full"></span>
+              <span className="w-1 h-5 bg-gradient-to-b from-sky-500 to-emerald-500 rounded-full"></span>
               Monthly Revenue
             </CardTitle>
           </CardHeader>
@@ -222,7 +222,7 @@ export default async function DashboardPage() {
 
                   return (
                     <div key={invoice.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent/50 transition-all duration-200 animate-in fade-in slide-in-from-right-2 duration-500 group" style={{ animationDelay: `${invoice.id.charCodeAt(0) % 5 * 100}ms`, animationFillMode: 'backwards' }}>
-                      <div className="w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/40 group-hover:shadow-xl group-hover:shadow-indigo-500/50 group-hover:scale-105 transition-all duration-300 dark:shadow-indigo-500/50 dark:group-hover:shadow-indigo-500/60">
+                      <div className="w-11 h-11 rounded-full bg-gradient-to-br from-sky-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-sky-500/40 group-hover:shadow-xl group-hover:shadow-sky-500/50 group-hover:scale-105 transition-all duration-300 dark:shadow-sky-500/50 dark:group-hover:shadow-sky-500/60">
                         <span className="text-sm font-semibold text-white">
                           {initials}
                         </span>
