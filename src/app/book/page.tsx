@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { trackLeadConversion } from '@/utils/gtag';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -56,14 +57,23 @@ export default function BookPage() {
         throw new Error('Failed to submit request');
       }
 
+      const json = (await response.json()) as { success?: boolean; lead_id?: string };
+
       setIsSuccess(true);
 
-      // Fire Google Ads conversion if available
-      if (typeof window !== 'undefined' && (window as any).gtag) {
-        (window as any).gtag('event', 'conversion', {
-          send_to: 'AW-CONVERSION_ID/CONVERSION_LABEL',
-          value: 1.0,
-          currency: 'AUD',
+      // Fire Google Ads "Lead" conversion (configure NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL)
+      if (json.lead_id) {
+        const [firstName, ...rest] = (yourName || '').trim().split(/\s+/).filter(Boolean);
+        const lastName = rest.length ? rest.join(' ') : undefined;
+
+        await trackLeadConversion({
+          leadId: json.lead_id,
+          userData: {
+            email,
+            phone_number: mobile,
+            first_name: firstName || undefined,
+            last_name: lastName,
+          },
         });
       }
     } catch (err) {

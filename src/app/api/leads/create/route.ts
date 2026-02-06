@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,8 +23,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create Supabase client without auth (anon)
-    const supabase = await createClient();
+    // Use service role for public lead capture to avoid RLS blocking inserts.
+    const supabase = createAdminClient();
 
     // Get the first business profile (for MVP, assuming single tenant per deployment)
     // In production, you'd use booking_url_slug or subdomain routing
@@ -34,14 +34,32 @@ export async function POST(request: NextRequest) {
       .limit(1)
       .single();
 
-    if (businessError || !businessProfile) {
-      // If no business exists yet, create a default one
-      // This is a fallback for MVP - in production, this shouldn't happen
-      console.error('No business profile found:', businessError);
-      return NextResponse.json(
-        { error: 'Service not available yet' },
-        { status: 503 }
-      );
+    let businessProfileId = businessProfile?.id as string | undefined;
+
+    if (businessError || !businessProfileId) {
+      // Fallback for fresh deployments (MVP): create a default profile so leads can be captured.
+      const { data: created, error: createError } = await supabase
+        .from('business_profile')
+        .insert({
+          user_id: null,
+          business_name: process.env.DEFAULT_BUSINESS_NAME || 'TradieFlow',
+          reply_to_email: process.env.RESEND_FROM_EMAIL || 'noreply@tradieflow.com',
+          google_review_url: null,
+          service_area_postcodes: [],
+          default_job_types: [],
+        })
+        .select('id')
+        .single();
+
+      if (createError || !created?.id) {
+        console.error('Failed to create default business profile:', createError);
+        return NextResponse.json(
+          { error: 'Service not available yet' },
+          { status: 503 }
+        );
+      }
+
+      businessProfileId = created.id;
     }
 
     // Insert lead
@@ -57,7 +75,7 @@ export async function POST(request: NextRequest) {
     const { data: lead, error: leadError } = await supabase
       .from('leads')
       .insert({
-        business_id: businessProfile.id,
+        business_id: businessProfileId,
         source: 'book_page',
         status: 'new',
         name: your_name,

@@ -18,11 +18,15 @@ import { getEnhancedConversionParams, debugEnhancedConversion } from './enhanced
 export const GOOGLE_ADS_CONFIG = {
   CONVERSION_ID: 'AW-17896188158',
   SIGN_UP_LABEL: '0fciCMj5wOobEP7RyNVC',
+  // Configure this in `.env.local` as NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL
+  // (Google Ads -> Tools -> Conversions -> your Lead action label)
+  LEAD_LABEL: process.env.NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL || '',
   SUBSCRIBE_LABEL: '', // Add your subscription conversion label here
-} as const;
+};
 
-// Storage key for tracking fired conversions (prevents duplicates from page refreshes)
-const CONVERSION_STORAGE_KEY = 'tradieflow_conversion_fired';
+// Storage keys for tracking fired conversions (prevents duplicates from page refreshes)
+const SIGNUP_CONVERSION_STORAGE_KEY = 'tradieflow_signup_conversion_fired';
+const LEAD_CONVERSION_STORAGE_KEY = 'tradieflow_lead_conversion_fired_ids';
 
 /**
  * Fire Google Ads sign-up conversion with Enhanced Conversions support
@@ -52,7 +56,7 @@ export async function trackSignUpConversion(
   }
 
   // DEDUPLICATION CHECK: Prevent duplicate conversions from page refreshes
-  if (hasConversionFired()) {
+  if (hasConversionFired(SIGNUP_CONVERSION_STORAGE_KEY)) {
     if (process.env.NODE_ENV === 'development') {
       console.log('[Google Ads] WARN Conversion already fired this session - skipping duplicate');
     }
@@ -61,7 +65,7 @@ export async function trackSignUpConversion(
   }
 
   const conversionLabel = `${GOOGLE_ADS_CONFIG.CONVERSION_ID}/${GOOGLE_ADS_CONFIG.SIGN_UP_LABEL}`;
-  const transactionId = generateTransactionId();
+  const transactionId = generateTransactionId('signup');
   
   // Prepare conversion parameters
   const conversionParams: Record<string, any> = {
@@ -97,13 +101,86 @@ export async function trackSignUpConversion(
   window.gtag('event', 'conversion', conversionParams);
 
   // Mark conversion as fired
-  markConversionFired();
+  markConversionFired(SIGNUP_CONVERSION_STORAGE_KEY);
 
   // Debug logging
   if (process.env.NODE_ENV === 'development') {
     console.log('OK [Google Ads] Sign-up conversion tracked:', conversionLabel);
     console.log('[Google Ads] Transaction ID:', transactionId);
     console.log('[Google Ads] Enhanced conversions:', userData ? 'OK Enabled' : 'NOT Not provided');
+  }
+}
+
+/**
+ * Fire Google Ads lead conversion (public booking/lead capture).
+ *
+ * IMPORTANT: Requires `NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL` to be set.
+ *
+ * DEDUPLICATION: Stored per `leadId` in sessionStorage so refreshes don't double-count.
+ */
+export async function trackLeadConversion(params: {
+  leadId: string;
+  userData?: EnhancedConversionData;
+  value?: number;
+  callback?: () => void;
+}) {
+  const { leadId, userData, value = 1.0, callback } = params;
+
+  if (typeof window === 'undefined' || !window.gtag) {
+    console.warn('[Google Ads] Tracking not available - window or gtag undefined');
+    if (callback) callback();
+    return;
+  }
+
+  if (!GOOGLE_ADS_CONFIG.LEAD_LABEL) {
+    console.warn('[Google Ads] Lead conversion label not configured (NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL)');
+    if (callback) callback();
+    return;
+  }
+
+  if (hasLeadConversionFired(leadId)) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Google Ads] WARN Lead conversion already fired for this leadId - skipping duplicate');
+    }
+    if (callback) callback();
+    return;
+  }
+
+  const conversionLabel = `${GOOGLE_ADS_CONFIG.CONVERSION_ID}/${GOOGLE_ADS_CONFIG.LEAD_LABEL}`;
+  const transactionId = `lead_${leadId}`;
+
+  const conversionParams: Record<string, any> = {
+    send_to: conversionLabel,
+    value,
+    currency: 'AUD',
+    transaction_id: transactionId,
+    event_callback: () => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('OK [Google Ads] Callback triggered - lead conversion logged successfully');
+      }
+      if (callback) callback();
+    },
+    event_timeout: 2000,
+  };
+
+  if (userData) {
+    const enhancedParams = await getEnhancedConversionParams(userData);
+    if (enhancedParams) {
+      Object.assign(conversionParams, enhancedParams);
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('SECURE [Google Ads] Enhanced conversions enabled for lead conversion');
+        await debugEnhancedConversion(userData);
+      }
+    }
+  }
+
+  window.gtag('event', 'conversion', conversionParams);
+  markLeadConversionFired(leadId);
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log('OK [Google Ads] Lead conversion tracked:', conversionLabel);
+    console.log('[Google Ads] Transaction ID:', transactionId);
   }
 }
 
@@ -133,7 +210,7 @@ export async function trackSubscriptionConversion(
   }
 
   const conversionLabel = `${GOOGLE_ADS_CONFIG.CONVERSION_ID}/${GOOGLE_ADS_CONFIG.SUBSCRIBE_LABEL}`;
-  const transactionId = generateTransactionId();
+  const transactionId = generateTransactionId('subscribe');
   
   // Prepare conversion parameters
   const conversionParams: Record<string, any> = {
@@ -177,28 +254,50 @@ export async function trackSubscriptionConversion(
   }
 }
 
-/**
- * Check if conversion has already fired this session
- */
-function hasConversionFired(): boolean {
+function hasConversionFired(storageKey: string): boolean {
   if (typeof window === 'undefined') return false;
-  return window.sessionStorage.getItem(CONVERSION_STORAGE_KEY) === 'true';
+  return window.sessionStorage.getItem(storageKey) === 'true';
 }
 
-/**
- * Mark conversion as fired in session storage
- */
-function markConversionFired(): void {
+function markConversionFired(storageKey: string): void {
   if (typeof window === 'undefined') return;
-  window.sessionStorage.setItem(CONVERSION_STORAGE_KEY, 'true');
+  window.sessionStorage.setItem(storageKey, 'true');
+}
+
+function getLeadFiredIds(): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  const raw = window.sessionStorage.getItem(LEAD_CONVERSION_STORAGE_KEY);
+  if (!raw) return new Set();
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((x) => typeof x === 'string'));
+  } catch {
+    return new Set();
+  }
+}
+
+function setLeadFiredIds(ids: Set<string>) {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.setItem(LEAD_CONVERSION_STORAGE_KEY, JSON.stringify(Array.from(ids)));
+}
+
+function hasLeadConversionFired(leadId: string): boolean {
+  return getLeadFiredIds().has(leadId);
+}
+
+function markLeadConversionFired(leadId: string): void {
+  const ids = getLeadFiredIds();
+  ids.add(leadId);
+  setLeadFiredIds(ids);
 }
 
 /**
  * Generate unique transaction ID for conversion deduplication
  * Format: timestamp + random string
  */
-function generateTransactionId(): string {
-  return `signup_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+function generateTransactionId(prefix: string): string {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 }
 
 /**
@@ -225,7 +324,7 @@ export function getTrackingStatus() {
 
   const hasGtag = typeof window.gtag === 'function';
   const hasDataLayer = Array.isArray(window.dataLayer);
-  const hasFired = hasConversionFired();
+  const hasFired = hasConversionFired(SIGNUP_CONVERSION_STORAGE_KEY);
 
   return {
     status: hasGtag && hasDataLayer ? 'ready' : 'not-loaded',
@@ -243,7 +342,8 @@ export function getTrackingStatus() {
  */
 export function resetConversionTracking() {
   if (typeof window === 'undefined') return;
-  window.sessionStorage.removeItem(CONVERSION_STORAGE_KEY);
+  window.sessionStorage.removeItem(SIGNUP_CONVERSION_STORAGE_KEY);
+  window.sessionStorage.removeItem(LEAD_CONVERSION_STORAGE_KEY);
   console.log('RESET [Google Ads] Conversion tracking reset - you can fire another test conversion');
 }
 
@@ -270,7 +370,7 @@ if (typeof window !== 'undefined') {
       return;
     }
     
-    if (hasConversionFired()) {
+    if (hasConversionFired(SIGNUP_CONVERSION_STORAGE_KEY)) {
       console.warn('WARN  Conversion already fired this session');
       console.log('TIP To test again, run: window.resetConversion()');
       return;

@@ -53,19 +53,43 @@ export async function updateBusinessProfile(formData: {
 
     if (error) throw error;
   } else {
-    // Create
-    const { error } = await supabase
+    // Claim an existing default profile (created by public lead capture) if present,
+    // otherwise create a brand new profile for this user.
+    const { data: defaultProfile } = await supabase
       .from('business_profile')
-      .insert({
-        user_id: user.id,
-        business_name: formData.business_name,
-        reply_to_email: formData.reply_to_email,
-        google_review_url: formData.google_review_url || null,
-        service_area_postcodes: formData.service_area_postcodes || [],
-        default_job_types: formData.default_job_types || [],
-      });
+      .select('id')
+      .is('user_id', null)
+      .limit(1)
+      .maybeSingle();
 
-    if (error) throw error;
+    if (defaultProfile?.id) {
+      const { error } = await supabase
+        .from('business_profile')
+        .update({
+          user_id: user.id,
+          business_name: formData.business_name,
+          reply_to_email: formData.reply_to_email,
+          google_review_url: formData.google_review_url || null,
+          service_area_postcodes: formData.service_area_postcodes || [],
+          default_job_types: formData.default_job_types || [],
+        })
+        .eq('id', defaultProfile.id);
+
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from('business_profile')
+        .insert({
+          user_id: user.id,
+          business_name: formData.business_name,
+          reply_to_email: formData.reply_to_email,
+          google_review_url: formData.google_review_url || null,
+          service_area_postcodes: formData.service_area_postcodes || [],
+          default_job_types: formData.default_job_types || [],
+        });
+
+      if (error) throw error;
+    }
   }
 
   revalidatePath('/dashboard/settings');
