@@ -1,203 +1,168 @@
 # TradieFlow
 
-**Job management system for Australian tradies** - Track jobs, manage clients, create invoices, and streamline your business operations.
+TradieFlow is a job + client + invoicing system built for Australian tradies. It also includes a public booking/lead capture flow and automated follow-up emails.
 
----
+## What’s inside
 
-## 🚀 Features
+- Jobs, clients, invoices (dashboard)
+- Invoice emailing via Resend
+- Photos upload support (server actions body size increased)
+- Supabase Auth (Google OAuth + email/password) + route protection via middleware
+- Stripe subscriptions (checkout, portal, webhook)
+- Lead capture endpoint + scheduled lead follow-up emails (Vercel Cron)
+- Google Ads conversion tracking + Enhanced Conversions utilities
 
-### Core Functionality
-- **Job Management** - Create, track, and update jobs with detailed information
-- **Client Management** - Maintain client database with contact details
-- **Invoice Generation** - Create professional invoices with email delivery
-- **Dashboard Analytics** - Revenue tracking and business insights
-- **Photo Uploads** - Attach job photos for documentation
+## Tech stack
 
-### Authentication & Security
-- Google OAuth integration via Supabase
-- Email/password authentication
-- Protected routes with middleware
-- Secure session management
+- Next.js (App Router) + TypeScript
+- React 19
+- Supabase (Postgres + Auth)
+- Stripe (subscriptions)
+- Resend (transactional email)
+- Tailwind CSS + shadcn/ui
 
-### Subscription & Payments
-- Stripe integration for subscription management
-- Free and Pro tier plans
-- Customer portal for subscription management
-- Webhook handling for payment events
-
-### Marketing & Analytics
-- Google Ads conversion tracking (ID: AW-17896188158)
-- Revenue analytics and charting
-- Subscription status tracking
-
----
-
-## 🛠️ Tech Stack
-
-- **Framework**: Next.js 15 (App Router)
-- **Language**: TypeScript
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
-- **Payments**: Stripe
-- **Email**: Resend
-- **Styling**: Tailwind CSS
-- **UI Components**: shadcn/ui
-- **Analytics**: Google Ads (gtag.js)
-
----
-
-## 📦 Getting Started
+## Local development (Windows)
 
 ### Prerequisites
-- Node.js 18+ installed
-- Supabase account and project
-- Stripe account
-- Resend account (for emails)
-- Google Ads account (optional)
 
-### Installation
+- Node.js 18.18+ (or newer)
+- A Supabase project (URL + anon key)
+- Resend API key (for invoice + follow-up emails)
+- Stripe account + keys (only required if you’re testing billing)
 
-1. **Clone the repository**
-```bash
-git clone <repository-url>
-cd tradieflow
-```
+### Install
 
-2. **Install dependencies**
 ```bash
 npm install
 ```
 
-3. **Set up environment variables**
+### Environment variables
 
-Create a `.env.local` file with the following:
+Next.js reads `.env.local`. This repo also contains an `env.local` file that can be used as a starting point — copy/rename it to `.env.local` and fill in values.
+
+Minimum to run the app:
+
 ```bash
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+# Supabase (client)
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
-# Stripe
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
-STRIPE_SECRET_KEY=your_stripe_secret_key
-STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
-
-# Stripe Price IDs
-NEXT_PUBLIC_STRIPE_PRO_MONTHLY_PRICE_ID=your_monthly_price_id
-NEXT_PUBLIC_STRIPE_PRO_YEARLY_PRICE_ID=your_yearly_price_id
-
-# Resend (Email)
-RESEND_API_KEY=your_resend_api_key
-
-# App URL
+# App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-4. **Run database migrations**
+To enable email features:
+
 ```bash
-# Install Supabase CLI if needed
-npm install -g supabase
+RESEND_API_KEY=
 
-# Link to your project
-supabase link --project-ref your-project-ref
-
-# Run migrations
-supabase db push
+# Optional defaults used in lead flows
+RESEND_FROM_EMAIL=
+DEFAULT_BUSINESS_NAME=TradieFlow
 ```
 
-5. **Run the development server**
+To enable Stripe billing:
+
+```bash
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+
+# Single Pro price used by the billing page
+NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=
+```
+
+To enable public lead capture (server-side insert bypassing RLS):
+
+```bash
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+To enable the scheduled lead follow-up cron (Vercel Cron):
+
+```bash
+CRON_SECRET=
+```
+
+Optional (Google Ads):
+
+```bash
+# Lead conversion label (Google Ads → Tools → Conversions)
+NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL=
+```
+
+### Run the dev server
+
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the application.
+Open http://localhost:3000
 
----
+## Database & migrations (Supabase)
 
-## 🔧 Development Notes
+This project includes Supabase migrations in `supabase/migrations/`.
 
-### Supabase Auth Setup (Local Dev)
+If you use the Supabase CLI:
 
-For faster local development, disable email confirmation:
-- Supabase Dashboard → Authentication → Providers → Email
-- Turn off "Confirm email" → Save
-- Re-create any unconfirmed users
-
-### Stripe Webhooks (Local Testing)
-
-Use Stripe CLI to forward webhooks locally:
 ```bash
-stripe listen --forward-to localhost:3000/api/stripe/webhook
+npm i -g supabase
+supabase link --project-ref <your-project-ref>
+supabase db push
 ```
 
-### Google Ads Testing
+Generate TypeScript types (writes to `src/types/database.generated.ts`):
 
-Test conversion tracking in the browser console:
-```javascript
-// Test enhanced conversions with sample data
-window.testGoogleAdsConversion()
-
-// Check Google Ads status
-window.checkGoogleAds()
-
-// Reset conversion (testing only)
-window.resetConversion()
+```bash
+npm run generate-types
 ```
 
-**Enhanced Conversions:** Fully implemented with SHA-256 hashing for improved attribution. See [ENHANCED_CONVERSIONS_SETUP.md](./ENHANCED_CONVERSIONS_SETUP.md) for complete documentation.
+## Stripe webhooks (local)
 
----
+Forward Stripe events to the webhook route:
 
-## 📁 Project Structure
-
-```
-src/
-├── app/                    # Next.js App Router
-│   ├── api/               # API routes (Stripe, auth)
-│   ├── auth/              # Auth callbacks
-│   ├── dashboard/         # Protected dashboard routes
-│   ├── legal/             # Terms & privacy pages
-│   ├── login/             # Login page
-│   └── signup/            # Signup page
-├── components/            # React components
-│   ├── ui/               # shadcn/ui components
-│   └── dashboard/        # Dashboard-specific components
-├── lib/                   # Utilities and configs
-│   ├── supabase/         # Supabase clients
-│   └── utils/            # Helper functions
-├── types/                 # TypeScript types
-└── utils/                 # Utility functions
+```bash
+stripe listen --forward-to http://localhost:3000/api/stripe/webhook
 ```
 
----
+## Lead automation (cron)
 
-## 🚢 Deployment
+Vercel Cron is configured in `vercel.json` to call:
 
-### Deploy to Vercel
+- `GET /api/cron/leads-followup`
 
-1. Push your code to GitHub
-2. Import project in [Vercel](https://vercel.com)
-3. Add environment variables
-4. Deploy
+The request must include `Authorization: Bearer <CRON_SECRET>`.
 
-### Post-Deployment Setup
+See:
 
-1. **Update Supabase redirect URLs**
-   - Add production URL to allowed redirect URLs
+- `LEAD_AUTOMATION_SETUP.md`
 
-2. **Configure Stripe webhook**
-   - Add production webhook endpoint in Stripe Dashboard
+## Google Ads + Enhanced Conversions
 
-3. **Update environment variables**
-   - Set `NEXT_PUBLIC_APP_URL` to production URL
+Enhanced Conversions helpers live in `src/utils/enhanced-conversions.ts` and `src/utils/gtag.ts`.
 
----
+Setup details:
 
-## 📝 License
+- `ENHANCED_CONVERSIONS_SETUP.md`
 
-This project is proprietary software.
+## Useful docs
 
----
+- `DEPLOYMENT_CHECKLIST.md`
+- `LEAD_AUTOMATION_SETUP.md`
+- `ENHANCED_CONVERSIONS_SETUP.md`
+
+## Deployment
+
+Recommended deployment target is Vercel.
+
+- Add all env vars in the Vercel Project Settings
+- Update Supabase Auth redirect URLs for your production domain
+- Configure Stripe webhook endpoint to `/api/stripe/webhook`
+- If using cron, set `CRON_SECRET` and keep it private
+
+## License
+
+Proprietary / internal use.
 
 ## 🎯 Status
 
