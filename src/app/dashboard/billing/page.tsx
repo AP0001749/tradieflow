@@ -47,16 +47,17 @@ export default async function BillingPage({
 
   // Get current usage for free tier users
   const usage = tier === "free" ? await checkSubscriptionLimits() : null;
-{/* Track subscription conversion on success */}
-      <SubscriptionSuccessTracker 
-        userEmail={user.email}
-        userName={fullName}
-        subscriptionValue={29}
-      />
 
-      
   return (
     <div className="space-y-8">
+      {/* Track subscription conversion on success */}
+      {params.success === "true" && (
+        <SubscriptionSuccessTracker 
+          userEmail={user.email}
+          userName={fullName}
+          subscriptionValue={29}
+        />
+      )}
       <div className="animate-in fade-in slide-in-from-top-4 duration-700">
         <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text">Billing</h1>
         <p className="text-muted-foreground mt-1">Manage your subscription plan.</p>
@@ -64,11 +65,11 @@ export default async function BillingPage({
 
       {/* Success/Cancel Messages */}
       {params.success === "true" && (
-        <div className="p-5 rounded-xl flex items-start gap-3 border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 shadow-lg shadow-emerald-500/10 animate-in fade-in slide-in-from-top-2 duration-500">
-          <CheckCircle2 className="h-5 w-5 text-emerald-300 mt-0.5" />
+        <div className="p-4 rounded-lg flex items-start gap-3 border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10">
+          <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mt-0.5" />
           <div>
-            <h3 className="font-semibold text-emerald-300">Payment Successful!</h3>
-            <p className="text-sm text-emerald-300/90 mt-1">
+            <h3 className="font-semibold text-emerald-800 dark:text-emerald-300">Payment Successful!</h3>
+            <p className="text-sm text-emerald-700 dark:text-emerald-300/90 mt-1">
               Your Pro subscription is now active. Welcome aboard!
             </p>
           </div>
@@ -76,11 +77,11 @@ export default async function BillingPage({
       )}
 
       {params.canceled === "true" && (
-        <div className="p-5 rounded-xl flex items-start gap-3 border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-orange-500/5 shadow-lg shadow-orange-500/10 animate-in fade-in slide-in-from-top-2 duration-500">
-          <XCircle className="h-5 w-5 text-orange-300 mt-0.5" />
+        <div className="p-4 rounded-lg flex items-start gap-3 border border-orange-200 dark:border-orange-500/30 bg-orange-50 dark:bg-orange-500/10">
+          <XCircle className="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5" />
           <div>
-            <h3 className="font-semibold text-orange-200">Payment Canceled</h3>
-            <p className="text-sm text-orange-200/80 mt-1">
+            <h3 className="font-semibold text-orange-800 dark:text-orange-200">Payment Canceled</h3>
+            <p className="text-sm text-orange-700 dark:text-orange-200/80 mt-1">
               No charges were made. You can try again whenever you&apos;re ready.
             </p>
           </div>
@@ -101,15 +102,15 @@ export default async function BillingPage({
 
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               Unlimited clients & jobs
             </li>
             <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               Professional invoicing
             </li>
             <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               Priority support
             </li>
           </ul>
@@ -143,7 +144,7 @@ export default async function BillingPage({
           {priceId ? (
             <SubscribeButton priceId={priceId} userId={user.id} />
           ) : (
-            <div className="text-sm text-rose-300 p-3 bg-rose-500/10 rounded border border-rose-500/20">
+            <div className="text-sm text-red-700 dark:text-rose-300 p-3 bg-red-50 dark:bg-rose-500/10 rounded border border-red-200 dark:border-rose-500/20">
               Missing env var: NEXT_PUBLIC_STRIPE_PRO_PRICE_ID
             </div>
           )}
@@ -155,7 +156,7 @@ export default async function BillingPage({
               <h2 className="text-xl font-semibold">Pro Plan</h2>
               <p className="text-muted-foreground mt-1">$29/month</p>
             </div>
-            <Badge className="bg-emerald-500/15 text-emerald-300 border-transparent">
+            <Badge className="bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-transparent">
               {subscriptionStatus === "active" ? "Active" : subscriptionStatus === "past_due" ? "Payment Due" : "Pro"} Plan
             </Badge>
           </div>

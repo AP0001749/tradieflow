@@ -6,12 +6,22 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { checkSubscriptionLimits } from "@/lib/subscription";
 
+interface SubscriptionStatus {
+  canProceed: boolean;
+  isPro: boolean;
+  tier?: string;
+  status?: string | null;
+  error?: string;
+  limits?: { maxClients: number; maxJobs: number; maxInvoices: number };
+  current?: { clients: number; jobs: number; invoices: number };
+}
+
 interface SubscriptionBannerProps {
   resourceType: "clients" | "jobs" | "invoices";
 }
 
 export function SubscriptionBanner({ resourceType }: SubscriptionBannerProps) {
-  const [status, setStatus] = useState<any>(null);
+  const [status, setStatus] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,7 +38,8 @@ export function SubscriptionBanner({ resourceType }: SubscriptionBannerProps) {
   }
 
   const current = status.current?.[resourceType] ?? 0;
-  const limit = status.limits?.[`max${resourceType.charAt(0).toUpperCase() + resourceType.slice(1)}`] ?? 0;
+  const limitKey = `max${resourceType.charAt(0).toUpperCase() + resourceType.slice(1)}` as keyof NonNullable<SubscriptionStatus["limits"]>;
+  const limit = status.limits?.[limitKey] ?? 0;
   const percentage = (current / limit) * 100;
 
   // Only show when approaching or at limit
@@ -37,7 +48,6 @@ export function SubscriptionBanner({ resourceType }: SubscriptionBannerProps) {
   }
 
   const isAtLimit = current >= limit;
-  const isNearLimit = percentage >= 80 && !isAtLimit;
 
   return (
     <div
@@ -50,20 +60,20 @@ export function SubscriptionBanner({ resourceType }: SubscriptionBannerProps) {
       <div className="flex items-start gap-3">
         <AlertCircle
           className={`h-5 w-5 mt-0.5 ${
-            isAtLimit ? "text-rose-400" : "text-amber-400"
+            isAtLimit ? "text-rose-600 dark:text-rose-400" : "text-amber-600 dark:text-amber-400"
           }`}
         />
         <div className="flex-1">
           <h3
             className={`font-semibold ${
-              isAtLimit ? "text-rose-300" : "text-amber-300"
+              isAtLimit ? "text-rose-800 dark:text-rose-300" : "text-amber-800 dark:text-amber-300"
             }`}
           >
             {isAtLimit ? "Limit Reached" : "Approaching Limit"}
           </h3>
           <p
             className={`text-sm mt-1 ${
-              isAtLimit ? "text-rose-300/90" : "text-amber-300/90"
+              isAtLimit ? "text-rose-700 dark:text-rose-300/90" : "text-amber-700 dark:text-amber-300/90"
             }`}
           >
             {isAtLimit

@@ -22,18 +22,18 @@ export function DashboardNavLink({
     <Link
       href={href}
       className={cn(
-        "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+        "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
         active
-          ? "bg-accent text-accent-foreground shadow-md shadow-black/5 dark:shadow-black/50"
-          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:shadow-sm hover:shadow-black/5 dark:hover:shadow-black/40"
+          ? "bg-primary/10 text-primary"
+          : "text-muted-foreground hover:bg-accent hover:text-foreground"
       )}
     >
       <Icon
         className={cn(
           "h-4 w-4 transition-colors",
           active
-            ? "text-accent-foreground"
-            : "text-muted-foreground group-hover:text-accent-foreground"
+            ? "text-primary"
+            : "text-muted-foreground group-hover:text-foreground"
         )}
       />
       <span className="truncate">{label}</span>

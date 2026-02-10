@@ -89,8 +89,8 @@ async function normalizeAndHash(str: string): Promise<string> {
  */
 export async function prepareEnhancedConversionData(
   userData: EnhancedConversionData
-): Promise<Record<string, any>> {
-  const enhanced: Record<string, any> = {};
+): Promise<Record<string, unknown>> {
+  const enhanced: Record<string, unknown> = {};
 
   // Email (most important for match rate)
   if (userData.email) {
@@ -164,7 +164,7 @@ export function hasValidEnhancedConversionData(
  */
 export async function getEnhancedConversionParams(
   userData: EnhancedConversionData
-): Promise<Record<string, any> | null> {
+): Promise<Record<string, unknown> | null> {
   if (!hasValidEnhancedConversionData(userData)) {
     if (process.env.NODE_ENV === 'development') {
       console.warn('[Enhanced Conversions] Insufficient user data - need at least email or phone');

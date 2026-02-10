@@ -111,8 +111,8 @@ export async function POST(request: Request) {
         };
 
         // Add period dates - Stripe timestamps are in seconds
-        const periodStart = (subscription as any).current_period_start;
-        const periodEnd = (subscription as any).current_period_end;
+        const periodStart = (subscription as unknown as Record<string, unknown>).current_period_start as number | undefined;
+        const periodEnd = (subscription as unknown as Record<string, unknown>).current_period_end as number | undefined;
         
         if (periodStart) {
           update.subscription_start_date = new Date(periodStart * 1000).toISOString();

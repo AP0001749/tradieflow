@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getTrackingStatus, isGoogleAdsLoaded } from "@/utils/gtag";
+import { getTrackingStatus } from "@/utils/gtag";
 
 /**
  * Google Ads Tracking Debug Component
@@ -13,7 +13,7 @@ import { getTrackingStatus, isGoogleAdsLoaded } from "@/utils/gtag";
  * <GoogleAdsDebug />
  */
 export function GoogleAdsDebug() {
-  const [status, setStatus] = useState<any>(null);
+  const [status, setStatus] = useState<Record<string, string> | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -22,7 +22,12 @@ export function GoogleAdsDebug() {
 
     // Check status after a short delay to ensure scripts are loaded
     const timer = setTimeout(() => {
-      setStatus(getTrackingStatus());
+      const result = getTrackingStatus();
+      const cleaned: Record<string, string> = {};
+      for (const [key, value] of Object.entries(result)) {
+        if (typeof value === 'string') cleaned[key] = value;
+      }
+      setStatus(cleaned);
     }, 1000);
 
     return () => clearTimeout(timer);

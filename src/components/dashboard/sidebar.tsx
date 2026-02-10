@@ -18,26 +18,23 @@ const navItems = [
 export function DashboardSidebar({ email }: { email?: string | null }) {
   return (
     <aside
-      className="hidden md:flex md:w-72 shrink-0 border-r border-border/40 bg-card/40 backdrop-blur-xl supports-[backdrop-filter]:bg-card/30 flex-col shadow-2xl shadow-black/5 dark:shadow-black/20 relative"
+      className="hidden md:flex md:w-64 shrink-0 border-r border-border bg-card flex-col"
       data-print-hidden="true"
     >
-      {/* Subtle gradient overlay */}
-      <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-sky-500/5 to-transparent pointer-events-none" />
-      
-      <div className="relative p-8 border-b border-border/40 backdrop-blur-sm">
+      <div className="p-6 border-b border-border">
         <Link href="/dashboard" className="block">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            <span className="bg-gradient-to-r from-sky-400 to-emerald-400 bg-clip-text text-transparent">
+          <h1 className="text-xl font-bold tracking-tight">
+            <span className="bg-gradient-to-r from-sky-500 to-emerald-500 bg-clip-text text-transparent">
               TradieFlow
             </span>
           </h1>
         </Link>
-        <p className="text-xs text-muted-foreground mt-2 truncate">
+        <p className="text-xs text-muted-foreground mt-1.5 truncate">
           {email ?? ""}
         </p>
       </div>
 
-      <nav className="relative flex-1 p-5 space-y-1.5">
+      <nav className="flex-1 p-3 space-y-0.5">
         {navItems.map((item) => (
           <DashboardNavLink
             key={item.href}
@@ -48,7 +45,7 @@ export function DashboardSidebar({ email }: { email?: string | null }) {
         ))}
       </nav>
 
-      <div className="relative p-5 border-t border-border/40 backdrop-blur-sm">
+      <div className="p-3 border-t border-border">
         <form action="/auth/signout" method="post">
           <button
             type="submit"

@@ -77,7 +77,7 @@ export default async function JobsPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-x-auto animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+      <div className="rounded-xl border border-border bg-card overflow-x-auto">
         {jobs && jobs.length > 0 ? (
           <Table className="min-w-[860px]">
             <TableHeader>
@@ -118,7 +118,7 @@ export default async function JobsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-sky-300 hover:text-sky-200"
+                            className="text-primary hover:text-primary/80"
                           >
                             View
                           </Button>

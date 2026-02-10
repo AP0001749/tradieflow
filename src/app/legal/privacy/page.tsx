@@ -170,7 +170,7 @@ export default function PrivacyPolicyPage() {
           <h2>11. Changes</h2>
           <p>
             We may update this Privacy Policy from time to time. The updated
-            version will be published on this page with a new "Last updated"
+            version will be published on this page with a new &ldquo;Last updated&rdquo;
             date.
           </p>
         </article>

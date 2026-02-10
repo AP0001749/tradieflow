@@ -35,11 +35,11 @@ export const TwentyFourHourFollowupEmail = ({
           </Text>
 
           <Text style={text}>
-            <strong>Still need help?</strong> Reply "YES" and I'll confirm availability right away.
+            <strong>Still need help?</strong> Reply &ldquo;YES&rdquo; and I&apos;ll confirm availability right away.
           </Text>
 
           <Text style={text}>
-            If you've already booked or found another cleaner, no worries - just let me know so I can close this request.
+            If you&apos;ve already booked or found another cleaner, no worries - just let me know so I can close this request.
           </Text>
 
           <Hr style={hr} />

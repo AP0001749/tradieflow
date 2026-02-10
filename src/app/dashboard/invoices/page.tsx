@@ -105,7 +105,7 @@ export default async function InvoicesPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-x-auto animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+      <div className="rounded-xl border border-border bg-card overflow-x-auto">
         {rows.length > 0 ? (
           <Table className="min-w-[1024px]">
             <TableHeader>

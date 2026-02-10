@@ -112,44 +112,36 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-12 overflow-hidden">
       {/* Theme Toggle */}
-      <div className="absolute top-4 right-4 z-20 animate-in fade-in slide-in-from-top-2 duration-500">
+      <div className="absolute top-4 right-4 z-20">
         <ThemeToggle />
       </div>
 
-      {/* Premium Gradient Backdrop */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,_var(--tw-gradient-stops))] from-sky-300/40 via-background to-background dark:from-sky-900/40 dark:via-background animate-in fade-in duration-1000" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,_var(--tw-gradient-stops))] from-emerald-300/30 via-transparent to-transparent dark:from-emerald-900/30 animate-in fade-in duration-1000" style={{ animationDelay: '200ms' }} />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,_var(--tw-gradient-stops))] from-sky-300/30 via-transparent to-transparent dark:from-sky-900/30 animate-in fade-in duration-1000" style={{ animationDelay: '400ms' }} />
-      
-      {/* Animated gradient orbs */}
-      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-sky-500/20 dark:bg-sky-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
-      <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-emerald-500/20 dark:bg-emerald-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s', animationDuration: '4s' }} />
+      {/* Subtle background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-sky-50 via-background to-emerald-50/30 dark:from-sky-950/30 dark:via-background dark:to-emerald-950/20" />
 
-      <Card className="w-full max-w-md border-border/40 bg-card/60 backdrop-blur-2xl text-card-foreground shadow-2xl shadow-black/10 dark:shadow-black/30 relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
+      <Card className="w-full max-w-md border-border bg-card text-card-foreground shadow-lg relative z-10">
         <CardHeader className="space-y-2 text-center pb-6 pt-8">
-          <div className="flex justify-center mb-4 animate-in zoom-in duration-500" style={{ animationDelay: '100ms' }}>
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-sky-500/20 to-emerald-500/20 border border-sky-500/30 shadow-xl shadow-sky-500/20 backdrop-blur-sm">
-              <Briefcase className="h-8 w-8 text-sky-500 dark:text-sky-400" />
+          <div className="flex justify-center mb-4">
+            <div className="p-3 rounded-xl bg-primary/10">
+              <Briefcase className="h-7 w-7 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl md:text-3xl font-bold tracking-tight">
-            <span className="bg-gradient-to-br from-sky-500 to-emerald-600 bg-clip-text text-transparent">
-              Start Your Free Trial
-            </span>
+          <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
+            Welcome to TradieFlow
           </CardTitle>
-          <CardDescription className="text-muted-foreground text-sm md:text-base pt-1">
-            Start billing cleaning jobs and capturing leads in under 60 seconds
+          <CardDescription className="text-muted-foreground text-sm pt-1">
+            Manage cleaning jobs, send invoices, and capture leads — all in one place
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-5 px-4 md:px-6">
           {notice && (
-            <div className="p-3.5 text-sm text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-lg animate-in fade-in slide-in-from-top-2 duration-300 break-words">
+            <div className="p-3 text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg break-words">
               {notice}
             </div>
           )}
           {error && (
-            <div className="p-3.5 text-sm text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg animate-in fade-in slide-in-from-top-2 duration-300 break-words">
+            <div className="p-3 text-sm text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg break-words">
               {error}
             </div>
           )}
@@ -158,7 +150,7 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
           <form action={signInWithGoogle} onSubmit={() => setGoogleLoading(true)}>
             <Button
               type="submit"
-              className="w-full h-12 bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-500 hover:to-emerald-500 text-white font-semibold shadow-lg shadow-sky-500/30 hover:shadow-sky-500/40 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={googleLoading}
             >
               {googleLoading ? (
@@ -193,7 +185,7 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
           </form>
 
           <p className="text-center text-xs text-muted-foreground">
-            One click. No credit card. Start capturing cleaning leads and invoicing immediately.
+            One click to sign in. Start capturing cleaning leads and invoicing immediately.
           </p>
 
           <div className="relative py-3">
@@ -201,7 +193,7 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
               <span className="w-full border-t border-border/60" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card/60 backdrop-blur-sm px-3 text-muted-foreground font-medium tracking-wider">Or use email</span>
+              <span className="bg-card px-3 text-muted-foreground font-medium text-xs tracking-wider">Or use email</span>
             </div>
           </div>
 
@@ -216,7 +208,7 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
                   id="email"
                   type="email"
                   placeholder="you@company.com"
-                  className="pl-10 h-11 bg-background/40 border-border placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-sky-500/30 focus-visible:border-sky-500/40 transition-all"
+                  className="pl-10 h-11"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -234,7 +226,7 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
                   id="password"
                   type="password"
                   placeholder="********"
-                  className="pl-10 h-11 bg-background/40 border-border placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-sky-500/30 focus-visible:border-sky-500/40 transition-all"
+                  className="pl-10 h-11"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -245,7 +237,7 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
             <Button
               type="submit"
               variant="outline"
-              className="w-full h-11 border-border/60 bg-background/40 hover:bg-accent hover:text-accent-foreground font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+              className="w-full h-11 font-medium transition-colors mt-4"
               disabled={loading}
             >
               {loading ? (

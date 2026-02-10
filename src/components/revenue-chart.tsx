@@ -63,8 +63,8 @@ export function RevenueChart({ data }: RevenueChartProps) {
         />
         <defs>
           <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6366f1" stopOpacity={1} />
-            <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.8} />
+            <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.9} />
+            <stop offset="100%" stopColor="#10b981" stopOpacity={0.7} />
           </linearGradient>
         </defs>
       </BarChart>

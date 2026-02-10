@@ -24,45 +24,29 @@ export default async function DashboardLayout({
       <DashboardSidebar email={user.email} />
 
       {/* Main Content */}
-      <main className="relative flex-1 min-w-0 overflow-auto w-full">
-        {/* Gradient Background */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,_var(--tw-gradient-stops))] from-sky-500/10 via-transparent to-transparent dark:from-sky-500/20"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,_var(--tw-gradient-stops))] from-emerald-500/5 via-transparent to-transparent dark:from-emerald-500/10"
-        />
-
+      <main className="flex-1 min-w-0 overflow-auto w-full">
         <div className="relative">
           <div
-            className="sticky top-0 z-10 border-b border-border/40 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/40 shadow-sm"
+            className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-md"
             data-print-hidden="true"
           >
-            <div className="container py-4 md:py-5 px-4 md:px-6">
-              <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold tracking-wide bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Dashboard</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    Welcome back
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2 md:gap-3 shrink-0">
-                  <ThemeToggle />
-                  <Link
-                    href="/legal/privacy"
-                    className="hidden sm:block text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors duration-200"
-                  >
-                    Privacy Policy
-                  </Link>
-                </div>
+            <div className="flex items-center justify-between gap-4 px-4 md:px-6 h-14">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">Dashboard</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <ThemeToggle />
+                <Link
+                  href="/legal/privacy"
+                  className="hidden sm:block text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Privacy
+                </Link>
               </div>
             </div>
           </div>
 
-          <div className="container py-6 md:py-10 px-4 md:px-6 min-w-0" data-layout-content>
+          <div className="px-4 md:px-6 py-6 md:py-8 min-w-0" data-layout-content>
             {children}
           </div>
         </div>

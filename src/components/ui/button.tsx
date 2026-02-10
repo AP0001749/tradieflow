@@ -4,17 +4,17 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] active:shadow-sm",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
   {
     variants: {
       variant: {
         default:
-          "bg-[linear-gradient(120deg,rgba(129,140,248,0.95),rgba(99,102,241,0.95))] text-white shadow-[0_12px_30px_rgba(99,102,241,0.35)] hover:shadow-[0_18px_40px_rgba(30,64,175,0.35)]",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-sm shadow-black/5 hover:shadow-md hover:shadow-black/10 dark:bg-secondary dark:hover:bg-secondary/80 dark:shadow-black/30 dark:hover:shadow-black/40",
+          "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
+        secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         outline:
-          "border-2 border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow-md hover:border-primary/30 dark:border-border dark:hover:bg-accent dark:hover:border-primary/50",
-        ghost: "hover:bg-accent hover:text-accent-foreground hover:shadow-sm hover:shadow-black/5 dark:hover:shadow-black/30",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-md shadow-destructive/25",
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
       },
       size: {
         default: "h-10 px-4 py-2",

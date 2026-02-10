@@ -68,7 +68,7 @@ export async function trackSignUpConversion(
   const transactionId = generateTransactionId('signup');
   
   // Prepare conversion parameters
-  const conversionParams: Record<string, any> = {
+  const conversionParams: Record<string, unknown> = {
     'send_to': conversionLabel,
     'value': 1.0,
     'currency': 'AUD',
@@ -149,7 +149,7 @@ export async function trackLeadConversion(params: {
   const conversionLabel = `${GOOGLE_ADS_CONFIG.CONVERSION_ID}/${GOOGLE_ADS_CONFIG.LEAD_LABEL}`;
   const transactionId = `lead_${leadId}`;
 
-  const conversionParams: Record<string, any> = {
+  const conversionParams: Record<string, unknown> = {
     send_to: conversionLabel,
     value,
     currency: 'AUD',
@@ -213,7 +213,7 @@ export async function trackSubscriptionConversion(
   const transactionId = generateTransactionId('subscribe');
   
   // Prepare conversion parameters
-  const conversionParams: Record<string, any> = {
+  const conversionParams: Record<string, unknown> = {
     'send_to': conversionLabel,
     'value': value || 0,
     'currency': 'AUD',
@@ -352,7 +352,7 @@ export function resetConversionTracking() {
  * Usage: window.testGoogleAdsConversion()
  */
 if (typeof window !== 'undefined') {
-  (window as any).testGoogleAdsConversion = async () => {
+  (window as unknown as Record<string, unknown>).testGoogleAdsConversion = async () => {
     console.log('TEST [Google Ads] Running tracking verification...\n');
     
     const status = getTrackingStatus();
@@ -394,10 +394,10 @@ if (typeof window !== 'undefined') {
   };
 
   // Helper to reset for testing
-  (window as any).resetConversion = resetConversionTracking;
+  (window as unknown as Record<string, unknown>).resetConversion = resetConversionTracking;
   
   // Helper to check status
-  (window as any).checkGoogleAds = () => {
+  (window as unknown as Record<string, unknown>).checkGoogleAds = () => {
     const status = getTrackingStatus();
     console.table(status);
     return status;

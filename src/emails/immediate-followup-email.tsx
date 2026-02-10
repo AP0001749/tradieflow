@@ -49,7 +49,7 @@ export const ImmediateFollowupEmail = ({
           </Section>
 
           <Text style={text}>
-            We'll get back to you within a few hours with availability and pricing.
+            We&apos;ll get back to you within a few hours with availability and pricing.
           </Text>
 
           <Hr style={hr} />

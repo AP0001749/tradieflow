@@ -83,9 +83,9 @@ export default function TermsOfServicePage() {
             </li>
           </ul>
 
-          <h2>5. Availability and "as is"</h2>
+          <h2>5. Availability and &ldquo;as is&rdquo;</h2>
           <p>
-            The Service is provided on an "as is" and "as available" basis. We
+            The Service is provided on an &ldquo;as is&rdquo; and &ldquo;as available&rdquo; basis. We
             do not warrant that the Service will be uninterrupted, error-free,
             or available 100% of the time.
           </p>
@@ -129,7 +129,7 @@ export default function TermsOfServicePage() {
           <h2>10. Changes</h2>
           <p>
             We may update these Terms from time to time. The updated Terms will
-            be published on this page with a new "Last updated" date.
+            be published on this page with a new &ldquo;Last updated&rdquo; date.
           </p>
         </article>
       </div>

@@ -29,11 +29,11 @@ export const FortyEightHourFollowupEmail = ({
           <Text style={text}>Hi {name},</Text>
           
           <Text style={text}>
-            I haven't heard back from you about your cleaning request.
+            I haven&apos;t heard back from you about your cleaning request.
           </Text>
 
           <Text style={text}>
-            <strong>Reply "YES" if you still need this clean</strong> - otherwise I'll close this request.
+            <strong>Reply &ldquo;YES&rdquo; if you still need this clean</strong> - otherwise I&apos;ll close this request.
           </Text>
 
           <Text style={text}>

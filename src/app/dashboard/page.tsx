@@ -30,7 +30,7 @@ export default async function DashboardPage() {
   }
 
   // Fetch all data in parallel
-  const [clientsResult, jobsResult, invoicesResult, allInvoicesResult, recentSalesResult] = await Promise.all([
+  const [clientsResult, jobsResult, invoicesResult, , recentSalesResult] = await Promise.all([
     // Total clients count
     supabase.from("clients").select("*", { count: "exact", head: true }).eq("user_id", user.id),
     
@@ -154,14 +154,14 @@ export default async function DashboardPage() {
         {stats.map((stat, index) => (
           <Card
             key={stat.title}
-            className="group cursor-default border-border/60 bg-gradient-to-br from-card to-card/50 hover:from-card hover:to-card/80 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] animate-in fade-in slide-in-from-bottom-4"
+            className="group border-border bg-card transition-shadow hover:shadow-md"
             style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'backwards' }}>
             <CardHeader className="flex flex-row items-center justify-between p-4 md:p-6 pb-2">
               <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground">
                 {stat.title}
               </CardTitle>
-              <div className="p-2 md:p-2.5 bg-gradient-to-br from-sky-500/10 to-emerald-500/10 rounded-lg md:rounded-xl group-hover:from-sky-500/20 group-hover:to-emerald-500/20 group-hover:shadow-lg group-hover:shadow-sky-500/20 transition-all duration-500">
-                <stat.icon className="w-4 h-4 text-sky-500 dark:text-sky-400 group-hover:scale-125 group-hover:rotate-12 transition-all duration-500" />
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <stat.icon className="w-4 h-4 text-primary" />
               </div>
             </CardHeader>
             <CardContent className="p-4 md:p-6 pt-0">
@@ -188,7 +188,7 @@ export default async function DashboardPage() {
       {/* Main Content Grid */}
       <div className="grid gap-4 md:gap-6 lg:grid-cols-7 animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
         {/* Revenue Chart - Takes up more space */}
-        <Card className="lg:col-span-4 border-border/60 bg-gradient-to-br from-card to-card/50 overflow-hidden">
+        <Card className="lg:col-span-4 border-border bg-card overflow-hidden">
           <CardHeader className="p-4 md:p-6">
             <CardTitle className="text-base md:text-lg font-semibold flex items-center gap-2">
               <span className="w-1 h-5 bg-gradient-to-b from-sky-500 to-emerald-500 rounded-full"></span>
@@ -201,7 +201,7 @@ export default async function DashboardPage() {
         </Card>
 
         {/* Recent Sales */}
-        <Card className="lg:col-span-3 border-border/60 bg-gradient-to-br from-card to-card/50">
+        <Card className="lg:col-span-3 border-border bg-card">
           <CardHeader className="p-4 md:p-6">
             <CardTitle className="text-base md:text-lg font-semibold flex items-center gap-2">
               <span className="w-1 h-5 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></span>
@@ -221,9 +221,9 @@ export default async function DashboardPage() {
                     .slice(0, 2);
 
                   return (
-                    <div key={invoice.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent/50 transition-all duration-200 animate-in fade-in slide-in-from-right-2 duration-500 group" style={{ animationDelay: `${invoice.id.charCodeAt(0) % 5 * 100}ms`, animationFillMode: 'backwards' }}>
-                      <div className="w-11 h-11 rounded-full bg-gradient-to-br from-sky-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-sky-500/40 group-hover:shadow-xl group-hover:shadow-sky-500/50 group-hover:scale-105 transition-all duration-300 dark:shadow-sky-500/50 dark:group-hover:shadow-sky-500/60">
-                        <span className="text-sm font-semibold text-white">
+                    <div key={invoice.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent/50 transition-colors group">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-semibold text-primary">
                           {initials}
                         </span>
                       </div>

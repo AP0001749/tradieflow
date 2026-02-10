@@ -90,7 +90,7 @@ export default function BookPage() {
           <CardHeader>
             <CardTitle className="text-2xl text-center">Request Received!</CardTitle>
             <CardDescription className="text-center">
-              Thanks for your cleaning request. We'll get back to you within 24 hours.
+              Thanks for your cleaning request. We&apos;ll get back to you within 24 hours.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
@@ -109,17 +109,17 @@ export default function BookPage() {
         <p className="hero-pill">TradieFlow for cleaners</p>
         <h1 className="tf-display text-4xl md:text-5xl">Get more cleaning jobs - without chasing leads</h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Capture new enquiries, confirm availability, and let TradieFlow follow up automatically -
-          so your cleaning business can focus on the work, not the admin. Local launch for Melbourne cleaning businesses.
+          Capture new enquiries, confirm availability, and let TradieFlow follow up automatically —
+          so your cleaning business can focus on the work, not the admin.
         </p>
-        <p className="text-sm text-muted-foreground">Set up in minutes. No lock-in. Built specifically for independent cleaners and small teams.</p>
+        <p className="text-sm text-muted-foreground">Set up in minutes. No lock‑in. Built specifically for independent cleaners and small teams.</p>
       </div>
 
       <Card className="glass-card w-full">
         <CardHeader className="space-y-2">
-          <CardTitle className="text-2xl">Get early access for your cleaning business</CardTitle>
+          <CardTitle className="text-2xl">Get started with TradieFlow for your cleaning business</CardTitle>
           <CardDescription>
-            Tell us a few details and we'll set you up with TradieFlow for your Melbourne cleaning business.
+            Tell us a few details and we&apos;ll set you up with TradieFlow for your Melbourne cleaning business.
           </CardDescription>
           <p className="text-xs text-muted-foreground">This is for cleaning businesses only (not customers requesting a clean).</p>
         </CardHeader>
@@ -191,12 +191,12 @@ export default function BookPage() {
             )}
 
             <Button type="submit" className="primary-btn w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Get access"}
+              {isSubmitting ? "Submitting..." : "Get Started"}
             </Button>
 
             <p className="form-note text-center">
-              We'll contact you to help activate your TradieFlow workspace.<br />
-              By submitting this form, you agree to be contacted about setting up TradieFlow for your cleaning business.
+              We&apos;ll set up your TradieFlow workspace and get you running in minutes.<br />
+              By submitting, you agree to be contacted about your TradieFlow account.
             </p>
           </form>
         </CardContent>
