@@ -70,7 +70,13 @@ export async function GET(request: NextRequest) {
           : lead.business_profile;
 
         const businessName = businessProfile?.business_name || 'TradieFlow';
-        const replyToEmail = businessProfile?.reply_to_email || process.env.RESEND_FROM_EMAIL;
+        // IMPORTANT: Resend requires the `from` domain to be verified.
+        // Keep business emails as Reply-To only.
+        const senderEmail =
+          process.env.RESEND_SENDER_EMAIL ||
+          process.env.RESEND_FROM_EMAIL ||
+          'onboarding@resend.dev';
+        const replyToEmail = businessProfile?.reply_to_email;
 
         let emailComponent;
         let subject;
@@ -119,7 +125,8 @@ export async function GET(request: NextRequest) {
 
         // Send email via Resend
         const { error: emailError } = await resend.emails.send({
-          from: replyToEmail || 'noreply@tradieflow.com',
+          from: senderEmail,
+          ...(replyToEmail ? { replyTo: replyToEmail } : {}),
           to: lead.email,
           subject,
           react: emailComponent,
