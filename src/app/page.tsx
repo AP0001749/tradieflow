@@ -42,7 +42,7 @@ export default function Home() {
                 href="/signup"
                 className="inline-flex items-center justify-center w-full sm:w-auto text-base h-12 px-8 rounded-lg font-semibold border border-input bg-background text-foreground hover:bg-accent transition-colors"
               >
-                Try It Now
+                Create Account
               </Link>
             </div>
             <p className="text-sm text-muted-foreground">Free plan available &mdash; start receiving leads</p>

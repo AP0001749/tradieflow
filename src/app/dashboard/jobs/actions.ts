@@ -5,6 +5,13 @@ import { createClient } from "@/lib/supabase/server";
 import { JobInsert, JobStatus } from "@/types";
 import { canCreateJob } from "@/lib/subscription";
 
+const isDev = process.env.NODE_ENV !== "production";
+const debugLog = (...args: unknown[]) => {
+  if (isDev) {
+    console.log(...args);
+  }
+};
+
 export async function createJob(formData: FormData) {
   // Check subscription limits first
   const limitCheck = await canCreateJob();
@@ -251,14 +258,14 @@ interface UploadPhotoResult {
 
 export async function uploadJobPhoto(formData: FormData): Promise<UploadPhotoResult> {
   try {
-    console.log("Server: Action invoked");
+    debugLog("Server: Action invoked");
     const supabase = await createClient();
 
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    console.log("Server: User check", { userId: user?.id });
+    debugLog("Server: User check", { userId: user?.id });
 
     if (!user) {
       return { success: false, error: "Unauthorized" };
@@ -268,7 +275,7 @@ export async function uploadJobPhoto(formData: FormData): Promise<UploadPhotoRes
     const jobId = formData.get("jobId") as string;
     const userId = user.id;
 
-    console.log("Server: Upload request received", { 
+    debugLog("Server: Upload request received", { 
       jobId, 
       userId, 
       hasFile: !!file,
@@ -306,7 +313,7 @@ export async function uploadJobPhoto(formData: FormData): Promise<UploadPhotoRes
     const fileName = `${timestamp}-${Math.random().toString(36).substring(7)}.${fileExt}`;
     const filePath = `${userId}/${jobId}/${fileName}`;
 
-    console.log("Server: Uploading to path:", filePath);
+    debugLog("Server: Uploading to path:", filePath);
 
     // Upload to Supabase Storage
     const { error: uploadError } = await supabase.storage
@@ -331,7 +338,7 @@ export async function uploadJobPhoto(formData: FormData): Promise<UploadPhotoRes
       return { success: false, error: "Failed to generate file URL" };
     }
 
-    console.log("Server: Upload successful", signedUrlData.signedUrl);
+    debugLog("Server: Upload successful", signedUrlData.signedUrl);
 
     revalidatePath(`/dashboard/jobs/${jobId}`);
 

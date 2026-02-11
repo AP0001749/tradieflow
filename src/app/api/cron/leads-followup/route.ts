@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { Resend } from 'resend';
 import { ImmediateFollowupEmail } from '@/emails/immediate-followup-email';
 import { TwentyFourHourFollowupEmail } from '@/emails/twentyfour-followup-email';
@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabase = await createClient();
+    // Cron runs without an authenticated user; use service-role client to bypass RLS.
+    const supabase = createAdminClient();
 
     // Fetch leads that need follow-up
     const { data: leads, error: fetchError } = await supabase
@@ -80,7 +81,7 @@ export async function GET(request: NextRequest) {
         // Determine which email to send
         switch (lead.followup_step) {
           case 0: // Immediate
-            subject = `Got your cleaning request - quick question`;
+            subject = `TradieFlow setup request received`;
             emailComponent = ImmediateFollowupEmail({
               name: lead.name,
               businessName,
@@ -92,7 +93,7 @@ export async function GET(request: NextRequest) {
             break;
 
           case 1: // 24h follow-up
-            subject = `Quick follow-up - still need help with this clean?`;
+            subject = `Quick follow-up - ready to set up TradieFlow?`;
             emailComponent = TwentyFourHourFollowupEmail({
               name: lead.name,
               businessName,
@@ -102,7 +103,7 @@ export async function GET(request: NextRequest) {
             break;
 
           case 2: // 48h follow-up (last)
-            subject = `Last check-in - should I close this request?`;
+            subject = `Last check-in - should I close your setup request?`;
             emailComponent = FortyEightHourFollowupEmail({
               name: lead.name,
               businessName,

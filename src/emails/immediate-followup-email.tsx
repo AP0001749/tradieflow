@@ -26,37 +26,37 @@ export const ImmediateFollowupEmail = ({
   return (
       <Html>
       <Head />
-      <Preview>Got your cleaning request - quick question</Preview>
+      <Preview>TradieFlow setup request received</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Thanks for your cleaning request!</Heading>
+          <Heading style={h1}>Thanks for requesting TradieFlow</Heading>
           
           <Text style={text}>Hi {name},</Text>
           
           <Text style={text}>
-            We got your request for {jobType?.replace('_', ' ')} in {suburb || 'your area'}.
+            We received your setup request for {jobType?.replace('_', ' ') || 'cleaning services'} in {suburb || 'your service area'}.
           </Text>
 
           <Text style={text}>
-            <strong>To confirm your booking, please reply with:</strong>
+            <strong>To set up your workspace, please reply with:</strong>
           </Text>
 
           <Section style={list}>
-            <Text style={listItem}>* Full address (street, suburb, postcode)</Text>
-            <Text style={listItem}>* Number of bedrooms and bathrooms</Text>
-            <Text style={listItem}>* Preferred date and time</Text>
-            <Text style={listItem}>* Any special requirements</Text>
+            <Text style={listItem}>* Team size (solo, 2-5, or 6+ cleaners)</Text>
+            <Text style={listItem}>* Main services you want to prioritize</Text>
+            <Text style={listItem}>* Best contact number for onboarding</Text>
+            <Text style={listItem}>* Preferred time for a quick setup call</Text>
           </Section>
 
           <Text style={text}>
-            We&apos;ll get back to you within a few hours with availability and pricing.
+            We&apos;ll configure your TradieFlow workspace and send your next steps within one business day.
           </Text>
 
           <Hr style={hr} />
 
           <Text style={footer}>
             {businessName}<br />
-            Reply to this email to confirm your booking
+            Reply to this email to continue onboarding
           </Text>
         </Container>
       </Body>

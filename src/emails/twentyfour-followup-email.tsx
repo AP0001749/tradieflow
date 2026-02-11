@@ -23,7 +23,7 @@ export const TwentyFourHourFollowupEmail = ({
   return (
       <Html>
       <Head />
-      <Preview>Quick follow-up - still need help with this clean?</Preview>
+      <Preview>Quick follow-up - ready to set up TradieFlow?</Preview>
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>Quick follow-up</Heading>
@@ -31,22 +31,22 @@ export const TwentyFourHourFollowupEmail = ({
           <Text style={text}>Hi {name},</Text>
           
           <Text style={text}>
-            Just checking in about your {jobType?.replace('_', ' ')} request.
+            Just checking in on your TradieFlow setup request for {jobType?.replace('_', ' ') || 'your cleaning business'}.
           </Text>
 
           <Text style={text}>
-            <strong>Still need help?</strong> Reply &ldquo;YES&rdquo; and I&apos;ll confirm availability right away.
+            <strong>Ready to get started?</strong> Reply &ldquo;YES&rdquo; and share the best time for onboarding.
           </Text>
 
           <Text style={text}>
-            If you&apos;ve already booked or found another cleaner, no worries - just let me know so I can close this request.
+            If timing changed or you no longer need help, just reply and I&apos;ll close the request.
           </Text>
 
           <Hr style={hr} />
 
           <Text style={footer}>
             {businessName}<br />
-            Reply to this email to confirm
+            Reply to this email to continue setup
           </Text>
         </Container>
       </Body>

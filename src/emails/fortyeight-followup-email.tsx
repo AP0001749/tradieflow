@@ -21,7 +21,7 @@ export const FortyEightHourFollowupEmail = ({
   return (
     <Html>
       <Head />
-      <Preview>Last check-in - should I close this request?</Preview>
+      <Preview>Last check-in - should I close your setup request?</Preview>
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>Last check-in</Heading>
@@ -29,22 +29,22 @@ export const FortyEightHourFollowupEmail = ({
           <Text style={text}>Hi {name},</Text>
           
           <Text style={text}>
-            I haven&apos;t heard back from you about your cleaning request.
+            I haven&apos;t heard back about your TradieFlow setup request.
           </Text>
 
           <Text style={text}>
-            <strong>Reply &ldquo;YES&rdquo; if you still need this clean</strong> - otherwise I&apos;ll close this request.
+            <strong>Reply &ldquo;YES&rdquo; if you still want to get set up</strong> - otherwise I&apos;ll close this request.
           </Text>
 
           <Text style={text}>
-            No pressure either way. If you need help in the future, you can always reach out again.
+            No pressure either way. If you want to start later, just reply and we can reopen it anytime.
           </Text>
 
           <Hr style={hr} />
 
           <Text style={footer}>
             {businessName}<br />
-            Reply to this email if you still need help
+            Reply to this email if you still want setup
           </Text>
         </Container>
       </Body>

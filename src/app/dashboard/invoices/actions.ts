@@ -296,10 +296,6 @@ export async function updateInvoice(
 }
 
 export async function sendInvoiceEmail(invoiceId: string) {
-  console.log("\n=== MAIL RESEND EMAIL DIAGNOSTIC START ===");
-  console.log("Invoice ID:", invoiceId);
-  console.log("Timestamp:", new Date().toISOString());
-  
   const supabase = await createClient();
 
   const {
@@ -307,13 +303,10 @@ export async function sendInvoiceEmail(invoiceId: string) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    console.error("ERROR UNAUTHORIZED: No user found");
+    console.error("Unauthorized invoice send attempt");
     return { success: false, error: "Unauthorized" };
   }
 
-  console.log("OK User authenticated:", user.id);
-
-  // Fetch invoice with related data
   const { data: invoice, error: invoiceError } = await supabase
     .from("invoices")
     .select(`
@@ -333,55 +326,40 @@ export async function sendInvoiceEmail(invoiceId: string) {
     .single();
 
   if (invoiceError || !invoice) {
-    console.error("ERROR INVOICE FETCH ERROR:", invoiceError);
+    console.error("Error fetching invoice:", invoiceError);
     return { success: false, error: "Invoice not found" };
   }
 
-  console.log("OK Invoice fetched");
-
-  // Generate invoice number from ID
   const invoiceNumber = invoice.id.slice(0, 8).toUpperCase();
 
-  // Fetch user profile for business name
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("business_name, email")
-    .eq("id", user.id)
-    .single();
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (profileError) {
+    console.error("Error fetching profile:", profileError);
+  }
 
   const businessName = profile?.business_name || "TradieFlow";
-  
-  // Production verified domain
-  const fromEmail = "invoices@gettradieflow.com";
-  
-  console.log("OK Business name:", businessName);
-  console.log("OK FROM address:", fromEmail);
+  const fromEmail = process.env.RESEND_FROM_EMAIL || "invoices@gettradieflow.com";
   
   // @ts-expect-error -- Supabase nested relation typing is not inferred here.
   const clientName = invoice.job?.client?.name || "Valued Client";
   // @ts-expect-error -- Supabase nested relation typing is not inferred here.
   const clientEmail = invoice.job?.client?.email;
 
-  console.log("OK Client name:", clientName);
-  console.log("OK TO address:", clientEmail);
-
   if (!clientEmail) {
-    console.error("ERROR CLIENT EMAIL MISSING");
+    console.error("Client email is missing for invoice:", invoiceId);
     return { success: false, error: "Client email not found" };
   }
 
-  console.log("\nWARN  SANDBOX RESTRICTION CHECK:");
-  console.log("   - Can only send to YOUR Resend signup email");
-  console.log("   - Check if client email matches your Resend account");
-  console.log("   - Current TO:", clientEmail);
-
-  // Format amount
   const formattedAmount = new Intl.NumberFormat("en-AU", {
     style: "currency",
     currency: "AUD",
   }).format(invoice.amount);
 
-  // Format due date with null safety
   const formattedDueDate = invoice.due_date 
     ? new Date(invoice.due_date).toLocaleDateString("en-AU", {
         year: "numeric",
@@ -390,19 +368,9 @@ export async function sendInvoiceEmail(invoiceId: string) {
       })
     : "Upon Receipt";
 
-  // Generate invoice URL (adjust this to your actual domain)
   const invoiceUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/invoices/${invoiceId}`;
 
-  console.log("\nDETAILS Email Details:");
-  console.log("   Amount:", formattedAmount);
-  console.log("   Due Date:", formattedDueDate);
-  console.log("   Invoice #:", invoiceNumber);
-  console.log("   URL:", invoiceUrl);
-
   try {
-    console.log("\nRENDER Rendering email template...");
-    
-    // Render the email template
     const emailHtml = await render(
       InvoiceEmail({
         businessName,
@@ -414,14 +382,6 @@ export async function sendInvoiceEmail(invoiceId: string) {
       })
     );
 
-    console.log("OK Template rendered successfully");
-    console.log("\nSEND CALLING RESEND API...");
-    console.log("   API Key present:", !!process.env.RESEND_API_KEY);
-    console.log("   FROM:", fromEmail);
-    console.log("   TO:", clientEmail);
-    console.log("   SUBJECT:", `Invoice ${invoiceNumber} from ${businessName}`);
-
-    // Send the email
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: [clientEmail],
@@ -430,45 +390,24 @@ export async function sendInvoiceEmail(invoiceId: string) {
     });
 
     if (error) {
-      console.error("\nERROR RESEND API ERROR:");
-      console.error("   Error object:", JSON.stringify(error, null, 2));
-      console.error("   Error message:", error.message);
-      console.error("   Error name:", error.name);
-      console.error("\nDEBUG TROUBLESHOOTING:");
-      console.error("   1. Check Resend Dashboard: https://resend.com/emails");
-      console.error("   2. Verify TO address matches your Resend signup email");
-      console.error("   3. Confirm API key is valid");
+      console.error("Resend API error:", error);
       return { success: false, error: error.message };
     }
-
-    console.log("\nOK RESEND API SUCCESS!");
-    console.log("   Response:", JSON.stringify(data, null, 2));
-    
-    // Update invoice status to 'sent' after successful email
+ 
     const { error: updateError } = await supabase
       .from("invoices")
       .update({ status: "sent" })
-      .eq("id", invoiceId);
+      .eq("id", invoiceId)
+      .eq("user_id", user.id);
     
     if (updateError) {
-      console.warn("WARN  Failed to update invoice status:", updateError);
-    } else {
-      console.log("OK Invoice status updated to 'sent'");
+      console.warn("Failed to update invoice status:", updateError);
     }
-    
-    console.log("\nNEXT NEXT STEPS:");
-    console.log("   1. Check Resend Dashboard: https://resend.com/emails");
-    console.log("   2. Check client email inbox and spam folder");
-    console.log("   3. Verify domain status at https://resend.com/domains");
-    console.log("\n=== MAIL DIAGNOSTIC END ===\n");
-    
+
     return { success: true, data };
   } catch (error) {
-    console.error("\nERROR CATCH BLOCK ERROR:");
-    console.error("   Error:", error);
-    console.error("   Stack:", error instanceof Error ? error.stack : "No stack trace");
-    console.log("\n=== MAIL DIAGNOSTIC END (WITH ERROR) ===\n");
-    
+    console.error("Unexpected invoice send error:", error);
+
     return { 
       success: false, 
       error: error instanceof Error ? error.message : "Failed to send email" 

@@ -90,12 +90,12 @@ export default function BookPage() {
           <CardHeader>
             <CardTitle className="text-2xl text-center">Request Received!</CardTitle>
             <CardDescription className="text-center">
-              Thanks for your cleaning request. We&apos;ll get back to you within 24 hours.
+              Thanks for your TradieFlow setup request. We&apos;ll reach out within 24 hours.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-sm text-muted-foreground">
-              Check your email for a confirmation message.
+              Check your email for onboarding next steps.
             </p>
           </CardContent>
         </Card>
@@ -109,10 +109,9 @@ export default function BookPage() {
         <p className="hero-pill">TradieFlow for cleaners</p>
         <h1 className="tf-display text-4xl md:text-5xl">Get more cleaning jobs - without chasing leads</h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Capture new enquiries, confirm availability, and let TradieFlow follow up automatically —
-          so your cleaning business can focus on the work, not the admin.
+          Capture new enquiries, confirm availability, and let TradieFlow follow up automatically - so your cleaning business can focus on the work, not the admin.
         </p>
-        <p className="text-sm text-muted-foreground">Set up in minutes. No lock‑in. Built specifically for independent cleaners and small teams.</p>
+        <p className="text-sm text-muted-foreground">Set up in minutes. No lock-in. Built specifically for independent cleaners and small teams.</p>
       </div>
 
       <Card className="glass-card w-full">

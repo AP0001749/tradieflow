@@ -344,7 +344,9 @@ export function resetConversionTracking() {
   if (typeof window === 'undefined') return;
   window.sessionStorage.removeItem(SIGNUP_CONVERSION_STORAGE_KEY);
   window.sessionStorage.removeItem(LEAD_CONVERSION_STORAGE_KEY);
-  console.log('RESET [Google Ads] Conversion tracking reset - you can fire another test conversion');
+  if (process.env.NODE_ENV === 'development') {
+    console.log('RESET [Google Ads] Conversion tracking reset - you can fire another test conversion');
+  }
 }
 
 /**
@@ -352,7 +354,8 @@ export function resetConversionTracking() {
  * Usage: window.testGoogleAdsConversion()
  */
 if (typeof window !== 'undefined') {
-  (window as unknown as Record<string, unknown>).testGoogleAdsConversion = async () => {
+  if (process.env.NODE_ENV === 'development') {
+    (window as unknown as Record<string, unknown>).testGoogleAdsConversion = async () => {
     console.log('TEST [Google Ads] Running tracking verification...\n');
     
     const status = getTrackingStatus();
@@ -391,12 +394,13 @@ if (typeof window !== 'undefined') {
     console.log('CHART Check Google Ads > Tools > Conversions in 3-24 hours');
     console.log('DEBUG Look for: "Sign Up" conversion event');
     console.log('SECURE Enhanced conversions data was included (check diagnostics report)');
-  };
+    };
 
-  // Helper to reset for testing
-  (window as unknown as Record<string, unknown>).resetConversion = resetConversionTracking;
+    // Helper to reset for testing
+    (window as unknown as Record<string, unknown>).resetConversion = resetConversionTracking;
+  }
   
-  // Helper to check status
+  // Lightweight helper: safe to expose in production for troubleshooting.
   (window as unknown as Record<string, unknown>).checkGoogleAds = () => {
     const status = getTrackingStatus();
     console.table(status);

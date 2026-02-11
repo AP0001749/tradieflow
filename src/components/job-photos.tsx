@@ -7,6 +7,13 @@ import { Card } from "@/components/ui/card";
 import { Upload, Image as ImageIcon, Trash2 } from "lucide-react";
 import { uploadJobPhoto, deleteJobPhoto } from "@/app/dashboard/jobs/actions";
 
+const isDev = process.env.NODE_ENV !== "production";
+const debugLog = (...args: unknown[]) => {
+  if (isDev) {
+    console.log(...args);
+  }
+};
+
 interface JobPhotosProps {
   jobId: string;
   userId: string;
@@ -53,12 +60,12 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
           formData.append("jobId", jobId);
           // userId is derived server-side from the authenticated session.
 
-          console.log("Uploading photo:", { jobId, userId, fileName: file.name });
+          debugLog("Uploading photo:", { jobId, userId, fileName: file.name });
           
           let result;
           try {
             result = await uploadJobPhoto(formData);
-            console.log("Upload result:", result);
+            debugLog("Upload result:", result);
           } catch (fetchError) {
             console.error("Fetch error calling uploadJobPhoto:", fetchError);
             setError(`Network error: ${fetchError instanceof Error ? fetchError.message : 'Failed to fetch'}`);
@@ -66,7 +73,7 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
           }
 
           if (result.success && result.photo) {
-            console.log("Adding photo to state:", result.photo);
+            debugLog("Adding photo to state:", result.photo);
             setPhotos((prev) => [...prev, result.photo!]);
             setError(null); // Clear any previous errors on success
           } else {
