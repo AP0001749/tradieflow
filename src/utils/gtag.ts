@@ -21,7 +21,7 @@ export const GOOGLE_ADS_CONFIG = {
   // Configure this in `.env.local` as NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL.
   // This should be your "Setup Demo Request" conversion action label.
   LEAD_LABEL: process.env.NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL || '',
-  SUBSCRIBE_LABEL: '', // Add your subscription conversion label here
+  SUBSCRIBE_LABEL: process.env.NEXT_PUBLIC_GOOGLE_ADS_SUBSCRIBE_LABEL || '',
 };
 
 // Storage keys for tracking fired conversions (prevents duplicates from page refreshes)
