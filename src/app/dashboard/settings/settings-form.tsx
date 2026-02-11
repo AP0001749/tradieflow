@@ -64,7 +64,7 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
     }
   };
 
-  const bookingUrl = typeof window !== 'undefined' 
+  const onboardingFormUrl = typeof window !== 'undefined' 
     ? `${window.location.origin}/book`
     : '/book';
 
@@ -158,23 +158,23 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Booking Page</CardTitle>
+          <CardTitle>Onboarding Form</CardTitle>
           <CardDescription>
-            Share this URL to receive leads
+            Share this URL to receive setup/demo requests
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2">
             <Input
               readOnly
-              value={bookingUrl}
+              value={onboardingFormUrl}
               className="font-mono text-sm"
             />
             <Button
               type="button"
               variant="outline"
               onClick={() => {
-                navigator.clipboard.writeText(bookingUrl);
+                navigator.clipboard.writeText(onboardingFormUrl);
                 alert('Copied to clipboard!');
               }}
             >
@@ -182,7 +182,7 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Use this URL in your Google Ads campaigns and website
+            Use this URL in your Google Ads campaigns and website CTAs
           </p>
         </CardContent>
       </Card>

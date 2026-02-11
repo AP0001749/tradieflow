@@ -27,7 +27,7 @@ export default async function LeadsPage() {
           <span className="text-xs uppercase tracking-[0.35em] text-muted-foreground">Dashboard</span>
           <h1>Leads</h1>
           <p className="text-muted-foreground">
-            Manage your cleaning job leads, automate follow-ups, and convert requests into paid work.
+            Manage onboarding requests, automate follow-ups, and track which businesses are ready to start.
           </p>
         </div>
       </section>

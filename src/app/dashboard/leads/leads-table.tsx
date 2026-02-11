@@ -36,6 +36,15 @@ interface LeadsTableProps {
   leads: Lead[];
 }
 
+function getStatusLabel(status: string) {
+  switch (status) {
+    case 'booked':
+      return 'demo booked';
+    default:
+      return status;
+  }
+}
+
 export default function LeadsTable({ leads }: LeadsTableProps) {
   const router = useRouter();
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -96,9 +105,9 @@ export default function LeadsTable({ leads }: LeadsTableProps) {
   if (leads.length === 0) {
     return (
       <div className="rounded-2xl border border-border/60 bg-card/70 backdrop-blur-xl p-12 text-center shadow-sm">
-        <p className="text-muted-foreground">No leads yet. Share your booking page to start receiving leads!</p>
+        <p className="text-muted-foreground">No leads yet. Share your onboarding form to start receiving setup requests.</p>
         <p className="text-sm text-muted-foreground/80 mt-2">
-          Your booking URL: <span className="font-mono">/book</span>
+          Your onboarding form URL: <span className="font-mono">/book</span>
         </p>
       </div>
     );
@@ -138,7 +147,7 @@ export default function LeadsTable({ leads }: LeadsTableProps) {
               </TableCell>
               <TableCell>
                 <Badge className={cn(getStatusColor(lead.status), "capitalize")}>
-                  {lead.status}
+                  {getStatusLabel(lead.status)}
                 </Badge>
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
@@ -171,7 +180,7 @@ export default function LeadsTable({ leads }: LeadsTableProps) {
                     disabled={processingId === lead.id}
                     onClick={() => handleStatusChange(lead.id, 'booked')}
                   >
-                    Mark Booked
+                    Mark Demo Booked
                   </Button>
                 )}
                 {lead.status === 'booked' && (

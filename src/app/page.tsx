@@ -18,17 +18,17 @@ export default function Home() {
         <div className="relative container mx-auto px-4 pt-24 pb-28 md:pt-36 md:pb-36">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <h1 className="tf-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
-              Get more cleaning jobs{" "}
+              TradieFlow onboarding{" "}
               <span className="bg-gradient-to-r from-sky-500 to-emerald-500 bg-clip-text text-transparent">
-                automatically
+                for cleaning businesses
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-foreground/80 max-w-2xl mx-auto">
-              Capture leads, follow up instantly, reduce no-shows.
+              Request setup once, then automate lead capture and follow-up.
             </p>
 
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Lead capture + booking + automated follow-ups for Australian cleaning businesses.
+              Built for Australian cleaners who want a fast onboarding flow and a repeatable lead system.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-center pt-4">
@@ -36,7 +36,7 @@ export default function Home() {
                 href="/book"
                 className="inline-flex items-center justify-center w-full sm:w-auto text-base h-12 px-8 rounded-lg font-semibold bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
               >
-                Book a Demo
+                Request Setup Demo
               </Link>
               <Link
                 href="/signup"
@@ -126,15 +126,15 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center space-y-6">
             <h2 className="tf-display text-3xl md:text-4xl font-bold text-foreground">
-              Ready to Get More Cleaning Jobs?
+              Ready to Request Your Setup Demo?
             </h2>
             <Link 
               href="/book"
               className="inline-flex items-center justify-center text-base h-12 px-8 rounded-lg font-semibold bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
             >
-              Visit Booking Page
+              Request Setup Demo
             </Link>
-            <p className="text-sm text-muted-foreground">Join Australian cleaning businesses getting more paid jobs</p>
+            <p className="text-sm text-muted-foreground">Join Australian cleaning businesses onboarding with TradieFlow</p>
           </div>
         </div>
       </section>

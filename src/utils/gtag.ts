@@ -18,8 +18,8 @@ import { getEnhancedConversionParams, debugEnhancedConversion } from './enhanced
 export const GOOGLE_ADS_CONFIG = {
   CONVERSION_ID: 'AW-17896188158',
   SIGN_UP_LABEL: '0fciCMj5wOobEP7RyNVC',
-  // Configure this in `.env.local` as NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL
-  // (Google Ads -> Tools -> Conversions -> your Lead action label)
+  // Configure this in `.env.local` as NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL.
+  // This should be your "Setup Demo Request" conversion action label.
   LEAD_LABEL: process.env.NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL || '',
   SUBSCRIBE_LABEL: '', // Add your subscription conversion label here
 };
@@ -112,7 +112,7 @@ export async function trackSignUpConversion(
 }
 
 /**
- * Fire Google Ads lead conversion (public booking/lead capture).
+ * Fire Google Ads lead conversion for onboarding/demo requests.
  *
  * IMPORTANT: Requires `NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL` to be set.
  *
@@ -133,7 +133,7 @@ export async function trackLeadConversion(params: {
   }
 
   if (!GOOGLE_ADS_CONFIG.LEAD_LABEL) {
-    console.warn('[Google Ads] Lead conversion label not configured (NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL)');
+    console.warn('[Google Ads] Demo-request conversion label not configured (NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL)');
     if (callback) callback();
     return;
   }

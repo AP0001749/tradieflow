@@ -107,18 +107,18 @@ export default function BookPage() {
     <div className="page-shell space-y-8">
       <div className="text-center space-y-3">
         <p className="hero-pill">TradieFlow for cleaners</p>
-        <h1 className="tf-display text-4xl md:text-5xl">Get more cleaning jobs - without chasing leads</h1>
+        <h1 className="tf-display text-4xl md:text-5xl">Request your TradieFlow setup demo</h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Capture new enquiries, confirm availability, and let TradieFlow follow up automatically - so your cleaning business can focus on the work, not the admin.
+          Tell us about your cleaning business and we&apos;ll set up your onboarding workspace with lead capture and automated follow-ups.
         </p>
         <p className="text-sm text-muted-foreground">Set up in minutes. No lock-in. Built specifically for independent cleaners and small teams.</p>
       </div>
 
       <Card className="glass-card w-full">
         <CardHeader className="space-y-2">
-          <CardTitle className="text-2xl">Get started with TradieFlow for your cleaning business</CardTitle>
+          <CardTitle className="text-2xl">Request setup for your cleaning business</CardTitle>
           <CardDescription>
-            Tell us a few details and we&apos;ll set you up with TradieFlow for your Melbourne cleaning business.
+            Tell us a few details and we&apos;ll set up your TradieFlow demo workspace.
           </CardDescription>
           <p className="text-xs text-muted-foreground">This is for cleaning businesses only (not customers requesting a clean).</p>
         </CardHeader>
@@ -190,7 +190,7 @@ export default function BookPage() {
             )}
 
             <Button type="submit" className="primary-btn w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Get Started"}
+              {isSubmitting ? "Submitting..." : "Request Setup Demo"}
             </Button>
 
             <p className="form-note text-center">
