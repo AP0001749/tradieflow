@@ -1,0 +1,16 @@
+name: TradieFlow Heartbeat
+
+on:
+  schedule:
+    - cron: '*/15 * * * *' # Runs every 15 minutes
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  ping-vercel:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Lead Automation Endpoint
+        run: |
+          curl -X GET "${{ secrets.VERCEL_URI }}/api/cron/leads-followup" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            --fail --silent --show-error
