@@ -75,8 +75,16 @@ export async function GET(request: NextRequest) {
         const senderEmail =
           process.env.RESEND_SENDER_EMAIL ||
           process.env.RESEND_FROM_EMAIL ||
-          'onboarding@resend.dev';
-        const replyToEmail = businessProfile?.reply_to_email;
+          (process.env.NODE_ENV !== 'production' ? 'onboarding@resend.dev' : undefined);
+
+        if (!senderEmail) {
+          throw new Error(
+            'Missing verified sender: set RESEND_SENDER_EMAIL (or RESEND_FROM_EMAIL) to a verified Resend domain address.'
+          );
+        }
+
+        const replyToEmail =
+          businessProfile?.reply_to_email || process.env.RESEND_REPLY_TO_EMAIL;
 
         let emailComponent;
         let subject;
