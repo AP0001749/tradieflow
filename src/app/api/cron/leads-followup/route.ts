@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { Resend } from 'resend';
+import { getResend } from '@/lib/resend';
 import { ImmediateFollowupEmail } from '@/emails/immediate-followup-email';
 import { TwentyFourHourFollowupEmail } from '@/emails/twentyfour-followup-email';
 import { FortyEightHourFollowupEmail } from '@/emails/fortyeight-followup-email';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function GET(request: NextRequest) {
   try {
+    const resend = getResend();
+
     // Verify cron secret
     const authHeader = request.headers.get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {

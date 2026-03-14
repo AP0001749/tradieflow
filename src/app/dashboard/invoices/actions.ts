@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { InvoiceInsert, InvoiceStatus, InvoiceUpdate } from "@/types";
-import { resend } from "@/lib/resend";
+import { getResend } from "@/lib/resend";
 import { InvoiceEmail } from "@/emails/invoice-email";
 import { render } from "@react-email/render";
 import { canCreateInvoice } from "@/lib/subscription";
@@ -371,6 +371,7 @@ export async function sendInvoiceEmail(invoiceId: string) {
   const invoiceUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/invoices/${invoiceId}`;
 
   try {
+    const resend = getResend();
     const emailHtml = await render(
       InvoiceEmail({
         businessName,
