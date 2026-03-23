@@ -47,23 +47,22 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
     .from("job-photos")
     .list(`${user.id}/${id}`);
 
-  const photos = [];
-  if (files) {
-    for (const file of files) {
-      const filePath = `${user.id}/${id}/${file.name}`;
-      const { data: signedUrlData } = await supabase.storage
-        .from("job-photos")
-        .createSignedUrl(filePath, 31536000); // 1 year
-
-      if (signedUrlData) {
-        photos.push({
-          name: file.name,
-          url: signedUrlData.signedUrl,
-          path: filePath,
-        });
-      }
-    }
-  }
+  // Generate signed URLs in parallel to avoid N+1 sequential calls
+  const photos = files
+    ? (
+        await Promise.all(
+          files.map(async (file) => {
+            const filePath = `${user.id}/${id}/${file.name}`;
+            const { data: signedUrlData } = await supabase.storage
+              .from("job-photos")
+              .createSignedUrl(filePath, 3600); // 1 hour
+            return signedUrlData
+              ? { name: file.name, url: signedUrlData.signedUrl, path: filePath }
+              : null;
+          })
+        )
+      ).filter((p): p is NonNullable<typeof p> => p !== null)
+    : [];
 
   const statusConfig: Record<
     JobStatus,

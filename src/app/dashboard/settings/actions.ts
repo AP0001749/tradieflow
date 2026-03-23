@@ -55,6 +55,7 @@ export async function updateBusinessProfile(formData: {
   } else {
     // Claim an existing default profile (created by public lead capture) if present,
     // otherwise create a brand new profile for this user.
+    // Use an atomic filter to avoid race conditions where two users claim the same profile.
     const { data: defaultProfile } = await supabase
       .from('business_profile')
       .select('id')
@@ -63,7 +64,8 @@ export async function updateBusinessProfile(formData: {
       .maybeSingle();
 
     if (defaultProfile?.id) {
-      const { error } = await supabase
+      // Atomically claim only if still unclaimed (user_id IS NULL)
+      const { data: claimed, error } = await supabase
         .from('business_profile')
         .update({
           user_id: user.id,
@@ -73,9 +75,27 @@ export async function updateBusinessProfile(formData: {
           service_area_postcodes: formData.service_area_postcodes || [],
           default_job_types: formData.default_job_types || [],
         })
-        .eq('id', defaultProfile.id);
+        .eq('id', defaultProfile.id)
+        .is('user_id', null) // Only claim if still unclaimed
+        .select('id');
 
       if (error) throw error;
+
+      // If another user already claimed it (empty result), create a new one instead
+      if (!claimed || claimed.length === 0) {
+        const { error: insertError } = await supabase
+          .from('business_profile')
+          .insert({
+            user_id: user.id,
+            business_name: formData.business_name,
+            reply_to_email: formData.reply_to_email,
+            google_review_url: formData.google_review_url || null,
+            service_area_postcodes: formData.service_area_postcodes || [],
+            default_job_types: formData.default_job_types || [],
+          });
+
+        if (insertError) throw insertError;
+      }
     } else {
       const { error } = await supabase
         .from('business_profile')

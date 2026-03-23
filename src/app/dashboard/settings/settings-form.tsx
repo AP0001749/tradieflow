@@ -64,8 +64,8 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
     }
   };
 
-  const onboardingFormUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/book`
+  const onboardingFormUrl = process.env.NEXT_PUBLIC_APP_URL
+    ? `${process.env.NEXT_PUBLIC_APP_URL}/book`
     : '/book';
 
   return (

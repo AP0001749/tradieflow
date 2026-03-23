@@ -40,7 +40,7 @@ export function SubscriptionBanner({ resourceType }: SubscriptionBannerProps) {
   const current = status.current?.[resourceType] ?? 0;
   const limitKey = `max${resourceType.charAt(0).toUpperCase() + resourceType.slice(1)}` as keyof NonNullable<SubscriptionStatus["limits"]>;
   const limit = status.limits?.[limitKey] ?? 0;
-  const percentage = (current / limit) * 100;
+  const percentage = limit > 0 ? (current / limit) * 100 : 0;
 
   // Only show when approaching or at limit
   if (percentage < 60) {

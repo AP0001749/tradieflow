@@ -143,7 +143,7 @@ export default function LeadsTable({ leads }: LeadsTableProps) {
                 {lead.suburb} {lead.postcode}
               </TableCell>
               <TableCell className="text-sm">
-                {lead.job_type?.replace('_', ' ')}
+                {lead.job_type?.replaceAll('_', ' ')}
               </TableCell>
               <TableCell>
                 <Badge className={cn(getStatusColor(lead.status), "capitalize")}>

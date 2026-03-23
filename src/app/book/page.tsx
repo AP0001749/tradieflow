@@ -35,6 +35,14 @@ export default function BookPage() {
       return;
     }
 
+    // Validate email format (HTML5 type="email" is bypassed by preventDefault)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      setIsSubmitting(false);
+      return;
+    }
+
     const data = {
       business_name: businessName,
       your_name: yourName,

@@ -29,8 +29,8 @@ export default function EditInvoiceDialog({
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  // Only allow editing unpaid invoices
-  if (invoice.status !== "unpaid") {
+  // Only allow editing unpaid or sent invoices (not paid ones)
+  if (invoice.status !== "unpaid" && invoice.status !== "sent") {
     return null;
   }
 

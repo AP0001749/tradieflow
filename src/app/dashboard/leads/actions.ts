@@ -154,7 +154,7 @@ export async function convertLeadToJob(leadId: string) {
   }
 
   // Create job
-  const jobTitle = `${lead.job_type?.replace('_', ' ')} - ${lead.suburb || 'Job'}`;
+  const jobTitle = `${lead.job_type?.replaceAll('_', ' ') || 'Job'} - ${lead.suburb || 'Job'}`;
   const { data: job, error: jobError } = await supabase
     .from('jobs')
     .insert({
