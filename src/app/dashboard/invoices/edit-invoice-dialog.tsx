@@ -28,14 +28,16 @@ export default function EditInvoiceDialog({
 }: EditInvoiceDialogProps) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
-  // Only allow editing unpaid or sent invoices (not paid ones)
-  if (invoice.status !== "unpaid" && invoice.status !== "sent") {
+  // Only allow editing invoices that haven't been paid
+  if (invoice.status === "paid") {
     return null;
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setError(null);
     const form = e.currentTarget;
     const formData = new FormData(form);
 
@@ -51,13 +53,13 @@ export default function EditInvoiceDialog({
       if (!result.error) {
         setOpen(false);
       } else {
-        alert(result.error);
+        setError(result.error);
       }
     });
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(next) => { setOpen(next); if (next) setError(null); }}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm" className="gap-2">
           <Pencil className="h-4 w-4" />
@@ -114,6 +116,10 @@ export default function EditInvoiceDialog({
               placeholder="Additional notes or payment terms..."
             />
           </div>
+
+          {error && (
+            <p className="text-sm text-destructive">{error}</p>
+          )}
 
           <div className="flex gap-3 pt-2">
             <Button

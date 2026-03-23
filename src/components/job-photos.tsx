@@ -176,7 +176,7 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
       {/* Error Message */}
       {error && (
         <div className="rounded-lg p-4 border border-rose-500/20 bg-rose-500/10">
-          <p className="text-sm text-rose-200">{error}</p>
+          <p className="text-sm text-rose-700 dark:text-rose-200">{error}</p>
         </div>
       )}
 
@@ -198,6 +198,7 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
                     size="sm"
                     className="opacity-0 group-hover:opacity-100 transition-opacity bg-red-600 hover:bg-red-700 text-white"
                     onClick={() => handleDelete(photo)}
+                    aria-label="Delete photo"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

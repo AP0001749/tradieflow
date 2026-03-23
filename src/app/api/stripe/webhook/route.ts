@@ -102,7 +102,7 @@ export async function POST(request: Request) {
           return NextResponse.json({ received: true });
         }
 
-        const isActive = subscription.status === "active" || subscription.status === "trialing";
+        const isActive = subscription.status === "active" || subscription.status === "trialing" || subscription.status === "past_due";
 
         const update: Record<string, unknown> = {
           subscription_tier: isActive ? "pro" : "free",

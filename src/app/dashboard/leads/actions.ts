@@ -52,13 +52,15 @@ export async function updateLeadStatus(leadId: string, status: string) {
 
   if (!profile) throw new Error('Business profile not found');
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('leads')
     .update({ status })
     .eq('id', leadId)
-    .eq('business_id', profile.id);
+    .eq('business_id', profile.id)
+    .select('id');
 
   if (error) throw error;
+  if (!updated || updated.length === 0) throw new Error('Lead not found');
 
   // Log event
   await supabase.from('lead_events').insert({
@@ -171,13 +173,17 @@ export async function convertLeadToJob(leadId: string) {
   if (jobError || !job) throw new Error('Failed to create job');
 
   // Update lead
-  await supabase
+  const { error: leadUpdateError } = await supabase
     .from('leads')
     .update({
       status: 'won',
       converted_job_id: job.id,
     })
     .eq('id', leadId);
+
+  if (leadUpdateError) {
+    console.warn('Failed to update lead status after conversion:', leadUpdateError);
+  }
 
   // Log event
   await supabase.from('lead_events').insert({

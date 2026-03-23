@@ -144,7 +144,14 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
           )}
 
           {/* Primary CTA: Google Sign Up */}
-          <form action={signInWithGoogle} onSubmit={() => setGoogleLoading(true)}>
+          <form action={async () => {
+            setGoogleLoading(true);
+            try {
+              await signInWithGoogle();
+            } catch {
+              setGoogleLoading(false);
+            }
+          }}>
             <Button
               type="submit"
               className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

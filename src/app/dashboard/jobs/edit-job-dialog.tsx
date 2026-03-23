@@ -25,9 +25,11 @@ interface EditJobDialogProps {
 export default function EditJobDialog({ job, clients }: EditJobDialogProps) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setError(null);
     const form = e.currentTarget;
     const formData = new FormData(form);
 
@@ -45,13 +47,13 @@ export default function EditJobDialog({ job, clients }: EditJobDialogProps) {
       if (!result.error) {
         setOpen(false);
       } else {
-        alert(result.error);
+        setError(result.error);
       }
     });
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(next) => { setOpen(next); if (next) setError(null); }}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm" className="gap-2">
           <Pencil className="h-4 w-4" />
@@ -130,6 +132,10 @@ export default function EditJobDialog({ job, clients }: EditJobDialogProps) {
               placeholder="Job details and notes..."
             />
           </div>
+
+          {error && (
+            <p className="text-sm text-destructive">{error}</p>
+          )}
 
           <div className="flex gap-3 pt-2">
             <Button

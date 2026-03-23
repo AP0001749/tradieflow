@@ -30,10 +30,10 @@ export function CreateJobDialog() {
     setOpen(nextOpen);
 
     if (!nextOpen) return;
-    if (clients.length > 0) return;
 
-    setLoadingClients(true);
+    // Always clear error on open and re-fetch clients to pick up newly added ones
     setError(null);
+    setLoadingClients(true);
 
     try {
       const result = await getClients();

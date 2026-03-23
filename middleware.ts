@@ -42,12 +42,20 @@ export async function middleware(request: NextRequest) {
 
   // 2. PROTECTED ROUTES: If no user, kick them to Login
   if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    const redir = NextResponse.redirect(new URL("/login", request.url));
+    for (const cookie of response.cookies.getAll()) {
+      redir.cookies.set(cookie);
+    }
+    return redir;
   }
 
-  // 3. AUTH ROUTES: If user IS logged in, don't let them see Login page
-  if (user && request.nextUrl.pathname.startsWith("/login")) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  // 3. AUTH ROUTES: If user IS logged in, don't let them see Login/Signup pages
+  if (user && (request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/signup"))) {
+    const redir = NextResponse.redirect(new URL("/dashboard", request.url));
+    for (const cookie of response.cookies.getAll()) {
+      redir.cookies.set(cookie);
+    }
+    return redir;
   }
 
   return response;

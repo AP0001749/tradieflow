@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
       .in('followup_step', [0, 1, 2])
       .lte('next_followup_at', new Date().toISOString())
       .not('email', 'is', null)
+      .neq('email', '')
       .limit(50);
 
     if (fetchError) {

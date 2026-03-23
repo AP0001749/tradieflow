@@ -26,9 +26,14 @@ export function SubscriptionBanner({ resourceType }: SubscriptionBannerProps) {
 
   useEffect(() => {
     async function fetchStatus() {
-      const result = await checkSubscriptionLimits();
-      setStatus(result);
-      setLoading(false);
+      try {
+        const result = await checkSubscriptionLimits();
+        setStatus(result);
+      } catch {
+        // Silently fail - banner is non-critical UI
+      } finally {
+        setLoading(false);
+      }
     }
     fetchStatus();
   }, []);

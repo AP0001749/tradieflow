@@ -249,9 +249,9 @@ export async function updateInvoice(
     return { error: "Invoice not found" };
   }
 
-  // Only allow editing unpaid or sent invoices (not paid ones)
-  if (invoice.status !== "unpaid" && invoice.status !== "sent") {
-    return { error: "Only unpaid or sent invoices can be edited" };
+  // Only allow editing invoices that haven't been paid
+  if (invoice.status === "paid") {
+    return { error: "Paid invoices cannot be edited" };
   }
 
   // Validate amount
@@ -395,24 +395,16 @@ export async function sendInvoiceEmail(invoiceId: string) {
       return { success: false, error: error.message };
     }
  
-    // Only update to "sent" if the invoice hasn't been paid yet
-    const { data: currentInvoice } = await supabase
+    // Atomically update to "sent" only if the invoice hasn't already been paid
+    const { error: updateError } = await supabase
       .from("invoices")
-      .select("status")
+      .update({ status: "sent" })
       .eq("id", invoiceId)
       .eq("user_id", user.id)
-      .single();
+      .neq("status", "paid");
 
-    if (currentInvoice && currentInvoice.status !== "paid") {
-      const { error: updateError } = await supabase
-        .from("invoices")
-        .update({ status: "sent" })
-        .eq("id", invoiceId)
-        .eq("user_id", user.id);
-    
-      if (updateError) {
-        console.warn("Failed to update invoice status:", updateError);
-      }
+    if (updateError) {
+      console.warn("Failed to update invoice status:", updateError);
     }
 
     return { success: true, data };
