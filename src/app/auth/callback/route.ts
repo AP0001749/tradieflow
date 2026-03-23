@@ -17,17 +17,18 @@ export async function GET(request: NextRequest) {
   }
 
   let redirectPath = "/dashboard";
-  const response = NextResponse.redirect(new URL(redirectPath, requestUrl.origin));
+
+  // Collect cookies set by supabase auth so they can be applied to the
+  // final response regardless of which redirect path is chosen.
+  const cookiesToSet: Array<{ name: string; value: string; options: Record<string, unknown> }> = [];
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet) {
-        for (const { name, value, options } of cookiesToSet) {
-          response.cookies.set(name, value, options);
-        }
+      setAll(cookies) {
+        cookiesToSet.push(...cookies);
       },
     },
   });
@@ -45,9 +46,13 @@ export async function GET(request: NextRequest) {
 
     if (isNewUser) {
       redirectPath = "/welcome";
-      // Update redirect URL
-      return NextResponse.redirect(new URL(redirectPath, requestUrl.origin));
     }
+  }
+
+  // Build the redirect response and apply auth cookies
+  const response = NextResponse.redirect(new URL(redirectPath, requestUrl.origin));
+  for (const { name, value, options } of cookiesToSet) {
+    response.cookies.set(name, value, options);
   }
 
   return response;

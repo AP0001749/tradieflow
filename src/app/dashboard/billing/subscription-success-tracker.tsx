@@ -24,8 +24,11 @@ export function SubscriptionSuccessTracker({
   const success = searchParams.get("success");
 
   useEffect(() => {
-    // Only fire on successful payment
-    if (success === "true") {
+    // Only fire on successful payment; deduplicate across refreshes
+    const STORAGE_KEY = 'tradieflow_subscribe_conversion_fired';
+    if (success === "true" && typeof window !== 'undefined' && !sessionStorage.getItem(STORAGE_KEY)) {
+      sessionStorage.setItem(STORAGE_KEY, 'true');
+
       async function fireConversion() {
         // Prepare enhanced conversion data
         const userData: EnhancedConversionData = {};

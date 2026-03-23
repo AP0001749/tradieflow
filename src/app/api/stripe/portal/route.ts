@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 
     const origin =
       request.headers.get("origin") ??
-      process.env.NEXT_PUBLIC_SITE_URL ??
+      process.env.NEXT_PUBLIC_APP_URL ??
       "http://localhost:3000";
 
     const portalSession = await stripe.billingPortal.sessions.create({

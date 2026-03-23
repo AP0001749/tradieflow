@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { canCreateClient, canCreateJob } from '@/lib/subscription';
 
 export async function getLeads() {
   const supabase = await createClient();
@@ -36,10 +37,26 @@ export async function updateLeadStatus(leadId: string, status: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
+  // Validate status value
+  const validStatuses = ['new', 'contacted', 'booked', 'won', 'lost', 'stale'];
+  if (!validStatuses.includes(status)) {
+    throw new Error('Invalid status');
+  }
+
+  // Verify the lead belongs to the user's business
+  const { data: profile } = await supabase
+    .from('business_profile')
+    .select('id')
+    .eq('user_id', user.id)
+    .single();
+
+  if (!profile) throw new Error('Business profile not found');
+
   const { error } = await supabase
     .from('leads')
     .update({ status })
-    .eq('id', leadId);
+    .eq('id', leadId)
+    .eq('business_id', profile.id);
 
   if (error) throw error;
 
@@ -59,11 +76,21 @@ export async function convertLeadToJob(leadId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  // Get lead details
+  // Verify the lead belongs to the user's business
+  const { data: profile } = await supabase
+    .from('business_profile')
+    .select('id')
+    .eq('user_id', user.id)
+    .single();
+
+  if (!profile) throw new Error('Business profile not found');
+
+  // Get lead details (scoped to user's business)
   const { data: lead, error: leadError } = await supabase
     .from('leads')
     .select('*')
     .eq('id', leadId)
+    .eq('business_id', profile.id)
     .single();
 
   if (leadError || !lead) throw new Error('Lead not found');
@@ -81,6 +108,12 @@ export async function convertLeadToJob(leadId: string) {
   if (existingClient) {
     clientId = existingClient.id;
   } else {
+    // Check subscription limits before creating a new client
+    const clientLimitCheck = await canCreateClient();
+    if (!clientLimitCheck.allowed) {
+      throw new Error(clientLimitCheck.error || 'Client limit reached');
+    }
+
     // Create new client
     const { data: newClient, error: clientError } = await supabase
       .from('clients')
@@ -99,6 +132,12 @@ export async function convertLeadToJob(leadId: string) {
     clientId = newClient.id;
   }
 
+  // Check subscription limits before creating a job
+  const jobLimitCheck = await canCreateJob();
+  if (!jobLimitCheck.allowed) {
+    throw new Error(jobLimitCheck.error || 'Job limit reached');
+  }
+
   // Create job
   const jobTitle = `${lead.job_type?.replace('_', ' ')} - ${lead.suburb || 'Job'}`;
   const { data: job, error: jobError } = await supabase
@@ -108,7 +147,7 @@ export async function convertLeadToJob(leadId: string) {
       client_id: clientId,
       title: jobTitle,
       description: lead.notes,
-      date_scheduled: lead.preferred_date,
+      start_date: lead.preferred_date,
       status: 'scheduled',
     })
     .select()

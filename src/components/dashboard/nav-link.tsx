@@ -16,7 +16,10 @@ export function DashboardNavLink({
   icon: LucideIcon;
 }) {
   const pathname = usePathname();
-  const active = pathname === href || pathname.startsWith(`${href}/`);
+  // Exact match for /dashboard (Home); prefix match for other nav items
+  const active = href === "/dashboard"
+    ? pathname === "/dashboard"
+    : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <Link
