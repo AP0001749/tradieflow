@@ -96,14 +96,29 @@ export async function convertLeadToJob(leadId: string) {
   if (leadError || !lead) throw new Error('Lead not found');
 
   // Check if client exists (by email or phone)
+  // Use separate .eq() queries instead of .or() to avoid PostgREST filter injection
   let clientId: string;
-  const { data: existingClient } = await supabase
-    .from('clients')
-    .select('id')
-    .eq('user_id', user.id)
-    .or(`email.eq.${lead.email},phone.eq.${lead.phone}`)
-    .limit(1)
-    .single();
+  let existingClient: { id: string } | null = null;
+  if (lead.email) {
+    const { data } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('email', lead.email)
+      .limit(1)
+      .maybeSingle();
+    existingClient = data;
+  }
+  if (!existingClient && lead.phone) {
+    const { data } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('phone', lead.phone)
+      .limit(1)
+      .maybeSingle();
+    existingClient = data;
+  }
 
   if (existingClient) {
     clientId = existingClient.id;

@@ -58,7 +58,7 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
     setNotice(null);
 
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: email.trim(),
       password,
     });
 
@@ -83,7 +83,7 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
     setNotice(null);
 
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: email.trim(),
       password,
       options: {
         emailRedirectTo: `${location.origin}/auth/callback`,

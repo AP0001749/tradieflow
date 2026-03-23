@@ -76,7 +76,7 @@ export async function createJob(formData: FormData) {
     client_id,
     title,
     status: status,
-    price: price ? parseFloat(price) : null,
+    price: price ? (Number.isFinite(parseFloat(price)) ? parseFloat(price) : null) : null,
     start_date: start_date || null,
     description: description || null,
   };
@@ -224,7 +224,7 @@ export async function updateJob(
     client_id: data.client_id,
     title: data.title,
     status: status,
-    price: data.price ? parseFloat(data.price) : null,
+    price: data.price ? (Number.isFinite(parseFloat(data.price)) ? parseFloat(data.price) : null) : null,
     start_date: data.start_date || null,
     description: data.description || null,
   };
@@ -371,7 +371,8 @@ export async function deleteJobPhoto(filePath: string) {
   }
 
   // Basic safety: only allow deleting within the caller's own prefix.
-  if (!filePath || !filePath.startsWith(`${user.id}/`)) {
+  // Also reject path traversal attempts.
+  if (!filePath || !filePath.startsWith(`${user.id}/`) || filePath.includes('..')) {
     return { success: false, error: "Forbidden" };
   }
 

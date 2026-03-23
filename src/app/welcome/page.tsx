@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Briefcase } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -12,6 +12,8 @@ import type { EnhancedConversionData } from "@/utils/enhanced-conversions";
 export default function WelcomePage() {
   const router = useRouter();
   const [userData, setUserData] = useState<EnhancedConversionData | undefined>();
+  const [userDataLoaded, setUserDataLoaded] = useState(false);
+  const conversionFired = useRef(false);
 
   useEffect(() => {
     // Fetch user data for enhanced conversions
@@ -47,12 +49,19 @@ export default function WelcomePage() {
 
         setUserData(enhancedData);
       }
+      setUserDataLoaded(true);
     }
 
     fetchUserData();
   }, []);
 
   useEffect(() => {
+    // Wait for user data fetch to complete before firing conversion
+    if (!userDataLoaded) return;
+    // Only fire conversion once (ref persists across re-renders)
+    if (conversionFired.current) return;
+    conversionFired.current = true;
+
     let redirected = false;
 
     const handleRedirect = () => {
@@ -65,12 +74,7 @@ export default function WelcomePage() {
     // Track Google Ads sign-up conversion with enhanced conversions
     // Must be async to properly hash user data before sending
     async function fireConversion() {
-      if (userData) {
-        await trackSignUpConversion(userData, handleRedirect);
-      } else {
-        // Fallback: track without enhanced data if user data isn't available
-        await trackSignUpConversion(undefined, handleRedirect);
-      }
+      await trackSignUpConversion(userData, handleRedirect);
     }
 
     fireConversion();
@@ -80,7 +84,7 @@ export default function WelcomePage() {
     const safetyTimer = setTimeout(handleRedirect, 5000);
 
     return () => clearTimeout(safetyTimer);
-  }, [router, userData]);
+  }, [router, userData, userDataLoaded]);
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-12 overflow-hidden">

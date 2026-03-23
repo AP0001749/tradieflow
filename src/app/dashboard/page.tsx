@@ -30,7 +30,7 @@ export default async function DashboardPage() {
   }
 
   // Fetch all data in parallel
-  const [clientsResult, jobsResult, invoicesResult, , recentSalesResult] = await Promise.all([
+  const [clientsResult, jobsResult, invoicesResult, recentSalesResult] = await Promise.all([
     // Total clients count
     supabase.from("clients").select("*", { count: "exact", head: true }).eq("user_id", user.id),
     
@@ -41,18 +41,12 @@ export default async function DashboardPage() {
       .eq("user_id", user.id)
       .eq("status", "in_progress"),
     
-    // All paid invoices for revenue and chart calculation
+    // All invoices for revenue, chart, and sales count calculation
     supabase
       .from("invoices")
       .select("amount, created_at, status")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
-    
-    // All invoices for sales count
-    supabase
-      .from("invoices")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id),
     
     // Recent sales - last 5 paid invoices with client info
     supabase
