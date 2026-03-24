@@ -1,5 +1,4 @@
-
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -13,33 +12,47 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
+      business_profile: {
+        Row: {
+          booking_url_slug: string
+          business_name: string
+          created_at: string | null
+          default_job_types: string[] | null
+          google_review_url: string | null
+          id: string
+          reply_to_email: string | null
+          service_area_postcodes: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          booking_url_slug: string
+          business_name: string
+          created_at?: string | null
+          default_job_types?: string[] | null
+          google_review_url?: string | null
+          id?: string
+          reply_to_email?: string | null
+          service_area_postcodes?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          booking_url_slug?: string
+          business_name?: string
+          created_at?: string | null
+          default_job_types?: string[] | null
+          google_review_url?: string | null
+          id?: string
+          reply_to_email?: string | null
+          service_area_postcodes?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: string | null
@@ -167,15 +180,134 @@ export type Database = {
           },
         ]
       }
+      lead_events: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          lead_id: string
+          meta: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          lead_id: string
+          meta?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          lead_id?: string
+          meta?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          business_id: string
+          converted_job_id: string | null
+          created_at: string | null
+          email: string | null
+          followup_step: number | null
+          id: string
+          job_type: string | null
+          last_contacted_at: string | null
+          name: string
+          next_followup_at: string | null
+          notes: string | null
+          phone: string | null
+          postcode: string | null
+          preferred_date: string | null
+          preferred_time_window: string | null
+          processing: boolean
+          processing_started_at: string | null
+          source: string | null
+          status: string
+          suburb: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          business_id: string
+          converted_job_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          followup_step?: number | null
+          id?: string
+          job_type?: string | null
+          last_contacted_at?: string | null
+          name: string
+          next_followup_at?: string | null
+          notes?: string | null
+          phone?: string | null
+          postcode?: string | null
+          preferred_date?: string | null
+          preferred_time_window?: string | null
+          processing?: boolean
+          processing_started_at?: string | null
+          source?: string | null
+          status?: string
+          suburb?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          business_id?: string
+          converted_job_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          followup_step?: number | null
+          id?: string
+          job_type?: string | null
+          last_contacted_at?: string | null
+          name?: string
+          next_followup_at?: string | null
+          notes?: string | null
+          phone?: string | null
+          postcode?: string | null
+          preferred_date?: string | null
+          preferred_time_window?: string | null
+          processing?: boolean
+          processing_started_at?: string | null
+          source?: string | null
+          status?: string
+          suburb?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_converted_job_id_fkey"
+            columns: ["converted_job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
           id: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
-          subscription_status: string | null
-          subscription_start_date: string | null
           subscription_end_date: string | null
+          subscription_start_date: string | null
+          subscription_status: string | null
           subscription_tier: string | null
           updated_at: string | null
           user_id: string
@@ -185,9 +317,9 @@ export type Database = {
           id?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
-          subscription_status?: string | null
-          subscription_start_date?: string | null
           subscription_end_date?: string | null
+          subscription_start_date?: string | null
+          subscription_status?: string | null
           subscription_tier?: string | null
           updated_at?: string | null
           user_id: string
@@ -197,12 +329,30 @@ export type Database = {
           id?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
-          subscription_status?: string | null
-          subscription_start_date?: string | null
           subscription_end_date?: string | null
+          subscription_start_date?: string | null
+          subscription_status?: string | null
           subscription_tier?: string | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      stripe_events: {
+        Row: {
+          event_type: string
+          id: string
+          processed_at: string
+        }
+        Insert: {
+          event_type: string
+          id: string
+          processed_at?: string
+        }
+        Update: {
+          event_type?: string
+          id?: string
+          processed_at?: string
         }
         Relationships: []
       }
@@ -211,7 +361,104 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_due_leads: {
+        Args: { limit_count?: number }
+        Returns: {
+          business_id: string
+          business_name: string
+          email: string
+          followup_step: number
+          id: string
+          job_type: string
+          name: string
+          notes: string
+          phone: string
+          preferred_date: string
+          preferred_time_window: string
+          reply_to_email: string
+          status: string
+          suburb: string
+        }[]
+      }
+      create_client_with_limit: {
+        Args: {
+          p_address?: string
+          p_email?: string
+          p_name: string
+          p_notes?: string
+          p_phone?: string
+        }
+        Returns: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "clients"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_invoice_with_limit: {
+        Args: {
+          p_amount: number
+          p_due_date: string
+          p_job_id: string
+          p_notes?: string
+        }
+        Returns: {
+          amount: number
+          created_at: string | null
+          due_date: string | null
+          id: string
+          job_id: string
+          notes: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "invoices"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_job_with_limit: {
+        Args: {
+          p_client_id: string
+          p_description?: string
+          p_price?: number
+          p_start_date?: string
+          p_status?: string
+          p_title: string
+        }
+        Returns: {
+          client_id: string | null
+          created_at: string
+          date_scheduled: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          price: number | null
+          start_date: string | null
+          status: string | null
+          title: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       [_ in never]: never
@@ -340,10 +587,8 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
 } as const
+

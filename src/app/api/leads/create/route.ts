@@ -1,117 +1,144 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizeBookingUrlSlug } from "@/lib/booking";
+
+const leadSchema = z.object({
+  booking_url_slug: z.string().trim().min(1),
+  website: z.string().trim().optional().default(""),
+  business_name: z.string().trim().max(120).optional().default(""),
+  your_name: z.string().trim().min(2).max(120),
+  mobile: z.string().trim().min(8).max(30),
+  email: z.string().trim().email().max(255),
+  service_area: z.string().trim().min(2).max(255),
+  service_type: z.string().trim().min(2).max(80),
+  abn: z.string().trim().max(30).optional().default(""),
+  notes: z.string().trim().max(2000).optional().default(""),
+});
+
+let ratelimit: Ratelimit | null = null;
+
+function getLeadRateLimit() {
+  if (ratelimit) {
+    return ratelimit;
+  }
+
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return null;
+  }
+
+  ratelimit = new Ratelimit({
+    redis: Redis.fromEnv(),
+    limiter: Ratelimit.slidingWindow(5, "10 s"),
+  });
+
+  return ratelimit;
+}
+
+function getClientIp(request: NextRequest) {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  const forwardedIp = forwardedFor?.split(",")[0]?.trim();
+  const directIp = "ip" in request ? (request.ip as string | undefined) : undefined;
+
+  return forwardedIp || directIp || "unknown";
+}
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const {
-      business_name,
-      your_name,
-      mobile,
-      email,
-      service_area,
-      service_type,
-      abn,
-      notes,
-    } = body;
+    const parsed = leadSchema.safeParse(body);
 
-    // Validate required fields
-    if (!your_name || !email || !mobile || !service_area || !service_type) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid request payload" }, { status: 400 });
     }
 
-    // Use service role for public lead capture to avoid RLS blocking inserts.
+    if (parsed.data.website) {
+      return NextResponse.json({ success: true });
+    }
+
+    const limiter = getLeadRateLimit();
+    if (!limiter) {
+      console.error("Missing Upstash Redis configuration for lead rate limiting");
+      return NextResponse.json({ error: "Lead capture unavailable" }, { status: 503 });
+    }
+
+    const ip = getClientIp(request);
+    const { success } = await limiter.limit(ip);
+
+    if (!success) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
+    const bookingUrlSlug = normalizeBookingUrlSlug(parsed.data.booking_url_slug);
+    if (!bookingUrlSlug) {
+      return NextResponse.json({ error: "Missing booking_url_slug" }, { status: 400 });
+    }
+
     const supabase = createAdminClient();
 
-    // Get the first business profile (for MVP, assuming single tenant per deployment)
-    // In production, you'd use booking_url_slug or subdomain routing
     const { data: businessProfile, error: businessError } = await supabase
-      .from('business_profile')
-      .select('id')
-      .limit(1)
-      .single();
+      .from("business_profile")
+      .select("id")
+      .eq("booking_url_slug", bookingUrlSlug)
+      .maybeSingle();
 
-    let businessProfileId = businessProfile?.id as string | undefined;
-
-    if (businessError || !businessProfileId) {
-      // Fallback for fresh deployments (MVP): create a default profile so leads can be captured.
-      const { data: created, error: createError } = await supabase
-        .from('business_profile')
-        .insert({
-          user_id: null,
-          business_name: process.env.DEFAULT_BUSINESS_NAME || 'TradieFlow',
-          reply_to_email: process.env.RESEND_FROM_EMAIL || 'noreply@tradieflow.com',
-          google_review_url: null,
-          service_area_postcodes: [],
-          default_job_types: [],
-        })
-        .select('id')
-        .single();
-
-      if (createError || !created?.id) {
-        console.error('Failed to create default business profile:', createError);
-        return NextResponse.json(
-          { error: 'Service not available yet' },
-          { status: 503 }
-        );
-      }
-
-      businessProfileId = created.id;
+    if (businessError) {
+      console.error("Business lookup error:", businessError);
+      return NextResponse.json({ error: "Failed to resolve business" }, { status: 500 });
     }
 
-    // Insert lead
-    const combinedNotes = [
-      business_name ? `Business: ${business_name}` : null,
-      abn ? `ABN: ${abn}` : null,
-      notes?.trim() ? notes.trim() : null,
-    ]
-      .filter(Boolean)
-      .join(' | ')
-      .trim() || null;
+    if (!businessProfile?.id) {
+      return NextResponse.json({ error: "Unknown booking_url_slug" }, { status: 400 });
+    }
+
+    const combinedNotes =
+      [
+        parsed.data.business_name ? `Business: ${parsed.data.business_name}` : null,
+        parsed.data.abn ? `ABN: ${parsed.data.abn}` : null,
+        parsed.data.notes || null,
+      ]
+        .filter(Boolean)
+        .join(" | ")
+        .trim() || null;
 
     const { data: lead, error: leadError } = await supabase
-      .from('leads')
+      .from("leads")
       .insert({
-        business_id: businessProfileId,
-        source: 'book_page',
-        status: 'new',
-        name: your_name,
-        email,
-        phone: mobile,
-        suburb: service_area,
+        business_id: businessProfile.id,
+        source: "book_page",
+        status: "new",
+        name: parsed.data.your_name,
+        email: parsed.data.email,
+        phone: parsed.data.mobile,
+        suburb: parsed.data.service_area,
         postcode: null,
-        job_type: service_type,
+        job_type: parsed.data.service_type,
         preferred_date: null,
         preferred_time_window: null,
         notes: combinedNotes,
+        followup_step: 0,
+        next_followup_at: new Date().toISOString(),
+        processing: false,
       })
-      .select()
+      .select("id")
       .single();
 
-    if (leadError) {
-      console.error('Lead creation error:', leadError);
-      return NextResponse.json(
-        { error: 'Failed to create lead' },
-        { status: 500 }
-      );
+    if (leadError || !lead?.id) {
+      console.error("Lead creation error:", leadError);
+      return NextResponse.json({ error: "Failed to create lead" }, { status: 500 });
     }
 
-    // Log event
-    await supabase.from('lead_events').insert({
+    await supabase.from("lead_events").insert({
       lead_id: lead.id,
-      event_type: 'created',
-      meta: { source: 'book_page' },
+      event_type: "created",
+      meta: { source: "book_page", booking_url_slug: bookingUrlSlug, ip },
     });
 
     return NextResponse.json({ success: true, lead_id: lead.id });
   } catch (error) {
-    console.error('Unexpected error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error("Unexpected error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

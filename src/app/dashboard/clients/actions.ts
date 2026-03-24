@@ -2,16 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { ClientInsert } from "@/types";
-import { canCreateClient } from "@/lib/subscription";
 
 export async function addClient(formData: FormData) {
-  // Check subscription limits first
-  const limitCheck = await canCreateClient();
-  if (!limitCheck.allowed) {
-    return { error: limitCheck.error };
-  }
-
   const supabase = await createClient();
 
   const {
@@ -32,16 +24,13 @@ export async function addClient(formData: FormData) {
     return { error: "Name is required" };
   }
 
-  const newClient: ClientInsert = {
-    user_id: user.id,
-    name,
-    email: email || null,
-    phone: phone || null,
-    address: address || null,
-    notes: notes || null,
-  };
-
-  const { error } = await supabase.from("clients").insert(newClient);
+  const { error } = await supabase.rpc("create_client_with_limit", {
+    p_name: name,
+    p_email: email || null,
+    p_phone: phone || null,
+    p_address: address || null,
+    p_notes: notes || null,
+  });
 
   if (error) {
     console.error("Error adding client:", error);

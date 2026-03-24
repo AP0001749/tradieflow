@@ -2,7 +2,6 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { canCreateClient, canCreateJob } from '@/lib/subscription';
 
 export async function getLeads() {
   const supabase = await createClient();
@@ -128,52 +127,34 @@ export async function convertLeadToJob(leadId: string) {
   if (existingClient) {
     clientId = existingClient.id;
   } else {
-    // Check subscription limits before creating a new client
-    const clientLimitCheck = await canCreateClient();
-    if (!clientLimitCheck.allowed) {
-      throw new Error(clientLimitCheck.error || 'Client limit reached');
+    const { data: newClient, error: clientError } = await supabase.rpc(
+      'create_client_with_limit',
+      {
+        p_name: lead.name,
+        p_email: lead.email,
+        p_phone: lead.phone,
+        p_address: lead.suburb && lead.postcode ? `${lead.suburb} ${lead.postcode}` : null,
+        p_notes: lead.notes,
+      }
+    );
+
+    if (clientError || !newClient) {
+      throw new Error(clientError?.message || 'Failed to create client');
     }
-
-    // Create new client
-    const { data: newClient, error: clientError } = await supabase
-      .from('clients')
-      .insert({
-        user_id: user.id,
-        name: lead.name,
-        email: lead.email,
-        phone: lead.phone,
-        address: lead.suburb && lead.postcode ? `${lead.suburb} ${lead.postcode}` : null,
-        notes: lead.notes,
-      })
-      .select()
-      .single();
-
-    if (clientError || !newClient) throw new Error('Failed to create client');
     clientId = newClient.id;
   }
 
-  // Check subscription limits before creating a job
-  const jobLimitCheck = await canCreateJob();
-  if (!jobLimitCheck.allowed) {
-    throw new Error(jobLimitCheck.error || 'Job limit reached');
-  }
-
-  // Create job
   const jobTitle = `${lead.job_type?.replaceAll('_', ' ') || 'Job'} - ${lead.suburb || 'Job'}`;
-  const { data: job, error: jobError } = await supabase
-    .from('jobs')
-    .insert({
-      user_id: user.id,
-      client_id: clientId,
-      title: jobTitle,
-      description: lead.notes,
-      start_date: lead.preferred_date,
-      status: 'scheduled',
-    })
-    .select()
-    .single();
+  const { data: job, error: jobError } = await supabase.rpc('create_job_with_limit', {
+    p_client_id: clientId,
+    p_title: jobTitle,
+    p_status: 'scheduled',
+    p_price: null,
+    p_start_date: lead.preferred_date,
+    p_description: lead.notes,
+  });
 
-  if (jobError || !job) throw new Error('Failed to create job');
+  if (jobError || !job) throw new Error(jobError?.message || 'Failed to create job');
 
   // Update lead
   const { error: leadUpdateError } = await supabase

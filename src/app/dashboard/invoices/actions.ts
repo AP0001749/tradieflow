@@ -2,11 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { InvoiceInsert, InvoiceStatus, InvoiceUpdate } from "@/types";
+import { InvoiceStatus, InvoiceUpdate } from "@/types";
 import { getResend } from "@/lib/resend";
 import { InvoiceEmail } from "@/emails/invoice-email";
 import { render } from "@react-email/render";
-import { canCreateInvoice } from "@/lib/subscription";
 
 type InvoiceableJob = {
   id: string;
@@ -74,12 +73,6 @@ export async function getInvoiceableJobs() {
 }
 
 export async function createInvoice(formData: FormData) {
-  // Check subscription limits first
-  const limitCheck = await canCreateInvoice();
-  if (!limitCheck.allowed) {
-    return { error: limitCheck.error };
-  }
-
   const supabase = await createClient();
 
   const {
@@ -130,16 +123,12 @@ export async function createInvoice(formData: FormData) {
     return { error: "This job already has an invoice" };
   }
 
-  const payload: InvoiceInsert = {
-    user_id: user.id,
-    job_id,
-    amount,
-    due_date,
-    status: "unpaid" satisfies InvoiceStatus,
-    notes: null,
-  };
-
-  const { error } = await supabase.from("invoices").insert(payload);
+  const { error } = await supabase.rpc("create_invoice_with_limit", {
+    p_job_id: job_id,
+    p_amount: amount,
+    p_due_date: due_date,
+    p_notes: null,
+  });
 
   if (error) {
     console.error("Error creating invoice:", error);

@@ -36,6 +36,22 @@ export async function POST(request: Request) {
   }
 
   try {
+    const { error: eventInsertError } = await supabaseAdmin
+      .from("stripe_events")
+      .insert({
+        id: event.id,
+        event_type: event.type,
+      });
+
+    if (eventInsertError) {
+      if (eventInsertError.code === "23505") {
+        return NextResponse.json({ received: true });
+      }
+
+      console.error("Failed to persist Stripe event:", eventInsertError);
+      return NextResponse.json({ error: "Webhook event persistence failed" }, { status: 500 });
+    }
+
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;

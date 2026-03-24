@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { updateBusinessProfile } from './actions';
 import { useRouter } from 'next/navigation';
+import { normalizeBookingUrlSlug } from '@/lib/booking';
 
 interface BusinessProfile {
   id: string;
@@ -27,6 +28,7 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [bookingSlug, setBookingSlug] = useState(profile?.booking_url_slug || '');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,26 +37,32 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
     setSuccess(false);
 
     const formData = new FormData(e.currentTarget);
-    
+
     const postcodes = (formData.get('service_area_postcodes') as string)
       .split(',')
-      .map(p => p.trim())
-      .filter(p => p);
+      .map((p) => p.trim())
+      .filter((p) => p);
 
     const jobTypes = (formData.get('default_job_types') as string)
       .split(',')
-      .map(t => t.trim())
-      .filter(t => t);
+      .map((t) => t.trim())
+      .filter((t) => t);
+
+    const businessName = formData.get('business_name') as string;
+    const requestedSlug = (formData.get('booking_url_slug') as string) || businessName;
+    const normalizedSlug = normalizeBookingUrlSlug(requestedSlug);
 
     try {
       await updateBusinessProfile({
-        business_name: formData.get('business_name') as string,
+        business_name: businessName,
         reply_to_email: formData.get('reply_to_email') as string,
         google_review_url: formData.get('google_review_url') as string,
         service_area_postcodes: postcodes,
         default_job_types: jobTypes,
+        booking_url_slug: normalizedSlug,
       });
 
+      setBookingSlug(normalizedSlug);
       setSuccess(true);
       router.refresh();
     } catch (err) {
@@ -64,9 +72,10 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
     }
   };
 
-  const onboardingFormUrl = process.env.NEXT_PUBLIC_APP_URL
-    ? `${process.env.NEXT_PUBLIC_APP_URL}/book`
-    : '/book';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+  const effectiveSlug =
+    bookingSlug || normalizeBookingUrlSlug(profile?.business_name || '') || 'your-business';
+  const onboardingFormUrl = appUrl ? `${appUrl}/book/${effectiveSlug}` : `/book/${effectiveSlug}`;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -87,6 +96,24 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
               defaultValue={profile?.business_name || ''}
               placeholder="ABC Cleaning Services"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="booking_url_slug">Booking URL Slug *</Label>
+            <Input
+              id="booking_url_slug"
+              name="booking_url_slug"
+              required
+              value={bookingSlug}
+              onChange={(event) => {
+                setBookingSlug(normalizeBookingUrlSlug(event.target.value));
+              }}
+              placeholder="abc-cleaning-services"
+            />
+            <p className="text-xs text-muted-foreground">
+              Lowercase letters, numbers, and hyphens only. This becomes your public
+              booking link.
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -146,7 +173,9 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
             <Input
               id="default_job_types"
               name="default_job_types"
-              defaultValue={profile?.default_job_types?.join(', ') || 'end_of_lease, regular, deep_clean'}
+              defaultValue={
+                profile?.default_job_types?.join(', ') || 'end_of_lease, regular, deep_clean'
+              }
               placeholder="end_of_lease, regular, deep_clean"
             />
             <p className="text-xs text-muted-foreground">
@@ -195,7 +224,9 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
 
       {success && (
         <div className="p-3 rounded-md border border-emerald-500/30 bg-emerald-500/10">
-          <p className="text-sm text-emerald-700 dark:text-emerald-200">Settings saved successfully!</p>
+          <p className="text-sm text-emerald-700 dark:text-emerald-200">
+            Settings saved successfully!
+          </p>
         </div>
       )}
 

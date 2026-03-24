@@ -1,11 +1,51 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { normalizeBookingUrlSlug } from '@/lib/booking';
 import { revalidatePath } from 'next/cache';
+
+async function generateAvailableBookingSlug(
+  preferredValue: string,
+  profileIdToIgnore?: string
+) {
+  const supabaseAdmin = createAdminClient();
+  const normalizedBase = normalizeBookingUrlSlug(preferredValue);
+
+  if (!normalizedBase) {
+    throw new Error('Booking URL slug is required');
+  }
+
+  for (let attempt = 0; attempt < 25; attempt += 1) {
+    const candidate =
+      attempt === 0 ? normalizedBase : `${normalizedBase}-${attempt + 1}`;
+
+    let query = supabaseAdmin
+      .from('business_profile')
+      .select('id')
+      .eq('booking_url_slug', candidate)
+      .limit(1);
+
+    if (profileIdToIgnore) {
+      query = query.neq('id', profileIdToIgnore);
+    }
+
+    const { data: existing, error } = await query.maybeSingle();
+    if (error) {
+      throw error;
+    }
+
+    if (!existing) {
+      return candidate;
+    }
+  }
+
+  throw new Error('Could not generate a unique booking URL slug');
+}
 
 export async function getBusinessProfile() {
   const supabase = await createClient();
-  
+
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
@@ -15,7 +55,7 @@ export async function getBusinessProfile() {
     .eq('user_id', user.id)
     .single();
 
-  if (error && error.code !== 'PGRST116') throw error; // Ignore "not found" error
+  if (error && error.code !== 'PGRST116') throw error;
   return data;
 }
 
@@ -25,91 +65,53 @@ export async function updateBusinessProfile(formData: {
   google_review_url?: string;
   service_area_postcodes?: string[];
   default_job_types?: string[];
+  booking_url_slug?: string;
 }) {
   const supabase = await createClient();
-  
+
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  // Check if profile exists
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from('business_profile')
     .select('id')
     .eq('user_id', user.id)
-    .single();
+    .maybeSingle();
 
-  if (existing) {
-    // Update
+  if (existingError) {
+    throw existingError;
+  }
+
+  const bookingUrlSlug = await generateAvailableBookingSlug(
+    formData.booking_url_slug || formData.business_name,
+    existing?.id
+  );
+
+  const payload = {
+    business_name: formData.business_name,
+    reply_to_email: formData.reply_to_email,
+    google_review_url: formData.google_review_url || null,
+    service_area_postcodes: formData.service_area_postcodes || [],
+    default_job_types: formData.default_job_types || [],
+    booking_url_slug: bookingUrlSlug,
+  };
+
+  if (existing?.id) {
     const { error } = await supabase
       .from('business_profile')
-      .update({
-        business_name: formData.business_name,
-        reply_to_email: formData.reply_to_email,
-        google_review_url: formData.google_review_url || null,
-        service_area_postcodes: formData.service_area_postcodes || [],
-        default_job_types: formData.default_job_types || [],
-      })
+      .update(payload)
       .eq('id', existing.id);
 
     if (error) throw error;
   } else {
-    // Claim an existing default profile (created by public lead capture) if present,
-    // otherwise create a brand new profile for this user.
-    // Use an atomic filter to avoid race conditions where two users claim the same profile.
-    const { data: defaultProfile } = await supabase
+    const { error } = await supabase
       .from('business_profile')
-      .select('id')
-      .is('user_id', null)
-      .limit(1)
-      .maybeSingle();
+      .insert({
+        user_id: user.id,
+        ...payload,
+      });
 
-    if (defaultProfile?.id) {
-      // Atomically claim only if still unclaimed (user_id IS NULL)
-      const { data: claimed, error } = await supabase
-        .from('business_profile')
-        .update({
-          user_id: user.id,
-          business_name: formData.business_name,
-          reply_to_email: formData.reply_to_email,
-          google_review_url: formData.google_review_url || null,
-          service_area_postcodes: formData.service_area_postcodes || [],
-          default_job_types: formData.default_job_types || [],
-        })
-        .eq('id', defaultProfile.id)
-        .is('user_id', null) // Only claim if still unclaimed
-        .select('id');
-
-      if (error) throw error;
-
-      // If another user already claimed it (empty result), create a new one instead
-      if (!claimed || claimed.length === 0) {
-        const { error: insertError } = await supabase
-          .from('business_profile')
-          .insert({
-            user_id: user.id,
-            business_name: formData.business_name,
-            reply_to_email: formData.reply_to_email,
-            google_review_url: formData.google_review_url || null,
-            service_area_postcodes: formData.service_area_postcodes || [],
-            default_job_types: formData.default_job_types || [],
-          });
-
-        if (insertError) throw insertError;
-      }
-    } else {
-      const { error } = await supabase
-        .from('business_profile')
-        .insert({
-          user_id: user.id,
-          business_name: formData.business_name,
-          reply_to_email: formData.reply_to_email,
-          google_review_url: formData.google_review_url || null,
-          service_area_postcodes: formData.service_area_postcodes || [],
-          default_job_types: formData.default_job_types || [],
-        });
-
-      if (error) throw error;
-    }
+    if (error) throw error;
   }
 
   revalidatePath('/dashboard/settings');

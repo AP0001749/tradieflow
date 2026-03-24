@@ -11,8 +11,11 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // If env vars are missing (common in misconfigured preview deploys), don't crash the app.
   if (!supabaseUrl || !supabaseAnonKey) {
+    if (request.nextUrl.pathname.startsWith("/dashboard")) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+
     return response;
   }
 

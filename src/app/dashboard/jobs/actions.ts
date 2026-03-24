@@ -2,8 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { JobInsert, JobStatus } from "@/types";
-import { canCreateJob } from "@/lib/subscription";
+import { JobStatus } from "@/types";
+import {
+  ALLOWED_JOB_PHOTO_MIME_TYPES,
+  MAX_JOB_PHOTO_SIZE_BYTES,
+  isAllowedJobPhotoMimeType,
+} from "@/lib/job-photos";
 
 const isDev = process.env.NODE_ENV !== "production";
 const debugLog = (...args: unknown[]) => {
@@ -13,12 +17,6 @@ const debugLog = (...args: unknown[]) => {
 };
 
 export async function createJob(formData: FormData) {
-  // Check subscription limits first
-  const limitCheck = await canCreateJob();
-  if (!limitCheck.allowed) {
-    return { error: limitCheck.error };
-  }
-
   const supabase = await createClient();
 
   const {
@@ -71,17 +69,20 @@ export async function createJob(formData: FormData) {
     return { error: "Invalid client selected" };
   }
 
-  const newJob: JobInsert = {
-    user_id: user.id,
-    client_id,
-    title,
-    status: status,
-    price: price ? (Number.isFinite(parseFloat(price)) ? parseFloat(price) : null) : null,
-    start_date: start_date || null,
-    description: description || null,
-  };
+  const parsedPrice = price
+    ? Number.isFinite(parseFloat(price))
+      ? parseFloat(price)
+      : null
+    : null;
 
-  const { error } = await supabase.from("jobs").insert(newJob);
+  const { error } = await supabase.rpc("create_job_with_limit", {
+    p_client_id: client_id,
+    p_title: title,
+    p_status: status,
+    p_price: parsedPrice,
+    p_start_date: start_date || null,
+    p_description: description || null,
+  });
 
   if (error) {
     console.error("Error creating job:", error);
@@ -293,6 +294,20 @@ export async function uploadJobPhoto(formData: FormData): Promise<UploadPhotoRes
       return { success: false, error: "Invalid file object" };
     }
 
+    if (!isAllowedJobPhotoMimeType(file.type)) {
+      return {
+        success: false,
+        error: `Only image uploads are allowed (${ALLOWED_JOB_PHOTO_MIME_TYPES.join(", ")})`,
+      };
+    }
+
+    if (file.size > MAX_JOB_PHOTO_SIZE_BYTES) {
+      return {
+        success: false,
+        error: "File is too large. Maximum size is 5MB.",
+      };
+    }
+
     // Verify the user owns this job
     const { data: job, error: jobError } = await supabase
       .from("jobs")
@@ -328,10 +343,10 @@ export async function uploadJobPhoto(formData: FormData): Promise<UploadPhotoRes
       return { success: false, error: uploadError.message };
     }
 
-    // Get signed URL (valid for 1 year)
+    // Keep signed URLs short-lived so leaked links expire quickly.
     const { data: signedUrlData, error: urlError } = await supabase.storage
       .from("job-photos")
-      .createSignedUrl(filePath, 31536000); // 1 year in seconds
+      .createSignedUrl(filePath, 3600);
 
     if (urlError || !signedUrlData) {
       console.error("Error creating signed URL:", urlError);

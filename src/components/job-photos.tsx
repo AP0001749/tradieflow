@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Upload, Image as ImageIcon, Trash2 } from "lucide-react";
 import { uploadJobPhoto, deleteJobPhoto } from "@/app/dashboard/jobs/actions";
+import {
+  MAX_JOB_PHOTO_SIZE_BYTES,
+  isAllowedJobPhotoMimeType,
+} from "@/lib/job-photos";
 
 const isDev = process.env.NODE_ENV !== "production";
 const debugLog = (...args: unknown[]) => {
@@ -43,15 +47,13 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
       try {
         let completed = 0;
         for (const file of acceptedFiles) {
-          // Validate file type
-          if (!file.type.startsWith("image/")) {
+          if (!isAllowedJobPhotoMimeType(file.type)) {
             setError(`${file.name} is not an image file`);
             continue;
           }
 
-          // Validate file size (max 10MB)
-          if (file.size > 10 * 1024 * 1024) {
-            setError(`${file.name} is too large (max 10MB)`);
+          if (file.size > MAX_JOB_PHOTO_SIZE_BYTES) {
+            setError(`${file.name} is too large (max 5MB)`);
             continue;
           }
 
@@ -100,7 +102,10 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
+      "image/jpeg": [".jpg", ".jpeg"],
+      "image/png": [".png"],
+      "image/webp": [".webp"],
+      "image/gif": [".gif"],
     },
     multiple: true,
     disabled: uploading,
@@ -144,7 +149,7 @@ export function JobPhotos({ jobId, userId, initialPhotos = [] }: JobPhotosProps)
                     Drag & drop images here, or click to select
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    PNG, JPG, GIF up to 10MB
+                    PNG, JPG, GIF, WEBP up to 5MB
                   </p>
                 </div>
                 <Button type="button" variant="outline" disabled={uploading}>
