@@ -9,7 +9,7 @@ TradieFlow is a job + client + invoicing system built for Australian tradies. It
 - Photos upload support (server actions body size increased)
 - Supabase Auth (Google OAuth + email/password) + route protection via middleware
 - Stripe subscriptions (checkout, portal, webhook)
-- Lead capture endpoint + scheduled lead follow-up emails (Vercel Cron)
+- Lead capture endpoint + scheduled lead follow-up emails (Supabase Cron + Edge Function)
 - Google Ads conversion tracking + Enhanced Conversions utilities
 
 ## Tech stack
@@ -78,10 +78,20 @@ To enable public lead capture (server-side insert bypassing RLS):
 SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-To enable the scheduled lead follow-up cron (Vercel Cron):
+To enable the scheduled lead follow-up scheduler:
 
 ```bash
 CRON_SECRET=
+LEAD_FOLLOWUP_SECRET=
+```
+
+Supabase Edge Function secrets also need:
+
+```bash
+SUPABASE_SERVICE_ROLE_KEY=
+RESEND_API_KEY=
+RESEND_SENDER_EMAIL=
+RESEND_REPLY_TO_EMAIL=
 ```
 
 Optional (Google Ads):
@@ -125,13 +135,15 @@ Forward Stripe events to the webhook route:
 stripe listen --forward-to http://localhost:3000/api/stripe/webhook
 ```
 
-## Lead automation (cron)
+## Lead automation (scheduler)
 
-Vercel Cron is configured in `vercel.json` to call:
+Production lead follow-up now runs through:
 
-- `GET /api/cron/leads-followup`
+- Supabase Cron
+- `public.invoke_lead_followup()`
+- `supabase/functions/lead-followup`
 
-The request must include `Authorization: Bearer <CRON_SECRET>`.
+The legacy Next.js route `GET /api/cron/leads-followup` remains available as a manual fallback.
 
 See:
 
@@ -158,7 +170,7 @@ Recommended deployment target is Vercel.
 - Add all env vars in the Vercel Project Settings
 - Update Supabase Auth redirect URLs for your production domain
 - Configure Stripe webhook endpoint to `/api/stripe/webhook`
-- If using cron, set `CRON_SECRET` and keep it private
+- Configure Supabase Edge Function secrets and Vault secrets before enabling the scheduler
 
 ## License
 

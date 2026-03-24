@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/leads-followup",
-      "schedule": "*/15 * * * *"
-    }
-  ]
-}

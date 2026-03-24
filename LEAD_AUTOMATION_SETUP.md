@@ -30,8 +30,11 @@ This creates three new tables:
 Add to your `.env.local` (and Vercel environment variables):
 
 ```env
-# Cron job authentication (generate a random secure token)
+# Legacy manual cron route authentication
 CRON_SECRET=your-random-secure-token-here
+
+# Supabase Edge Function authentication
+LEAD_FOLLOWUP_SECRET=your-random-secure-followup-secret-here
 
 # Already configured (verify these exist)
 RESEND_API_KEY=your-resend-key
@@ -40,30 +43,49 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-Generate a secure CRON_SECRET:
+Generate a secure secret:
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-### 3. Configure Vercel Cron (Production Only)
+### 3. Configure Supabase Cron + Edge Function (Production Only)
 
-The `vercel.json` file is already configured to run the cron job every 15 minutes:
+Lead follow-up is now scheduled from Supabase instead of Vercel. The migration adds:
 
-```json
-{
-  "crons": [
-    {
-      "path": "/api/cron/leads-followup",
-      "schedule": "*/15 * * * *"
-    }
-  ]
-}
+- `public.invoke_lead_followup()` - DB wrapper that calls the Edge Function
+- `public.configure_lead_followup_cron()` - creates the 15-minute cron job
+- `supabase/functions/lead-followup` - TypeScript email processor
+
+Before enabling the cron job, create these Vault secrets in Supabase:
+
+```sql
+select vault.create_secret('https://YOUR_PROJECT_REF.supabase.co', 'project_url');
+select vault.create_secret('YOUR_SUPABASE_ANON_KEY', 'supabase_anon_key');
+select vault.create_secret('YOUR_LEAD_FOLLOWUP_SECRET', 'lead_followup_secret');
 ```
 
-In Vercel:
-1. Go to your project settings
-2. Add `CRON_SECRET` environment variable
-3. Deploy - cron will run automatically
+Deploy the Edge Function:
+
+```bash
+npx supabase functions deploy lead-followup --no-verify-jwt
+```
+
+Set Edge Function secrets:
+
+```bash
+npx supabase secrets set \
+  LEAD_FOLLOWUP_SECRET=your-random-secure-followup-secret \
+  SUPABASE_SERVICE_ROLE_KEY=your-service-role-key \
+  RESEND_API_KEY=your-resend-key \
+  RESEND_SENDER_EMAIL=your-verified-sender \
+  RESEND_REPLY_TO_EMAIL=your-reply-to-email
+```
+
+If the secrets were not present when the migration ran, create the cron job after secrets are loaded:
+
+```sql
+select public.configure_lead_followup_cron();
+```
 
 ### 4. Set Up Your Business Profile
 
@@ -78,7 +100,7 @@ In Vercel:
 
 ### 5. Share Your Booking Page
 
-Your public booking page is at: `/book`
+Your public booking page is at: `/book/[booking_url_slug]`
 
 Use this URL in:
 - Google Ads campaigns
@@ -92,7 +114,7 @@ Use this URL in:
 
 ### Lead Flow
 
-1. **Lead submits form** at `/book`
+1. **Lead submits form** at `/book/[booking_url_slug]`
    - Creates lead record with status `new`
    - Triggers immediate follow-up scheduling
 
@@ -131,13 +153,18 @@ When you click "Convert to Job":
 ### Test the booking page:
 ```bash
 npm run dev
-# Visit http://localhost:3000/book
+# Visit http://localhost:3000/book/your-booking-slug
 ```
 
 ### Test the cron job manually:
 ```bash
 curl http://localhost:3000/api/cron/leads-followup \
   -H "Authorization: Bearer your-cron-secret"
+```
+
+### Test the Supabase Edge Function manually:
+```bash
+npx supabase functions serve lead-followup --no-verify-jwt
 ```
 
 ### Check Resend emails:
@@ -177,10 +204,10 @@ Customize these to match your brand voice.
 
 ## Google Ads Integration
 
-Update `/book` page with your Google Ads conversion tracking:
+Update `/book/[slug]` page with your Google Ads conversion tracking:
 
 ```typescript
-// In src/app/book/page.tsx
+// In src/components/book/booking-request-form.tsx
 if (typeof window !== 'undefined' && (window as any).gtag) {
   (window as any).gtag('event', 'conversion', {
     send_to: 'AW-YOUR_ID/YOUR_LABEL', // Replace with your conversion ID
@@ -210,8 +237,8 @@ AND status IN ('new', 'contacted');
 ```
 
 ### Check cron execution:
-- Vercel: Dashboard > Deployments > Functions > Logs
-- Look for `/api/cron/leads-followup` executions
+- Supabase: Database > Extensions > Cron > Job Run History
+- Supabase: Edge Functions > `lead-followup` > Logs
 
 ---
 
@@ -223,9 +250,10 @@ AND status IN ('new', 'contacted');
 3. Check `lead_events` table for errors
 
 ### Cron not running:
-1. Verify `CRON_SECRET` is set in Vercel
-2. Check Vercel Functions logs
-3. Test manually with curl
+1. Verify Vault secrets exist: `project_url`, `supabase_anon_key`, `lead_followup_secret`
+2. Verify `lead-followup` Edge Function is deployed
+3. Check `cron.job` and `cron.job_run_details`
+4. Test `select public.invoke_lead_followup();`
 
 ### Leads not appearing:
 1. Verify business profile exists
@@ -256,6 +284,6 @@ AND status IN ('new', 'contacted');
 
 For issues or questions:
 1. Check Supabase logs
-2. Check Vercel function logs
+2. Check Supabase Edge Function logs
 3. Check Resend delivery logs
 4. Review `lead_events` table for audit trail
