@@ -110,8 +110,8 @@ export default function Home() {
                  "Manage cleaning jobs & customer contacts",
                  "Work on your phone, tablet, or laptop",
                  "Australian-friendly (GST ready)"
-              ].map((feature, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-card border border-border">
+              ].map((feature) => (
+                <div key={feature} className="flex items-start gap-3 p-3 rounded-lg bg-card border border-border">
                   <CheckCircle className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
                   <span className="text-sm text-foreground">{feature}</span>
                 </div>

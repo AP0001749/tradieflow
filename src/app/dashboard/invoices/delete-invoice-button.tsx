@@ -45,6 +45,7 @@ export function DeleteInvoiceButton({
         onClick={handleDelete}
         disabled={isDeleting}
         className="text-red-600 hover:text-red-700 hover:bg-red-50"
+        aria-label={`Delete invoice ${invoiceNumber}`}
       >
         <Trash2 className="w-4 h-4" />
       </Button>

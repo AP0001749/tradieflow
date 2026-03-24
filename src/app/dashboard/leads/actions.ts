@@ -11,12 +11,13 @@ export async function getLeads() {
   if (!user) throw new Error('Not authenticated');
 
   // Get business profile
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('business_profile')
     .select('id')
     .eq('user_id', user.id)
     .single();
 
+  if (profileError && profileError.code !== 'PGRST116') throw profileError;
   if (!profile) {
     return [];
   }
@@ -44,12 +45,13 @@ export async function updateLeadStatus(leadId: string, status: string) {
   }
 
   // Verify the lead belongs to the user's business
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('business_profile')
     .select('id')
     .eq('user_id', user.id)
     .single();
 
+  if (profileError && profileError.code !== 'PGRST116') throw profileError;
   if (!profile) throw new Error('Business profile not found');
 
   const { data: updated, error } = await supabase
@@ -79,12 +81,13 @@ export async function convertLeadToJob(leadId: string) {
   if (!user) throw new Error('Not authenticated');
 
   // Verify the lead belongs to the user's business
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('business_profile')
     .select('id')
     .eq('user_id', user.id)
     .single();
 
+  if (profileError && profileError.code !== 'PGRST116') throw profileError;
   if (!profile) throw new Error('Business profile not found');
 
   // Get lead details (scoped to user's business)
