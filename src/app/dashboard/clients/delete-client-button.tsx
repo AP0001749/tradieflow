@@ -13,6 +13,7 @@ export function DeleteClientButton({
   clientName: string;
 }) {
   const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleDelete() {
     if (!confirm(`Delete client "${clientName}"? This will also delete all their jobs and invoices.`)) {
@@ -20,24 +21,28 @@ export function DeleteClientButton({
     }
 
     setDeleting(true);
+    setError(null);
     const result = await deleteClient(clientId);
 
     if (result.error) {
-      alert(`Error: ${result.error}`);
+      setError(result.error);
       setDeleting(false);
     }
     // No need to reset state on success since the component will unmount
   }
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={handleDelete}
-      disabled={deleting}
-      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-    >
-      <Trash2 className="h-4 w-4" />
-    </Button>
+    <div className="inline-flex flex-col items-end gap-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleDelete}
+        disabled={deleting}
+        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
   );
 }

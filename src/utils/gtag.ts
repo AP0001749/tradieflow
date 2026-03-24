@@ -256,19 +256,27 @@ export async function trackSubscriptionConversion(
 
 function hasConversionFired(storageKey: string): boolean {
   if (typeof window === 'undefined') return false;
-  return window.sessionStorage.getItem(storageKey) === 'true';
+  try {
+    return window.sessionStorage.getItem(storageKey) === 'true';
+  } catch {
+    return false;
+  }
 }
 
 function markConversionFired(storageKey: string): void {
   if (typeof window === 'undefined') return;
-  window.sessionStorage.setItem(storageKey, 'true');
+  try {
+    window.sessionStorage.setItem(storageKey, 'true');
+  } catch {
+    // sessionStorage unavailable (private browsing)
+  }
 }
 
 function getLeadFiredIds(): Set<string> {
   if (typeof window === 'undefined') return new Set();
-  const raw = window.sessionStorage.getItem(LEAD_CONVERSION_STORAGE_KEY);
-  if (!raw) return new Set();
   try {
+    const raw = window.sessionStorage.getItem(LEAD_CONVERSION_STORAGE_KEY);
+    if (!raw) return new Set();
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return new Set();
     return new Set(parsed.filter((x) => typeof x === 'string'));
@@ -279,7 +287,11 @@ function getLeadFiredIds(): Set<string> {
 
 function setLeadFiredIds(ids: Set<string>) {
   if (typeof window === 'undefined') return;
-  window.sessionStorage.setItem(LEAD_CONVERSION_STORAGE_KEY, JSON.stringify(Array.from(ids)));
+  try {
+    window.sessionStorage.setItem(LEAD_CONVERSION_STORAGE_KEY, JSON.stringify(Array.from(ids)));
+  } catch {
+    // sessionStorage unavailable
+  }
 }
 
 function hasLeadConversionFired(leadId: string): boolean {
@@ -342,8 +354,12 @@ export function getTrackingStatus() {
  */
 export function resetConversionTracking() {
   if (typeof window === 'undefined') return;
-  window.sessionStorage.removeItem(SIGNUP_CONVERSION_STORAGE_KEY);
-  window.sessionStorage.removeItem(LEAD_CONVERSION_STORAGE_KEY);
+  try {
+    window.sessionStorage.removeItem(SIGNUP_CONVERSION_STORAGE_KEY);
+    window.sessionStorage.removeItem(LEAD_CONVERSION_STORAGE_KEY);
+  } catch {
+    // sessionStorage unavailable
+  }
   if (process.env.NODE_ENV === 'development') {
     console.log('RESET [Google Ads] Conversion tracking reset - you can fire another test conversion');
   }

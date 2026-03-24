@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
         if (!userId) {
           console.error("checkout.session.completed missing metadata.userId");
-          return NextResponse.json({ received: true });
+          return NextResponse.json({ error: "Missing userId in metadata" }, { status: 400 });
         }
 
         const update: Record<string, unknown> = {

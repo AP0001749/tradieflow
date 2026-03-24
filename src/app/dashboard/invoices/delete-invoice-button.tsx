@@ -15,6 +15,7 @@ export function DeleteInvoiceButton({
   invoiceNumber,
 }: DeleteInvoiceButtonProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleDelete() {
     if (
@@ -26,24 +27,28 @@ export function DeleteInvoiceButton({
     }
 
     setIsDeleting(true);
+    setError(null);
     const result = await deleteInvoice(invoiceId);
 
     if (!result.success) {
-      alert(`Error: ${result.error}`);
+      setError(result.error ?? "Failed to delete invoice");
       setIsDeleting(false);
     }
     // On success, the page will revalidate automatically
   }
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={handleDelete}
-      disabled={isDeleting}
-      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-    >
-      <Trash2 className="w-4 h-4" />
-    </Button>
+    <div className="inline-flex flex-col items-end gap-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleDelete}
+        disabled={isDeleting}
+        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+      >
+        <Trash2 className="w-4 h-4" />
+      </Button>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
   );
 }
