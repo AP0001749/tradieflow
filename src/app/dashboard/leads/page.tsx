@@ -12,11 +12,15 @@ export default async function LeadsPage() {
   }
 
   // Check if business profile exists
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('business_profile')
     .select('id')
     .eq('user_id', user.id)
     .single();
+
+  if (profileError && profileError.code !== 'PGRST116') {
+    throw profileError;
+  }
 
   const leads = profile ? await getLeads() : [];
 

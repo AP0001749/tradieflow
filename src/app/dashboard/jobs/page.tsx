@@ -39,11 +39,15 @@ export default async function JobsPage() {
   }
 
   // Fetch clients for edit dialog
-  const { data: clients } = await supabase
+  const { data: clients, error: clientsError } = await supabase
     .from("clients")
     .select("id, name")
     .eq("user_id", user.id)
     .order("name", { ascending: true });
+
+  if (clientsError) {
+    throw clientsError;
+  }
 
   // CRITICAL: Relational join to fetch client name
   const { data: jobs, error } = await supabase

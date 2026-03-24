@@ -47,11 +47,15 @@ export default async function InvoicesPage() {
   }
 
   // Fetch jobs for edit dialog
-  const { data: jobs } = await supabase
+  const { data: jobs, error: jobsError } = await supabase
     .from("jobs")
     .select("id, title")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
+
+  if (jobsError) {
+    throw jobsError;
+  }
 
   // DOUBLE JOIN: invoice -> job -> client
   const { data: invoices, error } = await supabase
