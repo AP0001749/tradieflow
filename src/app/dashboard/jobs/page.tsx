@@ -73,9 +73,11 @@ export default async function JobsPage() {
     !subscription.isPro &&
     (subscription.current?.jobs ?? 0) >=
       (jobLimit ?? Number.POSITIVE_INFINITY);
-  const createDisabledReason = hasReachedFreeTierLimit && typeof jobLimit === "number"
-    ? getLimitReachedMessage("jobs", jobLimit)
-    : undefined;
+  const createDisabledReason = subscription.error
+    ? "Usage limits are temporarily unavailable. Try again in a moment."
+    : hasReachedFreeTierLimit && typeof jobLimit === "number"
+      ? getLimitReachedMessage("jobs", jobLimit)
+      : undefined;
 
   return (
     <div className="space-y-6 md:space-y-8">

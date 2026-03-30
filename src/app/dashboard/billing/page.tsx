@@ -118,26 +118,32 @@ export default async function BillingPage({
           {usage && (
             <div className="p-4 rounded-lg bg-muted/50 border border-border/40 space-y-3">
               <p className="text-sm font-medium text-muted-foreground">Current Usage (Free Tier)</p>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Clients</span>
-                  <span className="font-medium tabular-nums">
-                    {usage.current?.clients ?? 0} / {usage.limits?.maxClients ?? 0}
-                  </span>
+              {usage.error ? (
+                <p className="text-sm text-red-700 dark:text-rose-300">
+                  {usage.error}
+                </p>
+              ) : (
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Clients</span>
+                    <span className="font-medium tabular-nums">
+                      {usage.current?.clients ?? 0} / {usage.limits?.maxClients ?? 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Jobs</span>
+                    <span className="font-medium tabular-nums">
+                      {usage.current?.jobs ?? 0} / {usage.limits?.maxJobs ?? 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Invoices</span>
+                    <span className="font-medium tabular-nums">
+                      {usage.current?.invoices ?? 0} / {usage.limits?.maxInvoices ?? 0}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Jobs</span>
-                  <span className="font-medium tabular-nums">
-                    {usage.current?.jobs ?? 0} / {usage.limits?.maxJobs ?? 0}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Invoices</span>
-                  <span className="font-medium tabular-nums">
-                    {usage.current?.invoices ?? 0} / {usage.limits?.maxInvoices ?? 0}
-                  </span>
-                </div>
-              </div>
+              )}
             </div>
           )}
 

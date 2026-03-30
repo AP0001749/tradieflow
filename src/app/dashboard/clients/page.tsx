@@ -42,9 +42,11 @@ export default async function ClientsPage() {
     !subscription.isPro &&
     (subscription.current?.clients ?? 0) >=
       (clientLimit ?? Number.POSITIVE_INFINITY);
-  const createDisabledReason = hasReachedFreeTierLimit && typeof clientLimit === "number"
-    ? getLimitReachedMessage("clients", clientLimit)
-    : undefined;
+  const createDisabledReason = subscription.error
+    ? "Usage limits are temporarily unavailable. Try again in a moment."
+    : hasReachedFreeTierLimit && typeof clientLimit === "number"
+      ? getLimitReachedMessage("clients", clientLimit)
+      : undefined;
 
   return (
     <div className="space-y-6 md:space-y-8">

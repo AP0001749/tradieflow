@@ -100,9 +100,11 @@ export default async function InvoicesPage() {
     !subscription.isPro &&
     (subscription.current?.invoices ?? 0) >=
       (invoiceLimit ?? Number.POSITIVE_INFINITY);
-  const createDisabledReason = hasReachedFreeTierLimit && typeof invoiceLimit === "number"
-    ? getLimitReachedMessage("invoices", invoiceLimit)
-    : undefined;
+  const createDisabledReason = subscription.error
+    ? "Usage limits are temporarily unavailable. Try again in a moment."
+    : hasReachedFreeTierLimit && typeof invoiceLimit === "number"
+      ? getLimitReachedMessage("invoices", invoiceLimit)
+      : undefined;
 
   return (
     <div className="space-y-6 md:space-y-8">

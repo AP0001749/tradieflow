@@ -67,6 +67,16 @@ export async function checkSubscriptionLimits(): Promise<SubscriptionStatus> {
   const effectiveTier = hasUnlimitedProAccess ? "pro" : "free";
   const limits = await getTierLimitsForTier(effectiveTier);
 
+  if (!limits && !hasUnlimitedProAccess) {
+    return {
+      canProceed: false,
+      isPro: false,
+      tier: effectiveTier,
+      status,
+      error: "Could not load plan limits",
+    };
+  }
+
   if (hasUnlimitedProAccess) {
     return {
       canProceed: true,
@@ -83,6 +93,21 @@ export async function checkSubscriptionLimits(): Promise<SubscriptionStatus> {
     supabase.from("jobs").select("id", { count: "exact", head: true }).eq("user_id", user.id),
     supabase.from("invoices").select("id", { count: "exact", head: true }).eq("user_id", user.id),
   ]);
+
+  const countError =
+    clientsResult.error || jobsResult.error || invoicesResult.error;
+
+  if (countError) {
+    console.error("Error fetching subscription usage:", countError);
+    return {
+      canProceed: false,
+      isPro: false,
+      tier: "free",
+      status,
+      limits: limits ?? undefined,
+      error: "Could not load current usage",
+    };
+  }
 
   return {
     canProceed: true,
