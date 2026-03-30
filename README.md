@@ -15,15 +15,17 @@ Completed in the repo:
 - upload validation and signed URL hardening
 - middleware fail-closed behavior for protected routes
 - Supabase Cron migration path with a Supabase Edge Function for follow-up automation
+- compatibility follow-up processor at `/api/cron/leads-followup`
+- GitHub Actions fallback scheduler for the compatibility processor
 - removal of Vercel cron scheduling
 
 Still required before calling the rollout fully complete:
 
+- apply the Supabase Cron migration in the live project
 - deploy the `lead-followup` Edge Function
 - set Edge Function secrets in Supabase
 - create the required Vault secrets
-- apply the Supabase Cron migration in the live project
-- verify cron runs successfully in production
+- verify either the hosted compatibility route or Supabase Cron runs successfully in production
 - run the browser-based upload hardening check
 - run the final production smoke test
 
@@ -76,7 +78,6 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 `NEXT_PUBLIC_APP_URL` is required for OAuth redirects, Stripe return URLs, and invoice links.
@@ -91,9 +92,11 @@ RESEND_FROM_EMAIL=
 RESEND_SENDER_EMAIL=
 RESEND_REPLY_TO_EMAIL=
 LEAD_FOLLOWUP_SECRET=
+CRON_SECRET=
 ```
 
 `RESEND_SENDER_EMAIL` or `RESEND_FROM_EMAIL` must be a verified sender. The app and Edge Function now fail fast if no sender identity is configured.
+If you set both `LEAD_FOLLOWUP_SECRET` and the legacy `CRON_SECRET`, keep them identical during the cutover window.
 
 Billing:
 
@@ -132,9 +135,13 @@ npm run generate-types
 
 ## Lead Automation Architecture
 
-TradieFlow now targets this production flow:
+Target production flow:
 
 `Supabase Cron -> public.invoke_lead_followup() -> Supabase Edge Function -> Resend + DB updates`
+
+Current compatibility fallback:
+
+`GitHub Actions -> /api/cron/leads-followup -> Resend + DB updates`
 
 Relevant files:
 
@@ -143,7 +150,7 @@ Relevant files:
 - `supabase/migrations/20260324174500_move_lead_followup_to_supabase_cron.sql`
 - `supabase/migrations/20260330150000_centralize_tier_limits.sql`
 
-The old Next.js cron route is intentionally retired so there is only one production follow-up processor.
+The compatibility route exists so follow-up automation can still run while hosted Supabase Cron or the Edge Function rollout catches up. It accepts either `Authorization: Bearer <secret>` or `x-cron-secret: <secret>`.
 
 ## Supabase Cron Rollout
 
@@ -193,6 +200,7 @@ Check:
 - `cron.job_run_details`
 - Supabase Edge Function logs
 - Resend send results
+- GitHub Actions `TradieFlow Supabase Follow-up Check` if you are still relying on the compatibility route
 
 ## Verification
 
@@ -237,7 +245,8 @@ npm run build
 - Vercel remains the app host
 - Vercel cron is removed
 - Stripe webhook stays on `/api/stripe/webhook`
-- Supabase Cron handles scheduled lead follow-up
+- Supabase Cron is the target scheduled follow-up path
+- GitHub Actions can temporarily drive `/api/cron/leads-followup` as a hosted compatibility fallback
 
 ## Additional Docs
 

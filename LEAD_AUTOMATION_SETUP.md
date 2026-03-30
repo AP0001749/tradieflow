@@ -2,9 +2,12 @@
 
 ## Overview
 
-TradieFlow's lead automation flow is now:
+TradieFlow has two valid follow-up paths right now:
 
-`Public booking page -> /api/leads/create -> leads + lead_events -> Supabase Cron -> Edge Function -> Resend`
+- Target production path:
+  `Public booking page -> /api/leads/create -> leads + lead_events -> Supabase Cron -> Edge Function -> Resend`
+- Hosted compatibility path:
+  `Public booking page -> /api/leads/create -> leads + lead_events -> GitHub Actions -> /api/cron/leads-followup -> Resend`
 
 It automatically:
 
@@ -40,6 +43,7 @@ RESEND_API_KEY=your-resend-key
 RESEND_SENDER_EMAIL=your-verified-sender
 RESEND_REPLY_TO_EMAIL=your-reply-to-email
 LEAD_FOLLOWUP_SECRET=your-random-secure-followup-secret
+CRON_SECRET=your-random-secure-followup-secret
 ```
 
 Notes:
@@ -47,6 +51,7 @@ Notes:
 - `NEXT_PUBLIC_APP_URL` is required for auth redirects and email links.
 - Lead capture intentionally fails closed if Upstash is missing.
 - Email sending now fails fast if no verified sender is configured.
+- `CRON_SECRET` is a legacy alias. If you set both it and `LEAD_FOLLOWUP_SECRET`, keep them identical until every scheduler uses the new name.
 
 Generate a secure follow-up secret:
 
@@ -87,6 +92,21 @@ If the migration ran before the Vault secrets existed, reconfigure the scheduler
 select public.configure_lead_followup_cron();
 ```
 
+## 3A. Configure GitHub Actions Compatibility Scheduling
+
+If Supabase Cron is not live yet, the repo includes a GitHub Actions fallback that hits `/api/cron/leads-followup`.
+
+Set these repo secrets:
+
+- `APP_BASE_URL`
+- `LEAD_FOLLOWUP_SECRET` or legacy `CRON_SECRET`
+
+Important:
+
+- The GitHub Actions secret must match the app-host secret exactly.
+- The route accepts either `Authorization: Bearer <secret>` or `x-cron-secret: <secret>`.
+- Once Supabase Cron is healthy, you can keep the workflow only as a manual check or disable its schedule.
+
 ## 4. Set Up Your Business Profile
 
 In `/dashboard/settings`, configure:
@@ -109,8 +129,8 @@ The public lead capture URL is:
 1. A lead submits the public form at `/book/[booking_url_slug]`
 2. `/api/leads/create` validates the payload, checks the honeypot, rate limits by IP, and inserts the lead
 3. The lead is stored with `followup_step = 0` and `next_followup_at = now()`
-4. Supabase Cron calls `public.invoke_lead_followup()`
-5. The Edge Function claims due leads, sends the correct email, updates the lead, and logs a `lead_events` record
+4. Either Supabase Cron calls `public.invoke_lead_followup()` or GitHub Actions calls `/api/cron/leads-followup`
+5. The worker claims due leads, sends the correct email, updates the lead, and logs a `lead_events` record
 
 ### Follow-Up Sequence
 
@@ -203,6 +223,7 @@ Check cron execution:
 3. Verify `configure_lead_followup_cron()` ran successfully
 4. Check `cron.job_run_details`
 5. Test `select public.invoke_lead_followup();`
+6. If using GitHub Actions fallback, verify the workflow secret matches the app-host secret and the workflow can authenticate successfully
 
 ## 9. Production Validation
 

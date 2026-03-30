@@ -41,10 +41,16 @@
   `STRIPE_WEBHOOK_SECRET`
   `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
   `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID`
+  `LEAD_FOLLOWUP_SECRET` if using `/api/cron/leads-followup`
+  `CRON_SECRET` only as a legacy alias during cutover
   `NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL` if using lead conversion tracking
   `NEXT_PUBLIC_GOOGLE_ADS_SUBSCRIBE_LABEL` if using subscription conversion tracking
 - [ ] Verify `/login`, `/signup`, and `/dashboard` behave correctly after deploy
-- [ ] Verify `/api/cron/leads-followup` returns the expected retired response and is not being used by any scheduler
+- [ ] Verify `/api/cron/leads-followup` returns an authenticated success response if you are using the hosted compatibility processor
+- [ ] If using GitHub Actions fallback scheduling, confirm repo secrets:
+  `APP_BASE_URL`
+  `LEAD_FOLLOWUP_SECRET` or `CRON_SECRET`
+- [ ] Keep the app-host secret and GitHub Actions secret identical during cutover
 
 ## Supabase
 
@@ -69,6 +75,7 @@
   `select public.configure_lead_followup_cron();`
 - [ ] Verify `cron.job` and `cron.job_run_details`
 - [ ] Verify Supabase Edge Function logs show successful runs
+- [ ] Once Supabase Cron is confirmed healthy, disable the GitHub Actions fallback schedule if you no longer need the hosted compatibility route
 
 ## Stripe
 

@@ -25,4 +25,7 @@ jobs:
           APP_URL="${APP_BASE_URL:-https://gettradieflow.com}"
           curl -X GET "${APP_URL}/api/cron/leads-followup" \
             -H "Authorization: Bearer ${LEAD_FOLLOWUP_SECRET}" \
+            -H "x-cron-secret: ${LEAD_FOLLOWUP_SECRET}" \
+            --retry 2 \
+            --retry-delay 5 \
             --fail --silent --show-error
