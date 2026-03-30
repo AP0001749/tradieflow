@@ -12,6 +12,22 @@ type TierLimitRow = {
 };
 
 const ACTIVE_PRO_STATUSES = new Set(["active", "trialing", "past_due"]);
+const LEGACY_TIER_LIMITS: Record<string, TierLimits> = {
+  free: {
+    tier: "free",
+    maxClients: 3,
+    maxJobs: 5,
+    maxInvoices: 10,
+    unlimited: false,
+  },
+  pro: {
+    tier: "pro",
+    maxClients: null,
+    maxJobs: null,
+    maxInvoices: null,
+    unlimited: true,
+  },
+};
 
 function normalizeTierLimits(row: TierLimitRow): TierLimits {
   return {
@@ -31,11 +47,11 @@ async function getTierLimitsForTier(tier: string): Promise<TierLimits | null> {
 
   if (error) {
     console.error("Error fetching tier limits:", error);
-    return null;
+    return LEGACY_TIER_LIMITS[tier] ?? null;
   }
 
   const row = ((data as TierLimitRow[] | null) || [])[0] ?? null;
-  return row ? normalizeTierLimits(row) : null;
+  return row ? normalizeTierLimits(row) : (LEGACY_TIER_LIMITS[tier] ?? null);
 }
 
 export async function checkSubscriptionLimits(): Promise<SubscriptionStatus> {
