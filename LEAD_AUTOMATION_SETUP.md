@@ -1,59 +1,62 @@
-# Lead Automation System - Setup Guide
+# Lead Automation System Setup Guide
 
 ## Overview
 
-This lead automation system transforms TradieFlow into a lead capture and follow-up engine for cleaning businesses. It automatically:
+TradieFlow's lead automation flow is now:
+
+`Public booking page -> /api/leads/create -> leads + lead_events -> Supabase Cron -> Edge Function -> Resend`
+
+It automatically:
 
 1. Captures leads from a public booking page
-2. Sends immediate confirmation emails
-3. Follows up at 24h and 48h intervals
-4. Converts booked leads into jobs
+2. Sends an immediate confirmation email
+3. Follows up at 24-hour and 48-hour intervals
+4. Lets the dashboard convert booked leads into jobs
 
----
-
-## Setup Steps
-
-### 1. Run Database Migration
+## 1. Run Database Migrations
 
 ```bash
-# Apply the migration to create new tables
 npx supabase db push
 ```
 
-This creates three new tables:
-- `business_profile` - Business information
-- `leads` - Lead tracking with automation
-- `lead_events` - Audit log
+Relevant migrations include:
 
-### 2. Configure Environment Variables
+- `20260324153000_hardening_patch.sql`
+- `20260324174500_move_lead_followup_to_supabase_cron.sql`
+- `20260330150000_centralize_tier_limits.sql`
 
-Add to your `.env.local` (and Vercel environment variables):
+## 2. Configure Local / App Environment Variables
+
+Add these to `.env.local` and your app host:
 
 ```env
-# Supabase Edge Function authentication
-LEAD_FOLLOWUP_SECRET=your-random-secure-followup-secret-here
-
-# Already configured (verify these exist)
-RESEND_API_KEY=your-resend-key
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+UPSTASH_REDIS_REST_URL=your-upstash-url
+UPSTASH_REDIS_REST_TOKEN=your-upstash-token
+RESEND_API_KEY=your-resend-key
+RESEND_SENDER_EMAIL=your-verified-sender
+RESEND_REPLY_TO_EMAIL=your-reply-to-email
+LEAD_FOLLOWUP_SECRET=your-random-secure-followup-secret
 ```
 
-Generate a secure secret:
+Notes:
+
+- `NEXT_PUBLIC_APP_URL` is required for auth redirects and email links.
+- Lead capture intentionally fails closed if Upstash is missing.
+- Email sending now fails fast if no verified sender is configured.
+
+Generate a secure follow-up secret:
+
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-### 3. Configure Supabase Cron + Edge Function (Production Only)
+## 3. Configure Supabase Cron + Edge Function
 
-Lead follow-up is now scheduled from Supabase instead of Vercel. The migration adds:
-
-- `public.invoke_lead_followup()` - DB wrapper that calls the Edge Function
-- `public.configure_lead_followup_cron()` - creates the 15-minute cron job
-- `supabase/functions/lead-followup` - TypeScript email processor
-
-Before enabling the cron job, create these Vault secrets in Supabase:
+Create Vault secrets in Supabase:
 
 ```sql
 select vault.create_secret('https://YOUR_PROJECT_REF.supabase.co', 'project_url');
@@ -78,203 +81,134 @@ npx supabase secrets set \
   RESEND_REPLY_TO_EMAIL=your-reply-to-email
 ```
 
-If the secrets were not present when the migration ran, create the cron job after secrets are loaded:
+If the migration ran before the Vault secrets existed, reconfigure the scheduler:
 
 ```sql
 select public.configure_lead_followup_cron();
 ```
 
-### 4. Set Up Your Business Profile
+## 4. Set Up Your Business Profile
 
-1. Go to `/dashboard/settings`
-2. Fill in:
-   - Business Name
-   - Reply-To Email
-   - Google Review URL (optional)
-   - Service Area Postcodes
-   - Default Job Types
-3. Save settings
+In `/dashboard/settings`, configure:
 
-### 5. Share Your Booking Page
+- Business Name
+- Booking URL slug
+- Reply-To Email
+- Google Review URL if needed
+- Service area postcodes
+- Default job types
 
-Your public booking page is at: `/book/[booking_url_slug]`
+The public lead capture URL is:
 
-Use this URL in:
-- Google Ads campaigns
-- Your website
-- Social media
-- Email signatures
+`/book/[booking_url_slug]`
 
----
-
-## How It Works
+## 5. How the Automation Works
 
 ### Lead Flow
 
-1. **Lead submits form** at `/book/[booking_url_slug]`
-   - Creates lead record with status `new`
-   - Triggers immediate follow-up scheduling
+1. A lead submits the public form at `/book/[booking_url_slug]`
+2. `/api/leads/create` validates the payload, checks the honeypot, rate limits by IP, and inserts the lead
+3. The lead is stored with `followup_step = 0` and `next_followup_at = now()`
+4. Supabase Cron calls `public.invoke_lead_followup()`
+5. The Edge Function claims due leads, sends the correct email, updates the lead, and logs a `lead_events` record
 
-2. **Immediate email (Step 0)**
-   - Sent within seconds
-   - Asks for full details (address, bedrooms, etc.)
-   - Status → `contacted`
-   - Next follow-up scheduled for +24h
+### Follow-Up Sequence
 
-3. **24h follow-up (Step 1)**
-   - "Still need help?" email
-   - Next follow-up scheduled for +48h
-
-4. **48h follow-up (Step 2)**
-   - "Last check-in" email
-   - If no response → status becomes `stale`
-
-5. **Manual actions** (in `/dashboard/leads`)
-   - Mark as `contacted`
-   - Mark as `booked`
-   - Mark as `lost`
-   - Convert to job (when booked)
+- Step 0: immediate confirmation
+- Step 1: 24-hour follow-up
+- Step 2: 48-hour follow-up
+- After step 2 with no response: lead becomes `stale`
 
 ### Convert to Job
 
-When you click "Convert to Job":
-1. Creates or finds matching client (by email/phone)
-2. Creates job record linked to client
-3. Updates lead status to `won`
-4. Links lead to job for tracking
+From `/dashboard/leads`:
 
----
+1. Mark lead as `booked`
+2. Convert the lead to a job
+3. TradieFlow creates or reuses a client, creates a job, and marks the lead as `won`
 
-## Testing Locally
+## 6. Local Testing
 
-### Test the booking page:
+Start the app:
+
 ```bash
 npm run dev
-# Visit http://localhost:3000/book/your-booking-slug
 ```
 
-### Test the Supabase Edge Function manually:
+Visit a real booking page:
+
+```text
+http://localhost:3000/book/your-booking-slug
+```
+
+Serve the Edge Function locally if needed:
+
 ```bash
 npx supabase functions serve lead-followup --no-verify-jwt
 ```
 
-### Check Resend emails:
-- Go to https://resend.com/emails
-- View sent emails and delivery status
+Use the smoke test script:
 
----
-
-## Database Schema
-
-### business_profile
-- One per user
-- Stores business info used in emails
-- Required before leads can be captured
-
-### leads
-- Core tracking table
-- States: `new`, `contacted`, `booked`, `won`, `lost`, `stale`
-- Automated follow-up logic in `next_followup_at`
-
-### lead_events
-- Audit log for all lead actions
-- Tracks emails, status changes, conversions, errors
-
----
-
-## Email Templates
-
-Located in `src/emails/`:
-1. `immediate-followup-email.tsx` - Step 0
-2. `twentyfour-followup-email.tsx` - Step 1
-3. `fortyeight-followup-email.tsx` - Step 2
-
-Customize these to match your brand voice.
-
----
-
-## Google Ads Integration
-
-Update `/book/[slug]` page with your Google Ads conversion tracking:
-
-```typescript
-// In src/components/book/booking-request-form.tsx
-if (typeof window !== 'undefined' && (window as any).gtag) {
-  (window as any).gtag('event', 'conversion', {
-    send_to: 'AW-YOUR_ID/YOUR_LABEL', // Replace with your conversion ID
-    value: 1.0,
-    currency: 'AUD',
-  });
-}
+```powershell
+.\scripts\smoke-test.ps1 -BookingUrlSlug your-booking-slug
 ```
 
----
+## 7. Monitoring
 
-## Monitoring
+Check recent lead events:
 
-### Check lead events:
 ```sql
-SELECT * FROM lead_events 
-WHERE created_at > NOW() - INTERVAL '24 hours'
-ORDER BY created_at DESC;
+select *
+from lead_events
+where created_at > now() - interval '24 hours'
+order by created_at desc;
 ```
 
-### Check pending follow-ups:
+Check pending follow-ups:
+
 ```sql
-SELECT id, name, email, status, followup_step, next_followup_at
-FROM leads
-WHERE next_followup_at <= NOW()
-AND status IN ('new', 'contacted');
+select id, name, email, status, followup_step, next_followup_at
+from leads
+where next_followup_at <= now()
+  and status in ('new', 'contacted');
 ```
 
-### Check cron execution:
-- Supabase: Database > Extensions > Cron > Job Run History
-- Supabase: Edge Functions > `lead-followup` > Logs
+Check cron execution:
 
----
+- `cron.job`
+- `cron.job_run_details`
+- Supabase Edge Function logs
+- Resend delivery logs
 
-## Troubleshooting
+## 8. Troubleshooting
 
-### Emails not sending:
-1. Check Resend API key in env vars
-2. Verify `reply_to_email` in business profile
-3. Check `lead_events` table for errors
+### Leads not appearing
 
-### Cron not running:
-1. Verify Vault secrets exist: `project_url`, `supabase_anon_key`, `lead_followup_secret`
-2. Verify `lead-followup` Edge Function is deployed
-3. Check `cron.job` and `cron.job_run_details`
-4. Test `select public.invoke_lead_followup();`
+1. Verify a `business_profile` exists
+2. Verify the booking slug is correct
+3. Verify Upstash env vars are set
+4. Check app logs for `/api/leads/create`
 
-### Leads not appearing:
-1. Verify business profile exists
-2. Check RLS policies (anonymous users can insert leads)
-3. Check browser console for API errors
+### Emails not sending
 
----
+1. Verify `RESEND_API_KEY`
+2. Verify `RESEND_SENDER_EMAIL` or `RESEND_FROM_EMAIL`
+3. Verify `RESEND_REPLY_TO_EMAIL`
+4. Check `lead_events` for `error` records
 
-## Next Steps
+### Cron not running
 
-### MVP Complete ✅
-- Database schema
-- Public booking page
-- Email automation
-- Dashboard views
-- Convert to job
+1. Verify Vault secrets exist
+2. Verify the Edge Function is deployed
+3. Verify `configure_lead_followup_cron()` ran successfully
+4. Check `cron.job_run_details`
+5. Test `select public.invoke_lead_followup();`
 
-### Future Enhancements
-- SMS notifications (via Twilio)
-- Calendar integration
-- Review request automation (post-job)
-- Lead scoring
-- Multi-business support (franchises)
+## 9. Production Validation
 
----
+Before calling rollout complete:
 
-## Support
-
-For issues or questions:
-1. Check Supabase logs
-2. Check Supabase Edge Function logs
-3. Check Resend delivery logs
-4. Review `lead_events` table for audit trail
+- run the browser upload hardening check
+- run the full production smoke test
+- verify Stripe billing flows end to end
+- verify RLS and tenant isolation in the live database

@@ -1,128 +1,121 @@
-# Lead Automation MVP - Deployment Checklist
+# TradieFlow Deployment Checklist
 
 ## Pre-Deployment
 
-- [ ] Run migration locally to test: `npx supabase db push`
-- [ ] Test booking page at `/book`
-- [ ] Test the Supabase Edge Function manually
-- [ ] Verify Resend email templates render correctly
-- [ ] Set up business profile in `/dashboard/settings`
+- [ ] Run local verification:
+  `npm run lint`
+  `npm run build`
+  `npx tsc --noEmit`
+- [ ] Confirm `.env.local` includes:
+  `NEXT_PUBLIC_APP_URL`
+  `NEXT_PUBLIC_SUPABASE_URL`
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  `SUPABASE_SERVICE_ROLE_KEY`
+  `UPSTASH_REDIS_REST_URL`
+  `UPSTASH_REDIS_REST_TOKEN`
+  `RESEND_API_KEY`
+  `RESEND_SENDER_EMAIL` or `RESEND_FROM_EMAIL`
+  `STRIPE_SECRET_KEY`
+  `STRIPE_WEBHOOK_SECRET`
+  `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+  `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID`
+- [ ] Confirm a real `business_profile.booking_url_slug` exists for smoke testing
+- [ ] Test the public booking page at `/book/[booking_url_slug]`
+- [ ] Verify invoice email rendering locally
+- [ ] Verify a business profile exists in `/dashboard/settings`
 
-## Environment Variables
+## Vercel / App Host
 
-Add these to Vercel (or your hosting platform):
+- [ ] Deploy the latest `main`
+- [ ] Set production env vars:
+  `NEXT_PUBLIC_APP_URL`
+  `NEXT_PUBLIC_SUPABASE_URL`
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  `SUPABASE_SERVICE_ROLE_KEY`
+  `UPSTASH_REDIS_REST_URL`
+  `UPSTASH_REDIS_REST_TOKEN`
+  `RESEND_API_KEY`
+  `RESEND_SENDER_EMAIL` or `RESEND_FROM_EMAIL`
+  `RESEND_REPLY_TO_EMAIL`
+  `STRIPE_SECRET_KEY`
+  `STRIPE_WEBHOOK_SECRET`
+  `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+  `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID`
+  `NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL` if using lead conversion tracking
+  `NEXT_PUBLIC_GOOGLE_ADS_SUBSCRIBE_LABEL` if using subscription conversion tracking
+- [ ] Verify `/login`, `/signup`, and `/dashboard` behave correctly after deploy
+- [ ] Verify `/api/cron/leads-followup` returns the expected retired response and is not being used by any scheduler
 
-```env
-LEAD_FOLLOWUP_SECRET=<generate-random-32-char-token>
-RESEND_API_KEY=<your-existing-key>
-NEXT_PUBLIC_SUPABASE_URL=<your-url>
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-key>
-SUPABASE_SERVICE_ROLE_KEY=<your-key>
-```
+## Supabase
 
-## Supabase Setup
+- [ ] Apply production migrations, including:
+  `20260324174500_move_lead_followup_to_supabase_cron.sql`
+  `20260330150000_centralize_tier_limits.sql`
+- [ ] Verify RLS / tenant isolation in the live database
+- [ ] Confirm `tier_limits` contains the expected free/pro plan rows
+- [ ] Create or verify Vault secrets:
+  `project_url`
+  `supabase_anon_key`
+  `lead_followup_secret`
+- [ ] Deploy the `lead-followup` Edge Function
+- [ ] Set Supabase Edge Function secrets:
+  `LEAD_FOLLOWUP_SECRET`
+  `SUPABASE_SERVICE_ROLE_KEY`
+  `RESEND_API_KEY`
+  `RESEND_SENDER_EMAIL` or `RESEND_FROM_EMAIL`
+  `RESEND_REPLY_TO_EMAIL`
+- [ ] If Vault secrets were added after the migration, run:
+  `select public.configure_lead_followup_cron();`
+- [ ] Verify `cron.job` and `cron.job_run_details`
+- [ ] Verify Supabase Edge Function logs show successful runs
 
-- [ ] Run migration on production Supabase
-- [ ] Verify RLS policies are active
-- [ ] Test anonymous access to leads table (for /book page)
-- [ ] Create your first business_profile record
+## Stripe
 
-## Hosting Configuration
+- [ ] Create or verify the live Pro price ID in Stripe
+- [ ] Confirm `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` matches the intended live price
+- [ ] Point the Stripe webhook at `/api/stripe/webhook`
+- [ ] Verify webhook signing secret matches `STRIPE_WEBHOOK_SECRET`
+- [ ] Test checkout end to end
+- [ ] Test webhook retry behavior end to end
+- [ ] Test billing portal access end to end
+- [ ] Test downgrade / cancellation handling end to end
 
-- [ ] Deploy to Vercel
-- [ ] Verify Supabase cron job exists
-- [ ] Check Edge Function runs every 15 minutes (monitor logs)
+## Lead Capture and Automation
 
-## Google Ads Setup
+- [ ] Submit a real test lead via `/book/[booking_url_slug]`
+- [ ] Verify the lead appears in `/dashboard/leads`
+- [ ] Verify the immediate email sends through Resend
+- [ ] Verify `lead_events` logs the `created` and `email_sent` events
+- [ ] Verify the lead progresses through scheduled follow-up correctly
+- [ ] Verify lead status changes work from the dashboard
+- [ ] Verify lead conversion creates the expected client and job records
 
-- [ ] Update conversion tracking in `/book` page
-- [ ] Replace `AW-CONVERSION_ID/CONVERSION_LABEL` with your values
-- [ ] Test conversion fires on form submission
+## Uploads and Storage
 
-## Post-Deployment Testing
+- [ ] Test browser upload success on a real job
+- [ ] Test invalid file rejection
+- [ ] Test oversized file rejection
+- [ ] Verify signed URLs load correctly
+- [ ] Verify deleting a photo removes it from storage
 
-- [ ] Submit test lead via `/book`
-- [ ] Verify email arrives via Resend
-- [ ] Check lead appears in `/dashboard/leads`
-- [ ] Test status changes (contacted, booked, lost)
-- [ ] Test convert to job flow
-- [ ] Wait 15 mins and verify Supabase cron runs
-- [ ] Check `lead_events` table for audit trail
+## Final Smoke Test
 
-## Marketing Setup
+- [ ] Sign up with email
+- [ ] Sign up with Google
+- [ ] Confirm auth callback redirects correctly
+- [ ] Create a client
+- [ ] Create a job
+- [ ] Create an invoice
+- [ ] Send an invoice email
+- [ ] Start a Stripe checkout session
+- [ ] Open the billing portal
+- [ ] Submit a lead
+- [ ] Convert a booked lead into a job
 
-Update your messaging to focus on cleaners:
+## Success Criteria
 
-### Landing Page Copy
-**Before:** "Job management system for Australian tradies"
-**After:** "Get more cleaning jobs automatically — without chasing leads"
-
-### Google Ads Keywords
-- end of lease cleaning near me
-- house cleaners near me
-- bond cleaning [suburb]
-- commercial cleaning quotes
-
-Target: Business owners, not consumers
-
-### Value Proposition
-Focus on:
-- Automated lead capture
-- No missed follow-ups
-- Fewer no-shows
-- Less admin time
-- More bookings
-
-NOT on:
-- Job management
-- Invoice features
-- Generic CRM benefits
-
-## Quick Wins
-
-Once deployed, immediately:
-
-1. **Test the full flow**
-   - Submit lead → receive email → check dashboard → convert to job
-
-2. **Share booking page**
-   - Add to website
-   - Use in Google Ads
-   - Email signature
-   - Social media bio
-
-3. **Monitor for 48 hours**
-   - Check Vercel logs for cron runs
-   - Verify follow-up emails send
-   - Watch for any errors in `lead_events`
-
-4. **Gather feedback**
-   - If you have existing customers, send them the booking link
-   - Ask: "Would you use this?"
-   - Iterate based on real cleaner needs
-
-## Success Metrics
-
-Track these weekly:
-
-- Leads captured (from `/book`)
-- Email open/reply rates (via Resend)
-- Lead → Booked conversion %
-- Booked → Job conversion %
-- Time from lead to booking
-
-Goal: Prove the wedge works before building more features.
-
-## What NOT to Do
-
-❌ Add more job management features
-❌ Build pretty dashboards
-❌ Create generic marketing
-❌ Try to serve all tradies
-❌ Add complexity before validation
-
-✅ Focus only on lead leakage for cleaners
-✅ Talk to actual cleaning businesses
-✅ Iterate on the booking/follow-up flow
-✅ Measure lead → revenue conversion
-✅ Perfect ONE workflow before expanding
+- [ ] No failed cron runs
+- [ ] No failed webhook deliveries
+- [ ] No cross-tenant data visibility
+- [ ] No broken invoice or OAuth links
+- [ ] No upload permission failures in the browser

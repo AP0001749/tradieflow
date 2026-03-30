@@ -3,19 +3,19 @@ PowerShell Smoke Test for TradieFlow (local dev)
 
 What it does:
 1. Loads env vars from .env.local into the process environment
-2. Optionally starts `npm run dev` (if nothing is listening on localhost:3000)
-3. Waits for the dev server to become healthy
-4. Submits a test lead to /api/leads/create
-5. Optionally calls a locally served Supabase Edge Function if LEAD_FOLLOWUP_EDGE_URL is set
-6. Prints responses and exits
+2. Validates the minimum env vars required for lead capture
+3. Optionally starts `npm run dev` if nothing is listening on localhost:3000
+4. Waits for the dev server to become healthy
+5. Submits a test lead to /api/leads/create
+6. Optionally calls a locally served Supabase Edge Function if LEAD_FOLLOWUP_EDGE_URL is set
+7. Prints responses and exits
 
 Usage:
 - Open PowerShell in the repo root
-- Run: .\scripts\smoke-test.ps1
+- Run: .\scripts\smoke-test.ps1 -BookingUrlSlug your-booking-slug
 
 Notes:
 - This script assumes `.env.local` exists at the repo root
-- If you prefer to start the dev server yourself, press Ctrl+C in the script when it attempts to start the server
 - If the lead creation fails, confirm a `business_profile` exists in Supabase and use a real `booking_url_slug`
 #>
 
@@ -23,11 +23,21 @@ param(
     [string]$BookingUrlSlug = "smoke-test-business"
 )
 
+$requiredEnvVars = @(
+    "NEXT_PUBLIC_APP_URL",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_TOKEN"
+)
+
 function Load-EnvFile {
     param(
         [string]$Path = ".env.local"
     )
-    if (-Not (Test-Path $Path)) {
+
+    if (-not (Test-Path $Path)) {
         Write-Error "$Path not found. Create .env.local with required env vars and try again."
         exit 1
     }
@@ -38,13 +48,32 @@ function Load-EnvFile {
             $parts = $line -split '=', 2
             $k = $parts[0].Trim()
             $v = $parts[1].Trim()
-            # Remove surrounding quotes if present
+
             if ($v.StartsWith('"') -and $v.EndsWith('"')) { $v = $v.Trim('"') }
             if ($v.StartsWith("'") -and $v.EndsWith("'")) { $v = $v.Trim("'") }
-            # Set env var for this PowerShell session
+
             Write-Host "Setting env var: $k"
             Set-Item -Path "Env:$k" -Value $v
         }
+    }
+}
+
+function Test-RequiredEnvVars {
+    param(
+        [string[]]$Names
+    )
+
+    $missing = @()
+    foreach ($name in $Names) {
+        $value = (Get-Item -Path "Env:$name" -ErrorAction SilentlyContinue).Value
+        if (-not $value) {
+            $missing += $name
+        }
+    }
+
+    if ($missing.Count -gt 0) {
+        Write-Error "Missing required env vars: $($missing -join ', ')"
+        exit 1
     }
 }
 
@@ -52,6 +81,7 @@ function Test-PortListening {
     param(
         [int]$Port = 3000
     )
+
     try {
         $tcp = Get-NetTCPConnection -LocalPort $Port -ErrorAction Stop
         return $true
@@ -61,7 +91,6 @@ function Test-PortListening {
 }
 
 function Start-DevServer {
-    # Start dev server in a new process redirected to log files
     Write-Host "Starting dev server (npm run dev) in background..."
     $out = Join-Path $PWD "dev.log"
     $err = Join-Path $PWD "dev.err"
@@ -80,7 +109,6 @@ function Start-DevServer {
     $p.Start() | Out-Null
 
     Start-Sleep -Seconds 1
-    # As we redirected, write the streams to files in background
     $stdOut = $p.StandardOutput
     $stdErr = $p.StandardError
 
@@ -99,9 +127,10 @@ function Start-DevServer {
 
 function Wait-For-Url {
     param(
-        [string]$Url = 'http://localhost:3000',
+        [string]$Url = "http://localhost:3000",
         [int]$TimeoutSeconds = 60
     )
+
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ((Get-Date) -lt $deadline) {
         try {
@@ -111,18 +140,17 @@ function Wait-For-Url {
                 return $true
             }
         } catch {
-            # ignore
         }
         Start-Sleep -Seconds 2
     }
+
     Write-Warning "Timed out waiting for $Url"
     return $false
 }
 
-# ---------- Script start ----------
 Load-EnvFile
+Test-RequiredEnvVars -Names $requiredEnvVars
 
-# If port 3000 not in use, start dev server
 $port = 3000
 if (-not (Test-PortListening -Port $port)) {
     $proc = Start-DevServer
@@ -134,10 +162,9 @@ if (-not (Test-PortListening -Port $port)) {
         exit 1
     }
 } else {
-    Write-Host "Port $port already in use — assuming dev server already running."
+    Write-Host "Port $port already in use - assuming dev server already running."
 }
 
-# Submit test lead
 $createUrl = "http://localhost:$port/api/leads/create"
 $payload = @{
     booking_url_slug = $BookingUrlSlug
@@ -154,14 +181,13 @@ $payload = @{
 
 Write-Host "Submitting test lead to $createUrl"
 try {
-    $resp = Invoke-RestMethod -Uri $createUrl -Method Post -Body $payload -ContentType 'application/json' -TimeoutSec 15
+    $resp = Invoke-RestMethod -Uri $createUrl -Method Post -Body $payload -ContentType "application/json" -TimeoutSec 15
     Write-Host "Lead create response:`n$(ConvertTo-Json $resp -Depth 5)"
 } catch {
     Write-Error "Lead creation failed: $($_.Exception.Message)"
-    # Dump last lines of dev log
-    if (Test-Path './dev.err') {
-        Write-Host "--- Last 200 chars of dev.err ---"
-        Get-Content './dev.err' -Tail 40 | ForEach-Object { Write-Host $_ }
+    if (Test-Path "./dev.err") {
+        Write-Host "--- Last lines of dev.err ---"
+        Get-Content "./dev.err" -Tail 40 | ForEach-Object { Write-Host $_ }
     }
     exit 1
 }
@@ -182,4 +208,4 @@ if ($edgeUrl -and $leadFollowupSecret) {
     Write-Host "Skipping Edge Function step. Set LEAD_FOLLOWUP_EDGE_URL and LEAD_FOLLOWUP_SECRET to test follow-up automation locally."
 }
 
-Write-Host 'Smoke test completed successfully. Check Supabase leads and lead_events tables for records.'
+Write-Host "Smoke test completed successfully. Check Supabase leads and lead_events tables for records."
