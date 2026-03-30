@@ -26,8 +26,16 @@ type LeadResults = {
   stale: number;
 };
 
-function getCronSecret() {
-  return process.env.LEAD_FOLLOWUP_SECRET || process.env.CRON_SECRET || null;
+function getCronSecrets() {
+  const configuredSecrets = [
+    process.env.LEAD_FOLLOWUP_SECRET,
+    process.env.CRON_SECRET,
+  ]
+    .flatMap((value) => (value || "").split(","))
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set(configuredSecrets));
 }
 
 function immediateFollowupHtml(lead: ClaimedLead, businessName: string) {
@@ -136,19 +144,23 @@ function buildEmailPayload(lead: ClaimedLead, results: LeadResults) {
 }
 
 export async function GET(request: Request) {
-  const cronSecret = getCronSecret();
+  const cronSecrets = getCronSecrets();
   const authHeader = request.headers.get("authorization");
   const bearerSecret = authHeader?.replace(/^Bearer\s+/i, "").trim();
   const headerSecret = request.headers.get("x-cron-secret");
 
-  if (!cronSecret) {
+  if (cronSecrets.length === 0) {
     return NextResponse.json(
       { error: "Cron route not configured" },
       { status: 500 },
     );
   }
 
-  if (bearerSecret !== cronSecret && headerSecret !== cronSecret) {
+  const isAuthorized = [bearerSecret, headerSecret]
+    .filter((value): value is string => Boolean(value))
+    .some((value) => cronSecrets.includes(value));
+
+  if (!isAuthorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

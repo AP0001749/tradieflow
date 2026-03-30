@@ -96,7 +96,7 @@ CRON_SECRET=
 ```
 
 `RESEND_SENDER_EMAIL` or `RESEND_FROM_EMAIL` must be a verified sender. The app and Edge Function now fail fast if no sender identity is configured.
-If you set both `LEAD_FOLLOWUP_SECRET` and the legacy `CRON_SECRET`, keep them identical during the cutover window.
+The compatibility route accepts both `LEAD_FOLLOWUP_SECRET` and the legacy `CRON_SECRET`. You can also supply a comma-separated allowlist during secret rotation.
 
 Billing:
 
@@ -150,7 +150,7 @@ Relevant files:
 - `supabase/migrations/20260324174500_move_lead_followup_to_supabase_cron.sql`
 - `supabase/migrations/20260330150000_centralize_tier_limits.sql`
 
-The compatibility route exists so follow-up automation can still run while hosted Supabase Cron or the Edge Function rollout catches up. It accepts either `Authorization: Bearer <secret>` or `x-cron-secret: <secret>`.
+The compatibility route exists so follow-up automation can still run while hosted Supabase Cron or the Edge Function rollout catches up. It accepts either `Authorization: Bearer <secret>` or `x-cron-secret: <secret>`, and it will honor both configured secret names during cutover.
 
 ## Supabase Cron Rollout
 

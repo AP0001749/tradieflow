@@ -51,7 +51,7 @@ Notes:
 - `NEXT_PUBLIC_APP_URL` is required for auth redirects and email links.
 - Lead capture intentionally fails closed if Upstash is missing.
 - Email sending now fails fast if no verified sender is configured.
-- `CRON_SECRET` is a legacy alias. If you set both it and `LEAD_FOLLOWUP_SECRET`, keep them identical until every scheduler uses the new name.
+- `CRON_SECRET` is a legacy alias. The compatibility route accepts either name, and it can honor a comma-separated allowlist during secret rotation.
 
 Generate a secure follow-up secret:
 
@@ -103,7 +103,8 @@ Set these repo secrets:
 
 Important:
 
-- The GitHub Actions secret must match the app-host secret exactly.
+- The GitHub Actions secret must be accepted by the app-host route configuration.
+- The route can accept both `LEAD_FOLLOWUP_SECRET` and `CRON_SECRET` during cutover.
 - The route accepts either `Authorization: Bearer <secret>` or `x-cron-secret: <secret>`.
 - Once Supabase Cron is healthy, you can keep the workflow only as a manual check or disable its schedule.
 

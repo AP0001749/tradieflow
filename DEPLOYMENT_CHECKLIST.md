@@ -50,7 +50,7 @@
 - [ ] If using GitHub Actions fallback scheduling, confirm repo secrets:
   `APP_BASE_URL`
   `LEAD_FOLLOWUP_SECRET` or `CRON_SECRET`
-- [ ] Keep the app-host secret and GitHub Actions secret identical during cutover
+- [ ] Confirm the app-host and GitHub Actions secrets are both present in the route allowlist during cutover
 
 ## Supabase
 
