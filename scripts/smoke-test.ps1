@@ -194,6 +194,12 @@ try {
 
 $edgeUrl = $env:LEAD_FOLLOWUP_EDGE_URL
 $leadFollowupSecret = $env:LEAD_FOLLOWUP_SECRET
+if (-not $leadFollowupSecret) {
+    $leadFollowupSecret = $env:CRON_SECRET
+    if ($leadFollowupSecret) {
+        Write-Host "Using legacy CRON_SECRET for local Edge Function auth."
+    }
+}
 if ($edgeUrl -and $leadFollowupSecret) {
     Write-Host "Triggering local Edge Function: $edgeUrl"
     try {
@@ -205,7 +211,7 @@ if ($edgeUrl -and $leadFollowupSecret) {
         exit 1
     }
 } else {
-    Write-Host "Skipping Edge Function step. Set LEAD_FOLLOWUP_EDGE_URL and LEAD_FOLLOWUP_SECRET to test follow-up automation locally."
+    Write-Host "Skipping Edge Function step. Set LEAD_FOLLOWUP_EDGE_URL and LEAD_FOLLOWUP_SECRET (or legacy CRON_SECRET) to test follow-up automation locally."
 }
 
 Write-Host "Smoke test completed successfully. Check Supabase leads and lead_events tables for records."
