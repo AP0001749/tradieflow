@@ -201,6 +201,7 @@ Check:
 - Supabase Edge Function logs
 - Resend send results
 - GitHub Actions `TradieFlow Supabase Follow-up Check` if you are still relying on the compatibility route
+  The workflow will try both `LEAD_FOLLOWUP_SECRET` and legacy `CRON_SECRET` if both repo secrets are configured.
 
 ## Verification
 

@@ -51,6 +51,7 @@
   `APP_BASE_URL`
   `LEAD_FOLLOWUP_SECRET` or `CRON_SECRET`
 - [ ] Confirm the app-host and GitHub Actions secrets are both present in the route allowlist during cutover
+- [ ] If both GitHub secrets exist during cutover, confirm at least one matches the app-host route secret set
 
 ## Supabase
 

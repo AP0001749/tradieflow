@@ -12,20 +12,33 @@ jobs:
       - name: Validate required secrets
         env:
           APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
-          LEAD_FOLLOWUP_SECRET: ${{ secrets.LEAD_FOLLOWUP_SECRET || secrets.CRON_SECRET }}
+          LEAD_FOLLOWUP_SECRET: ${{ secrets.LEAD_FOLLOWUP_SECRET }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           test -n "${APP_BASE_URL:-https://gettradieflow.com}" || (echo "Missing app URL" && exit 1)
-          test -n "$LEAD_FOLLOWUP_SECRET" || (echo "Missing LEAD_FOLLOWUP_SECRET secret" && exit 1)
+          test -n "$LEAD_FOLLOWUP_SECRET$CRON_SECRET" || (echo "Missing LEAD_FOLLOWUP_SECRET/CRON_SECRET secret" && exit 1)
 
       - name: Invoke TradieFlow Lead Follow-up Route
         env:
           APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
-          LEAD_FOLLOWUP_SECRET: ${{ secrets.LEAD_FOLLOWUP_SECRET || secrets.CRON_SECRET }}
+          LEAD_FOLLOWUP_SECRET: ${{ secrets.LEAD_FOLLOWUP_SECRET }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           APP_URL="${APP_BASE_URL:-https://gettradieflow.com}"
-          curl -X POST "${APP_URL}/api/cron/leads-followup" \
-            -H "Authorization: Bearer ${LEAD_FOLLOWUP_SECRET}" \
-            -H "x-cron-secret: ${LEAD_FOLLOWUP_SECRET}" \
-            --retry 2 \
-            --retry-delay 5 \
-            --fail --silent --show-error
+          mapfile -t SECRETS < <(printf '%s\n%s\n' "$LEAD_FOLLOWUP_SECRET" "$CRON_SECRET" | awk 'NF && !seen[$0]++')
+          for SECRET in "${SECRETS[@]}"; do
+            echo "Trying /api/cron/leads-followup with one configured secret candidate..."
+            STATUS="$(curl -sS -o response.json -w '%{http_code}' -X POST "${APP_URL}/api/cron/leads-followup" \
+              -H "Authorization: Bearer ${SECRET}" \
+              -H "x-cron-secret: ${SECRET}" \
+              --retry 2 \
+              --retry-delay 5 || true)"
+            echo "HTTP ${STATUS}"
+            cat response.json
+            echo
+            if [ "${STATUS}" -ge 200 ] && [ "${STATUS}" -lt 300 ]; then
+              exit 0
+            fi
+          done
+          echo "All configured follow-up secrets were rejected by the app host."
+          exit 1
