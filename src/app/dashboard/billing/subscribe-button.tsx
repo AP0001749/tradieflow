@@ -5,13 +5,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 
-export function SubscribeButton({
-  priceId,
-  userId,
-}: {
-  priceId: string;
-  userId: string;
-}) {
+export function SubscribeButton() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +17,7 @@ export function SubscribeButton({
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, userId }),
+        body: JSON.stringify({}),
       });
 
       const data = (await res.json()) as {

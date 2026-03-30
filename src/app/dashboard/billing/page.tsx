@@ -142,7 +142,7 @@ export default async function BillingPage({
           )}
 
           {priceId ? (
-            <SubscribeButton priceId={priceId} userId={user.id} />
+            <SubscribeButton />
           ) : (
             <div className="text-sm text-red-700 dark:text-rose-300 p-3 bg-red-50 dark:bg-rose-500/10 rounded border border-red-200 dark:border-rose-500/20">
               Billing is not configured yet. Please contact support.

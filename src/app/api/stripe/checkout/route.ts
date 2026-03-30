@@ -18,19 +18,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = (await request.json().catch(() => null)) as
-      | { priceId?: string; userId?: string }
-      | null;
+    await request.json().catch(() => null);
 
-    const priceId = body?.priceId;
-    const userId = body?.userId ?? user.id;
+    const priceId = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID;
 
     if (!priceId) {
-      return NextResponse.json({ error: "priceId is required" }, { status: 400 });
-    }
-
-    if (userId !== user.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Billing is not configured" },
+        { status: 503 }
+      );
     }
 
     await ensureProfileExists(user);
@@ -80,11 +76,11 @@ export async function POST(request: Request) {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${origin}/dashboard/billing?success=true`,
       cancel_url: `${origin}/dashboard/billing?canceled=true`,
-      metadata: { userId },
+      metadata: { userId: user.id },
       subscription_data: {
-        metadata: { userId },
+        metadata: { userId: user.id },
       },
-      client_reference_id: userId,
+      client_reference_id: user.id,
       allow_promotion_codes: true,
     });
 
