@@ -46,12 +46,18 @@ jobs:
           APP_URL="${APP_BASE_URL:-https://gettradieflow.com}"
           LAST_STATUS=""
           LAST_BODY=""
-          mapfile -t SECRETS < <(printf '%s\n%s\n' "$LEAD_FOLLOWUP_SECRET" "$CRON_SECRET" | awk 'NF && !seen[$0]++')
-          for SECRET in "${SECRETS[@]}"; do
-            echo "Trying /api/cron/leads-followup with one configured secret candidate..."
+          LAST_LABEL=""
+          try_secret() {
+            local SECRET_VALUE="$1"
+            local SECRET_LABEL="$2"
+            if [ -z "$SECRET_VALUE" ]; then
+              return 1
+            fi
+
+            echo "Trying /api/cron/leads-followup with ${SECRET_LABEL}..."
             STATUS="$(curl -sS -D response.headers -o response.json -w '%{http_code}' -X POST "${APP_URL}/api/cron/leads-followup" \
-              -H "Authorization: Bearer ${SECRET}" \
-              -H "x-cron-secret: ${SECRET}" \
+              -H "Authorization: Bearer ${SECRET_VALUE}" \
+              -H "x-cron-secret: ${SECRET_VALUE}" \
               --retry 2 \
               --retry-delay 5 || true)"
             BODY="$(tr '\n' ' ' < response.json | sed 's/[[:space:]]\+/ /g' | cut -c1-400)"
@@ -67,6 +73,7 @@ jobs:
                 echo "## TradieFlow Follow-up Check"
                 echo
                 echo "- URL: ${APP_URL}/api/cron/leads-followup"
+                echo "- Secret Candidate: ${SECRET_LABEL}"
                 echo "- Status: ${STATUS}"
                 echo "- Route Header: ${ROUTE_HEADER:-missing}"
                 echo "- Auth Header: ${AUTH_HEADER:-missing}"
@@ -74,14 +81,23 @@ jobs:
               } >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
+            LAST_LABEL="${SECRET_LABEL}"
             LAST_STATUS="${STATUS}"
             LAST_BODY="${BODY}"
-          done
-          echo "::error title=TradieFlow follow-up route rejected workflow secret::HTTP ${LAST_STATUS}. Route=${ROUTE_HEADER:-missing}. Auth=${AUTH_HEADER:-missing}. Response: ${LAST_BODY}"
+            return 1
+          }
+
+          try_secret "$LEAD_FOLLOWUP_SECRET" "LEAD_FOLLOWUP_SECRET" || true
+          if [ -n "$CRON_SECRET" ] && [ "$CRON_SECRET" != "$LEAD_FOLLOWUP_SECRET" ]; then
+            try_secret "$CRON_SECRET" "CRON_SECRET" || true
+          fi
+
+          echo "::error title=TradieFlow follow-up route rejected workflow secret::Candidate=${LAST_LABEL:-none}. HTTP ${LAST_STATUS}. Route=${ROUTE_HEADER:-missing}. Auth=${AUTH_HEADER:-missing}. Response: ${LAST_BODY}"
           {
             echo "## TradieFlow Follow-up Check"
             echo
             echo "- URL: ${APP_URL}/api/cron/leads-followup"
+            echo "- Final Secret Candidate: ${LAST_LABEL:-none}"
             echo "- Final Status: ${LAST_STATUS}"
             echo "- Final Route Header: ${ROUTE_HEADER:-missing}"
             echo "- Final Auth Header: ${AUTH_HEADER:-missing}"
