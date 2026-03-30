@@ -241,6 +241,13 @@ Production build:
 npm run build
 ```
 
+Live follow-up route probe:
+
+```powershell
+.\scripts\check-followup-route.ps1
+.\scripts\check-followup-route.ps1 -WithAuth
+```
+
 ## Deployment Notes
 
 - Vercel remains the app host
