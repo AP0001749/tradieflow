@@ -177,6 +177,7 @@ export async function markAsPaid(invoiceId: string): Promise<void> {
 
   revalidatePath("/dashboard/invoices");
   revalidatePath(`/dashboard/invoices/${invoiceId}`);
+  revalidatePath("/dashboard");
   return;
 }
 
@@ -395,6 +396,10 @@ export async function sendInvoiceEmail(invoiceId: string) {
     if (updateError) {
       console.warn("Failed to update invoice status:", updateError);
     }
+
+    revalidatePath("/dashboard/invoices");
+    revalidatePath(`/dashboard/invoices/${invoiceId}`);
+    revalidatePath("/dashboard");
 
     return { success: true, data };
   } catch (error) {

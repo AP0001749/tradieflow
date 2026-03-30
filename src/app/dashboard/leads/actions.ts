@@ -157,16 +157,21 @@ export async function convertLeadToJob(leadId: string) {
   if (jobError || !job) throw new Error(jobError?.message || 'Failed to create job');
 
   // Update lead
-  const { error: leadUpdateError } = await supabase
+  const { data: updatedLeadRows, error: leadUpdateError } = await supabase
     .from('leads')
     .update({
       status: 'won',
       converted_job_id: job.id,
     })
-    .eq('id', leadId);
+    .eq('id', leadId)
+    .eq('business_id', profile.id)
+    .select('id');
 
   if (leadUpdateError) {
     console.warn('Failed to update lead status after conversion:', leadUpdateError);
+  }
+  if (!updatedLeadRows || updatedLeadRows.length === 0) {
+    console.warn('Lead conversion completed but lead update matched no rows:', leadId);
   }
 
   // Log event
@@ -179,6 +184,7 @@ export async function convertLeadToJob(leadId: string) {
   revalidatePath('/dashboard/leads');
   revalidatePath('/dashboard/jobs');
   revalidatePath('/dashboard/clients');
+  revalidatePath('/dashboard');
   
   return job.id;
 }

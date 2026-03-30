@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
 import { sendInvoiceEmail } from "../actions";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface SendEmailButtonProps {
   invoiceId: string;
 }
 
 export function SendEmailButton({ invoiceId }: SendEmailButtonProps) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -22,6 +24,7 @@ export function SendEmailButton({ invoiceId }: SendEmailButtonProps) {
 
       if (result.success) {
         setMessage({ type: "success", text: "Invoice email sent successfully!" });
+        router.refresh();
       } else {
         setMessage({ type: "error", text: result.error || "Failed to send email" });
       }
