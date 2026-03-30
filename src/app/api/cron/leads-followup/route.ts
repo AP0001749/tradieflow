@@ -6,7 +6,7 @@ import { getResend, getResendSenderEmail } from "@/lib/resend";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const ROUTE_VERSION = "compat-v4";
+const ROUTE_VERSION = "compat-v5";
 
 type ClaimedLead = {
   id: string;
