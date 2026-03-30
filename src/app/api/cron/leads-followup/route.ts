@@ -5,6 +5,8 @@ import { getResend, getResendSenderEmail } from "@/lib/resend";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const ROUTE_VERSION = "compat-v4";
+
 type ClaimedLead = {
   id: string;
   business_id: string;
@@ -46,6 +48,9 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
     status,
     headers: {
       "Cache-Control": "no-store",
+      Allow: "GET, POST",
+      "X-TradieFlow-Followup-Auth": "bearer-or-x-cron-secret",
+      "X-TradieFlow-Followup-Route": ROUTE_VERSION,
     },
   });
 }
