@@ -34,6 +34,18 @@ function requireEnv(name: string) {
   return value;
 }
 
+function requireSenderEmail() {
+  return (
+    Deno.env.get("RESEND_SENDER_EMAIL") ||
+    Deno.env.get("RESEND_FROM_EMAIL") ||
+    (() => {
+      throw new Error(
+        "Missing environment variable: RESEND_SENDER_EMAIL or RESEND_FROM_EMAIL",
+      );
+    })()
+  );
+}
+
 function immediateFollowupHtml(lead: ClaimedLead, businessName: string) {
   const jobType = lead.job_type?.replaceAll("_", " ") || "cleaning services";
   const suburb = lead.suburb || "your service area";
@@ -155,10 +167,7 @@ serve(async (request) => {
     const supabaseUrl = requireEnv("SUPABASE_URL");
     const serviceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
     const resendApiKey = requireEnv("RESEND_API_KEY");
-    const senderEmail =
-      Deno.env.get("RESEND_SENDER_EMAIL") ||
-      Deno.env.get("RESEND_FROM_EMAIL") ||
-      "onboarding@resend.dev";
+    const senderEmail = requireSenderEmail();
     const fallbackReplyTo = Deno.env.get("RESEND_REPLY_TO_EMAIL") || undefined;
 
     const supabase = createClient(supabaseUrl, serviceRoleKey, {

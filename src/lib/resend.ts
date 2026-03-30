@@ -15,3 +15,16 @@ export function getResend() {
 
   return resendClient;
 }
+
+export function getResendSenderEmail() {
+  const senderEmail =
+    process.env.RESEND_SENDER_EMAIL || process.env.RESEND_FROM_EMAIL;
+
+  if (!senderEmail) {
+    throw new Error(
+      "RESEND_SENDER_EMAIL or RESEND_FROM_EMAIL environment variable is not set"
+    );
+  }
+
+  return senderEmail;
+}

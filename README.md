@@ -91,6 +91,8 @@ RESEND_REPLY_TO_EMAIL=
 LEAD_FOLLOWUP_SECRET=
 ```
 
+`RESEND_SENDER_EMAIL` or `RESEND_FROM_EMAIL` must be a verified sender. The app and Edge Function now fail fast if no sender identity is configured.
+
 Billing:
 
 ```bash

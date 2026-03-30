@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { InvoiceStatus, InvoiceUpdate } from "@/types";
-import { getResend } from "@/lib/resend";
+import { getResend, getResendSenderEmail } from "@/lib/resend";
 import { InvoiceEmail } from "@/emails/invoice-email";
 import { render } from "@react-email/render";
 
@@ -333,7 +333,7 @@ export async function sendInvoiceEmail(invoiceId: string) {
   }
 
   const businessName = profile?.business_name || "TradieFlow";
-  const fromEmail = process.env.RESEND_FROM_EMAIL || "invoices@gettradieflow.com";
+  const fromEmail = getResendSenderEmail();
   
   // @ts-expect-error -- Supabase nested relation typing is not inferred here.
   const clientName = invoice.job?.client?.name || "Valued Client";
