@@ -14,7 +14,7 @@ export default async function LeadsPage() {
   // Check if business profile exists
   const { data: profile, error: profileError } = await supabase
     .from('business_profile')
-    .select('id')
+    .select('id, booking_url_slug')
     .eq('user_id', user.id)
     .single();
 
@@ -48,7 +48,10 @@ export default async function LeadsPage() {
       )}
 
       <section className="section-card">
-        <LeadsTable leads={leads} />
+        <LeadsTable
+          leads={leads}
+          bookingUrlSlug={profile?.booking_url_slug ?? null}
+        />
       </section>
     </div>
   );

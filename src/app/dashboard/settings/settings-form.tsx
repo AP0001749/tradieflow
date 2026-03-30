@@ -28,6 +28,7 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [copyMessage, setCopyMessage] = useState<string | null>(null);
   const [bookingSlug, setBookingSlug] = useState(profile?.booking_url_slug || '');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -35,6 +36,7 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
     setIsSubmitting(true);
     setError(null);
     setSuccess(false);
+    setCopyMessage(null);
 
     const formData = new FormData(e.currentTarget);
 
@@ -202,14 +204,21 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                navigator.clipboard.writeText(onboardingFormUrl);
-                alert('Copied to clipboard!');
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(onboardingFormUrl);
+                  setCopyMessage('Copied booking link to clipboard.');
+                } catch {
+                  setCopyMessage('Could not copy automatically. You can still copy the link manually.');
+                }
               }}
             >
               Copy
             </Button>
           </div>
+          {copyMessage ? (
+            <p className="text-xs text-muted-foreground mt-2">{copyMessage}</p>
+          ) : null}
           <p className="text-xs text-muted-foreground mt-2">
             Use this URL in your Google Ads campaigns and website CTAs
           </p>

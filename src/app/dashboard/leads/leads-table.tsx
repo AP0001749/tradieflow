@@ -34,6 +34,7 @@ interface Lead {
 
 interface LeadsTableProps {
   leads: Lead[];
+  bookingUrlSlug?: string | null;
 }
 
 function getStatusLabel(status: string) {
@@ -45,18 +46,26 @@ function getStatusLabel(status: string) {
   }
 }
 
-export default function LeadsTable({ leads }: LeadsTableProps) {
+export default function LeadsTable({ leads, bookingUrlSlug }: LeadsTableProps) {
   const router = useRouter();
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const appOrigin = process.env.NEXT_PUBLIC_APP_URL?.trim() || '';
+  const onboardingFormUrl = bookingUrlSlug
+    ? `${appOrigin.replace(/\/+$/, '')}/book/${bookingUrlSlug}`
+    : '/dashboard/settings';
 
   const handleStatusChange = async (leadId: string, newStatus: string) => {
     setProcessingId(leadId);
+    setErrorMessage(null);
     try {
       await updateLeadStatus(leadId, newStatus);
       router.refresh();
     } catch (error) {
       console.error('Failed to update status:', error);
-      alert('Failed to update status');
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Failed to update lead status'
+      );
     } finally {
       setProcessingId(null);
     }
@@ -64,12 +73,15 @@ export default function LeadsTable({ leads }: LeadsTableProps) {
 
   const handleConvert = async (leadId: string) => {
     setProcessingId(leadId);
+    setErrorMessage(null);
     try {
       const jobId = await convertLeadToJob(leadId);
       router.push(`/dashboard/jobs/${jobId}`);
     } catch (error) {
       console.error('Failed to convert:', error);
-      alert('Failed to convert lead to job');
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Failed to convert lead to job'
+      );
     } finally {
       setProcessingId(null);
     }
@@ -107,7 +119,20 @@ export default function LeadsTable({ leads }: LeadsTableProps) {
       <div className="rounded-2xl border border-border/60 bg-card/70 backdrop-blur-xl p-12 text-center shadow-sm">
         <p className="text-muted-foreground">No leads yet. Share your onboarding form to start receiving setup requests.</p>
         <p className="text-sm text-muted-foreground/80 mt-2">
-          Your onboarding form URL: <span className="font-mono">/book</span>
+          {bookingUrlSlug ? (
+            <>
+              Your onboarding form URL:{' '}
+              <span className="font-mono break-all">{onboardingFormUrl}</span>
+            </>
+          ) : (
+            <>
+              Set your booking link in{' '}
+              <a href={onboardingFormUrl} className="font-medium underline">
+                Settings
+              </a>
+              .
+            </>
+          )}
         </p>
       </div>
     );
@@ -115,6 +140,11 @@ export default function LeadsTable({ leads }: LeadsTableProps) {
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card/70 backdrop-blur-xl shadow-sm">
+      {errorMessage ? (
+        <div className="border-b border-border/60 bg-destructive/10 px-4 py-3">
+          <p className="text-sm text-destructive">{errorMessage}</p>
+        </div>
+      ) : null}
       <Table>
         <TableHeader>
           <TableRow>
