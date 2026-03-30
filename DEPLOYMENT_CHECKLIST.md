@@ -4,7 +4,7 @@
 
 - [ ] Run migration locally to test: `npx supabase db push`
 - [ ] Test booking page at `/book`
-- [ ] Test cron endpoint manually with curl
+- [ ] Test the Supabase Edge Function manually
 - [ ] Verify Resend email templates render correctly
 - [ ] Set up business profile in `/dashboard/settings`
 
@@ -13,7 +13,7 @@
 Add these to Vercel (or your hosting platform):
 
 ```env
-CRON_SECRET=<generate-random-32-char-token>
+LEAD_FOLLOWUP_SECRET=<generate-random-32-char-token>
 RESEND_API_KEY=<your-existing-key>
 NEXT_PUBLIC_SUPABASE_URL=<your-url>
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-key>
@@ -27,12 +27,11 @@ SUPABASE_SERVICE_ROLE_KEY=<your-key>
 - [ ] Test anonymous access to leads table (for /book page)
 - [ ] Create your first business_profile record
 
-## Vercel Configuration
+## Hosting Configuration
 
-- [ ] Ensure `vercel.json` is committed
 - [ ] Deploy to Vercel
-- [ ] Verify cron job shows in Functions dashboard
-- [ ] Check cron runs every 15 minutes (monitor logs)
+- [ ] Verify Supabase cron job exists
+- [ ] Check Edge Function runs every 15 minutes (monitor logs)
 
 ## Google Ads Setup
 
@@ -47,7 +46,7 @@ SUPABASE_SERVICE_ROLE_KEY=<your-key>
 - [ ] Check lead appears in `/dashboard/leads`
 - [ ] Test status changes (contacted, booked, lost)
 - [ ] Test convert to job flow
-- [ ] Wait 15 mins and verify cron runs
+- [ ] Wait 15 mins and verify Supabase cron runs
 - [ ] Check `lead_events` table for audit trail
 
 ## Marketing Setup

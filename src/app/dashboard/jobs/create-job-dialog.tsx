@@ -18,18 +18,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { createJob, getClients } from "./actions";
 import { Client } from "@/types";
 
-export function CreateJobDialog() {
+interface CreateJobDialogProps {
+  disabledReason?: string;
+}
+
+export function CreateJobDialog({ disabledReason }: CreateJobDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clients, setClients] = useState<Pick<Client, "id" | "name">[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [loadingClients, setLoadingClients] = useState(false);
+  const isDisabled = Boolean(disabledReason);
 
   async function handleOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
 
-    if (!nextOpen) return;
+    if (!nextOpen || isDisabled) return;
 
     // Always clear error on open and re-fetch clients to pick up newly added ones
     setError(null);
@@ -72,7 +77,7 @@ export function CreateJobDialog() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
+        <Button className="gap-2" disabled={isDisabled} title={disabledReason}>
           <Plus className="w-4 h-4" />
           New Job
         </Button>
@@ -84,6 +89,11 @@ export function CreateJobDialog() {
             Create a new job and assign it to a client. Title and client are required.
           </DialogDescription>
         </DialogHeader>
+        {disabledReason && (
+          <div className="rounded-md border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
+            {disabledReason}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Client Select - CRITICAL */}
           <div className="space-y-2">

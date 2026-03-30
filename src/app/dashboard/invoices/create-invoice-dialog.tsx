@@ -24,7 +24,11 @@ type InvoiceableJob = {
   client: { name: string } | null;
 };
 
-export function CreateInvoiceDialog() {
+interface CreateInvoiceDialogProps {
+  disabledReason?: string;
+}
+
+export function CreateInvoiceDialog({ disabledReason }: CreateInvoiceDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,11 +43,12 @@ export function CreateInvoiceDialog() {
   );
 
   const [amount, setAmount] = useState<string>("");
+  const isDisabled = Boolean(disabledReason);
 
   async function handleOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
 
-    if (!nextOpen) return;
+    if (!nextOpen || isDisabled) return;
 
     setLoadingJobs(true);
     setError(null);
@@ -92,7 +97,7 @@ export function CreateInvoiceDialog() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
+        <Button className="gap-2" disabled={isDisabled} title={disabledReason}>
           <Plus className="w-4 h-4" />
           New Invoice
         </Button>
@@ -104,6 +109,11 @@ export function CreateInvoiceDialog() {
             Select a completed/in-progress job to invoice, then set a due date.
           </DialogDescription>
         </DialogHeader>
+        {disabledReason && (
+          <div className="rounded-md border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
+            {disabledReason}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">

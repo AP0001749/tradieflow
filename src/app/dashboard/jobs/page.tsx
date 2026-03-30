@@ -15,6 +15,7 @@ import { DeleteJobButton } from "./delete-job-button";
 import EditJobDialog from "./edit-job-dialog";
 import { SubscriptionBanner } from "@/components/subscription-banner";
 import Link from "next/link";
+import { checkSubscriptionLimits } from "@/lib/subscription";
 
 const statusConfig: Record<
   JobStatus,
@@ -65,6 +66,15 @@ export default async function JobsPage() {
     console.error("Error fetching jobs:", error);
   }
 
+  const subscription = await checkSubscriptionLimits();
+  const hasReachedFreeTierLimit =
+    !subscription.isPro &&
+    (subscription.current?.jobs ?? 0) >=
+      (subscription.limits?.maxJobs ?? Number.POSITIVE_INFINITY);
+  const createDisabledReason = hasReachedFreeTierLimit
+    ? "Free plan limited to 5 jobs. Upgrade to Pro for unlimited jobs."
+    : undefined;
+
   return (
     <div className="space-y-6 md:space-y-8">
       <SubscriptionBanner resourceType="jobs" />
@@ -77,7 +87,7 @@ export default async function JobsPage() {
           </p>
         </div>
         <div className="shrink-0">
-          <CreateJobDialog />
+          <CreateJobDialog disabledReason={createDisabledReason} />
         </div>
       </div>
 

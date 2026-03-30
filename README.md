@@ -1,34 +1,63 @@
 # TradieFlow
 
-TradieFlow is a job + client + invoicing system built for Australian tradies. It also includes a public booking/lead capture flow and automated follow-up emails.
+TradieFlow is a SaaS job management and lead follow-up platform for Australian tradies. It combines a public booking flow, tenant-safe lead capture, client and job management, invoicing, Stripe billing, and automated lead follow-up.
 
-## What’s inside
+## Status
 
-- Jobs, clients, invoices (dashboard)
-- Invoice emailing via Resend
-- Photos upload support (server actions body size increased)
-- Supabase Auth (Google OAuth + email/password) + route protection via middleware
-- Stripe subscriptions (checkout, portal, webhook)
-- Lead capture endpoint + scheduled lead follow-up emails (Supabase Cron + Edge Function)
-- Google Ads conversion tracking + Enhanced Conversions utilities
+The codebase hardening work is done and pushed.
 
-## Tech stack
+Completed in the repo:
 
-- Next.js (App Router) + TypeScript
+- tenant-safe lead routing using `business_profile.booking_url_slug`
+- anti-spam protection with Zod validation, honeypot, and Upstash rate limiting
+- Stripe webhook dedupe with retry-safe processing
+- atomic free-tier quota enforcement through database RPCs
+- upload validation and signed URL hardening
+- middleware fail-closed behavior for protected routes
+- Supabase Cron migration path with a Supabase Edge Function for follow-up automation
+- removal of Vercel cron scheduling
+
+Still required before calling the rollout fully complete:
+
+- deploy the `lead-followup` Edge Function
+- set Edge Function secrets in Supabase
+- create the required Vault secrets
+- apply the Supabase Cron migration in the live project
+- verify cron runs successfully in production
+- run the browser-based upload hardening check
+- run the final production smoke test
+
+## Core Features
+
+- Dashboard for clients, jobs, invoices, and leads
+- Public booking pages at `/book/[booking_url_slug]`
+- Multi-tenant lead capture and follow-up sequencing
+- Job photo uploads
+- Stripe subscriptions and billing portal
+- Google Ads conversion tracking
+- Supabase-backed auth, database, storage, and scheduled automation
+
+## Tech Stack
+
+- Next.js App Router
+- TypeScript
 - React 19
-- Supabase (Postgres + Auth)
-- Stripe (subscriptions)
-- Resend (transactional email)
-- Tailwind CSS + shadcn/ui
+- Supabase Auth, Postgres, Storage, Edge Functions, and Cron
+- Stripe
+- Resend
+- Upstash Redis
+- Tailwind CSS
 
-## Local development (Windows)
+## Local Setup
 
 ### Prerequisites
 
-- Node.js 18.18+ (or newer)
-- A Supabase project (URL + anon key)
-- Resend API key (for invoice + follow-up emails)
-- Stripe account + keys (only required if you’re testing billing)
+- Node.js 18.18+
+- npm
+- a Supabase project
+- Stripe credentials if testing billing
+- Resend credentials if testing emails
+- Upstash Redis credentials if testing public lead capture rate limiting
 
 ### Install
 
@@ -36,161 +65,174 @@ TradieFlow is a job + client + invoicing system built for Australian tradies. It
 npm install
 ```
 
-### Environment variables
+### Environment
 
-Next.js reads `.env.local`. This repo also contains an `env.local` file that can be used as a starting point — copy/rename it to `.env.local` and fill in values.
+Copy `.env.local.example` to `.env.local` and fill in the values you need.
 
-Minimum to run the app:
+App runtime:
 
 ```bash
-# Supabase (client)
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-
-# App
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-To enable email features:
-
-```bash
-RESEND_API_KEY=
-
-# Optional defaults used in lead flows
-RESEND_FROM_EMAIL=
-DEFAULT_BUSINESS_NAME=TradieFlow
-```
-
-To enable Stripe billing:
-
-```bash
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-
-# Single Pro price used by the billing page
-NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=
-```
-
-To enable public lead capture (server-side insert bypassing RLS):
-
-```bash
 SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-To enable the scheduled lead follow-up scheduler:
+Lead capture and automation:
 
 ```bash
-CRON_SECRET=
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=
+RESEND_SENDER_EMAIL=
+RESEND_REPLY_TO_EMAIL=
 LEAD_FOLLOWUP_SECRET=
 ```
 
-Supabase Edge Function secrets also need:
+Billing:
 
 ```bash
-SUPABASE_SERVICE_ROLE_KEY=
-RESEND_API_KEY=
-RESEND_SENDER_EMAIL=
-RESEND_REPLY_TO_EMAIL=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=
 ```
 
-Optional (Google Ads):
-
-```bash
-# Lead conversion label (Google Ads → Tools → Conversions)
-NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL=
-```
-
-### Run the dev server
+### Run Locally
 
 ```bash
 npm run dev
 ```
 
-Open http://localhost:3000
+Open `http://localhost:3000`.
 
-## Database & migrations (Supabase)
+## Database
 
-This project includes Supabase migrations in `supabase/migrations/`.
+Supabase migrations live in `supabase/migrations`.
 
-If you use the Supabase CLI:
+Apply migrations:
 
 ```bash
-npm i -g supabase
-supabase link --project-ref <your-project-ref>
-supabase db push
+npx supabase db push -p <db-password>
 ```
 
-Generate TypeScript types (writes to `src/types/database.generated.ts`):
+Generate fresh database types after schema changes:
 
 ```bash
 npm run generate-types
 ```
 
-## Stripe webhooks (local)
+## Lead Automation Architecture
 
-Forward Stripe events to the webhook route:
+TradieFlow now targets this production flow:
+
+`Supabase Cron -> public.invoke_lead_followup() -> Supabase Edge Function -> Resend + DB updates`
+
+Relevant files:
+
+- `supabase/functions/lead-followup/index.ts`
+- `supabase/migrations/20260324153000_hardening_patch.sql`
+- `supabase/migrations/20260324174500_move_lead_followup_to_supabase_cron.sql`
+
+The old Next.js cron route is intentionally retired so there is only one production follow-up processor.
+
+## Supabase Cron Rollout
+
+### 1. Deploy the Edge Function
 
 ```bash
-stripe listen --forward-to http://localhost:3000/api/stripe/webhook
+npx supabase functions deploy lead-followup --no-verify-jwt
 ```
 
-## Lead automation (scheduler)
+### 2. Set Edge Function Secrets
 
-Production lead follow-up now runs through:
+```bash
+npx supabase secrets set \
+  LEAD_FOLLOWUP_SECRET=your-random-secure-followup-secret \
+  SUPABASE_SERVICE_ROLE_KEY=your-service-role-key \
+  RESEND_API_KEY=your-resend-api-key \
+  RESEND_SENDER_EMAIL=your-verified-sender \
+  RESEND_REPLY_TO_EMAIL=your-reply-to-email
+```
 
-- Supabase Cron
-- `public.invoke_lead_followup()`
-- `supabase/functions/lead-followup`
+### 3. Create Vault Secrets
 
-The legacy Next.js route `GET /api/cron/leads-followup` remains available as a manual fallback.
+```sql
+select vault.create_secret('https://YOUR_PROJECT_REF.supabase.co', 'project_url');
+select vault.create_secret('YOUR_SUPABASE_ANON_KEY', 'supabase_anon_key');
+select vault.create_secret('YOUR_LEAD_FOLLOWUP_SECRET', 'lead_followup_secret');
+```
 
-See:
+### 4. Apply the Scheduler Migration
+
+Apply:
+
+- `supabase/migrations/20260324174500_move_lead_followup_to_supabase_cron.sql`
+
+If the Vault secrets did not exist when the migration ran:
+
+```sql
+select public.configure_lead_followup_cron();
+```
+
+### 5. Verify the Scheduler
+
+Check:
+
+- `cron.job`
+- `cron.job_run_details`
+- Supabase Edge Function logs
+- Resend send results
+
+## Verification
+
+Already verified locally:
+
+- booking slug routing
+- payload validation
+- honeypot behavior
+- rate limiting
+- middleware fail-closed behavior
+- cron claim/idempotency behavior
+- Stripe webhook dedupe and retry safety
+- free-tier quota enforcement
+
+Still recommended before production rollout:
+
+- browser-based upload hardening check
+- production smoke test after deploy
+
+## Useful Commands
+
+Lint:
+
+```bash
+npm run lint
+```
+
+Typecheck:
+
+```bash
+npx tsc --noEmit
+```
+
+Production build:
+
+```bash
+npm run build
+```
+
+## Deployment Notes
+
+- Vercel remains the app host
+- Vercel cron is removed
+- Stripe webhook stays on `/api/stripe/webhook`
+- Supabase Cron handles scheduled lead follow-up
+
+## Additional Docs
 
 - `LEAD_AUTOMATION_SETUP.md`
-
-## Google Ads + Enhanced Conversions
-
-Enhanced Conversions helpers live in `src/utils/enhanced-conversions.ts` and `src/utils/gtag.ts`.
-
-Setup details:
-
-- `ENHANCED_CONVERSIONS_SETUP.md`
-
-## Useful docs
-
 - `DEPLOYMENT_CHECKLIST.md`
-- `LEAD_AUTOMATION_SETUP.md`
 - `ENHANCED_CONVERSIONS_SETUP.md`
-
-## Deployment
-
-Recommended deployment target is Vercel.
-
-- Add all env vars in the Vercel Project Settings
-- Update Supabase Auth redirect URLs for your production domain
-- Configure Stripe webhook endpoint to `/api/stripe/webhook`
-- Configure Supabase Edge Function secrets and Vault secrets before enabling the scheduler
-
-## License
-
-Proprietary / internal use.
-
-## 🎯 Status
-
-**Final Version** - January 26, 2026
-
-This is the production-ready release with all core features implemented:
-✅ Authentication & user management
-✅ Job, client, and invoice management
-✅ Stripe subscription system
-✅ Email delivery
-✅ Google Ads tracking
-✅ Revenue analytics
-✅ Responsive design
-
----
-
-## 📧 Support
-
-For issues or questions, please contact the development team.

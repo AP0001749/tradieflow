@@ -16,6 +16,7 @@ import { DeleteInvoiceButton } from "./delete-invoice-button";
 import EditInvoiceDialog from "./edit-invoice-dialog";
 import { InvoiceStatus, InvoiceWithJobClient } from "@/types";
 import { SubscriptionBanner } from "@/components/subscription-banner";
+import { checkSubscriptionLimits } from "@/lib/subscription";
 
 const statusConfig: Record<
   InvoiceStatus,
@@ -92,6 +93,14 @@ export default async function InvoicesPage() {
   }
 
   const rows: InvoiceWithJobClient[] = invoices || [];
+  const subscription = await checkSubscriptionLimits();
+  const hasReachedFreeTierLimit =
+    !subscription.isPro &&
+    (subscription.current?.invoices ?? 0) >=
+      (subscription.limits?.maxInvoices ?? Number.POSITIVE_INFINITY);
+  const createDisabledReason = hasReachedFreeTierLimit
+    ? "Free plan limited to 10 invoices. Upgrade to Pro for unlimited invoices."
+    : undefined;
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -105,7 +114,7 @@ export default async function InvoicesPage() {
           </p>
         </div>
         <div className="shrink-0">
-          <CreateInvoiceDialog />
+          <CreateInvoiceDialog disabledReason={createDisabledReason} />
         </div>
       </div>
 

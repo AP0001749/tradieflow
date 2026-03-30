@@ -1,16 +1,31 @@
-name: TradieFlow Heartbeat
+name: TradieFlow Supabase Follow-up Check
 
 on:
-  schedule:
-    - cron: '*/15 * * * *' # Runs every 15 minutes
-  workflow_dispatch: # Allows manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
-  ping-vercel:
+  invoke-supabase-edge-function:
     runs-on: ubuntu-latest
     steps:
-      - name: Call Lead Automation Endpoint
+      - name: Validate required secrets
+        env:
+          SUPABASE_PROJECT_URL: ${{ secrets.SUPABASE_PROJECT_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          LEAD_FOLLOWUP_SECRET: ${{ secrets.LEAD_FOLLOWUP_SECRET }}
         run: |
-          curl -X GET "${{ secrets.VERCEL_URI }}/api/cron/leads-followup" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          test -n "$SUPABASE_PROJECT_URL" || (echo "Missing SUPABASE_PROJECT_URL secret" && exit 1)
+          test -n "$SUPABASE_ANON_KEY" || (echo "Missing SUPABASE_ANON_KEY secret" && exit 1)
+          test -n "$LEAD_FOLLOWUP_SECRET" || (echo "Missing LEAD_FOLLOWUP_SECRET secret" && exit 1)
+
+      - name: Invoke Supabase Lead Follow-up Edge Function
+        env:
+          SUPABASE_PROJECT_URL: ${{ secrets.SUPABASE_PROJECT_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          LEAD_FOLLOWUP_SECRET: ${{ secrets.LEAD_FOLLOWUP_SECRET }}
+        run: |
+          curl -X POST "${SUPABASE_PROJECT_URL}/functions/v1/lead-followup" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${LEAD_FOLLOWUP_SECRET}" \
+            -d '{"source":"github-workflow-dispatch"}' \
             --fail --silent --show-error

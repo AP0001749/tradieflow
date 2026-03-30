@@ -6,7 +6,7 @@ What it does:
 2. Optionally starts `npm run dev` (if nothing is listening on localhost:3000)
 3. Waits for the dev server to become healthy
 4. Submits a test lead to /api/leads/create
-5. Calls the cron endpoint /api/cron/leads-followup with Authorization: Bearer $CRON_SECRET
+5. Optionally calls a locally served Supabase Edge Function if LEAD_FOLLOWUP_EDGE_URL is set
 6. Prints responses and exits
 
 Usage:
@@ -16,8 +16,12 @@ Usage:
 Notes:
 - This script assumes `.env.local` exists at the repo root
 - If you prefer to start the dev server yourself, press Ctrl+C in the script when it attempts to start the server
-- If the lead creation returns "Service not available yet", create a `business_profile` in Supabase (see README)
+- If the lead creation fails, confirm a `business_profile` exists in Supabase and use a real `booking_url_slug`
 #>
+
+param(
+    [string]$BookingUrlSlug = "smoke-test-business"
+)
 
 function Load-EnvFile {
     param(
@@ -118,12 +122,6 @@ function Wait-For-Url {
 # ---------- Script start ----------
 Load-EnvFile
 
-$CRON_SECRET = $env:CRON_SECRET
-if (-not $CRON_SECRET) {
-    Write-Error "CRON_SECRET not set in environment. Please add it to .env.local"
-    exit 1
-}
-
 # If port 3000 not in use, start dev server
 $port = 3000
 if (-not (Test-PortListening -Port $port)) {
@@ -142,12 +140,16 @@ if (-not (Test-PortListening -Port $port)) {
 # Submit test lead
 $createUrl = "http://localhost:$port/api/leads/create"
 $payload = @{
-    name = "Smoke Test Lead"
+    booking_url_slug = $BookingUrlSlug
+    website = ""
+    business_name = "Smoke Test Cleaning"
+    your_name = "Smoke Test Lead"
+    mobile = "0400000000"
     email = "smoketest+lead@example.com"
-    phone = "0400000000"
-    suburb = "Melbourne"
-    postcode = "3000"
-    job_type = "end_of_lease"
+    service_area = "Melbourne"
+    service_type = "end_of_lease"
+    abn = ""
+    notes = "Smoke test submission"
 } | ConvertTo-Json
 
 Write-Host "Submitting test lead to $createUrl"
@@ -164,20 +166,20 @@ try {
     exit 1
 }
 
-# Trigger cron endpoint
-$cronUrl = "http://localhost:$port/api/cron/leads-followup"
-Write-Host "Triggering cron: $cronUrl"
-try {
-    $headers = @{ Authorization = "Bearer $CRON_SECRET" }
-    $cronResp = Invoke-RestMethod -Uri $cronUrl -Method Get -Headers $headers -TimeoutSec 30
-    Write-Host "Cron response:`n$(ConvertTo-Json $cronResp -Depth 5)"
-} catch {
-    Write-Error "Cron invocation failed: $($_.Exception.Message)"
-    if (Test-Path './dev.err') {
-        Write-Host "--- Last 200 chars of dev.err ---"
-        Get-Content './dev.err' -Tail 40 | ForEach-Object { Write-Host $_ }
+$edgeUrl = $env:LEAD_FOLLOWUP_EDGE_URL
+$leadFollowupSecret = $env:LEAD_FOLLOWUP_SECRET
+if ($edgeUrl -and $leadFollowupSecret) {
+    Write-Host "Triggering local Edge Function: $edgeUrl"
+    try {
+        $headers = @{ "x-cron-secret" = $leadFollowupSecret }
+        $edgeResp = Invoke-RestMethod -Uri $edgeUrl -Method Post -Headers $headers -TimeoutSec 30
+        Write-Host "Edge Function response:`n$(ConvertTo-Json $edgeResp -Depth 5)"
+    } catch {
+        Write-Error "Edge Function invocation failed: $($_.Exception.Message)"
+        exit 1
     }
-    exit 1
+} else {
+    Write-Host "Skipping Edge Function step. Set LEAD_FOLLOWUP_EDGE_URL and LEAD_FOLLOWUP_SECRET to test follow-up automation locally."
 }
 
 Write-Host 'Smoke test completed successfully. Check Supabase leads and lead_events tables for records.'

@@ -15,10 +15,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { addClient } from "./actions";
 
-export function AddClientDialog() {
+interface AddClientDialogProps {
+  disabledReason?: string;
+}
+
+export function AddClientDialog({ disabledReason }: AddClientDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isDisabled = Boolean(disabledReason);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,7 +48,7 @@ export function AddClientDialog() {
   return (
     <Dialog open={open} onOpenChange={(next) => { setOpen(next); if (next) setError(null); }}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
+        <Button className="gap-2" disabled={isDisabled} title={disabledReason}>
           <Plus className="w-4 h-4" />
           New Client
         </Button>
@@ -55,6 +60,11 @@ export function AddClientDialog() {
             Enter the client details below. Only the name is required.
           </DialogDescription>
         </DialogHeader>
+        {disabledReason && (
+          <div className="rounded-md border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
+            {disabledReason}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name" className="text-sm font-medium">

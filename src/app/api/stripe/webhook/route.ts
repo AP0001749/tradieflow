@@ -36,20 +36,19 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { error: eventInsertError } = await supabaseAdmin
+    const { data: existingEvent, error: existingEventError } = await supabaseAdmin
       .from("stripe_events")
-      .insert({
-        id: event.id,
-        event_type: event.type,
-      });
+      .select("id")
+      .eq("id", event.id)
+      .maybeSingle();
 
-    if (eventInsertError) {
-      if (eventInsertError.code === "23505") {
-        return NextResponse.json({ received: true });
-      }
+    if (existingEventError) {
+      console.error("Failed to check Stripe event:", existingEventError);
+      return NextResponse.json({ error: "Webhook event lookup failed" }, { status: 500 });
+    }
 
-      console.error("Failed to persist Stripe event:", eventInsertError);
-      return NextResponse.json({ error: "Webhook event persistence failed" }, { status: 500 });
+    if (existingEvent) {
+      return NextResponse.json({ received: true });
     }
 
     switch (event.type) {
@@ -192,6 +191,18 @@ export async function POST(request: Request) {
 
       default:
         console.log(`Unhandled event type: ${event.type}`);
+    }
+
+    const { error: eventInsertError } = await supabaseAdmin
+      .from("stripe_events")
+      .insert({
+        id: event.id,
+        event_type: event.type,
+      });
+
+    if (eventInsertError && eventInsertError.code !== "23505") {
+      console.error("Failed to persist Stripe event:", eventInsertError);
+      return NextResponse.json({ error: "Webhook event persistence failed" }, { status: 500 });
     }
 
     return NextResponse.json({ received: true });

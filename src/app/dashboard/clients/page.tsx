@@ -12,6 +12,7 @@ import { AddClientDialog } from "./add-client-dialog";
 import { DeleteClientButton } from "./delete-client-button";
 import { EditClientDialog } from "./edit-client-dialog";
 import { SubscriptionBanner } from "@/components/subscription-banner";
+import { checkSubscriptionLimits } from "@/lib/subscription";
 
 export default async function ClientsPage() {
   const supabase = await createClient();
@@ -34,6 +35,15 @@ export default async function ClientsPage() {
     console.error("Error fetching clients:", error);
   }
 
+  const subscription = await checkSubscriptionLimits();
+  const hasReachedFreeTierLimit =
+    !subscription.isPro &&
+    (subscription.current?.clients ?? 0) >=
+      (subscription.limits?.maxClients ?? Number.POSITIVE_INFINITY);
+  const createDisabledReason = hasReachedFreeTierLimit
+    ? "Free plan limited to 3 clients. Upgrade to Pro for unlimited clients."
+    : undefined;
+
   return (
     <div className="space-y-6 md:space-y-8">
       <SubscriptionBanner resourceType="clients" />
@@ -46,7 +56,7 @@ export default async function ClientsPage() {
           </p>
         </div>
         <div className="shrink-0">
-          <AddClientDialog />
+          <AddClientDialog disabledReason={createDisabledReason} />
         </div>
       </div>
 

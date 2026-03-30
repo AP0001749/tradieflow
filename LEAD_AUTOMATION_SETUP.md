@@ -30,9 +30,6 @@ This creates three new tables:
 Add to your `.env.local` (and Vercel environment variables):
 
 ```env
-# Legacy manual cron route authentication
-CRON_SECRET=your-random-secure-token-here
-
 # Supabase Edge Function authentication
 LEAD_FOLLOWUP_SECRET=your-random-secure-followup-secret-here
 
@@ -154,12 +151,6 @@ When you click "Convert to Job":
 ```bash
 npm run dev
 # Visit http://localhost:3000/book/your-booking-slug
-```
-
-### Test the cron job manually:
-```bash
-curl http://localhost:3000/api/cron/leads-followup \
-  -H "Authorization: Bearer your-cron-secret"
 ```
 
 ### Test the Supabase Edge Function manually:
