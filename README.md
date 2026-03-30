@@ -116,6 +116,8 @@ Open `http://localhost:3000`.
 
 Supabase migrations live in `supabase/migrations`.
 
+`supabase/config.toml` is for local Supabase CLI development. Do not treat its auth settings as proof of your hosted production auth policy.
+
 Apply migrations:
 
 ```bash

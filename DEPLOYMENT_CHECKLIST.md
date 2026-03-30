@@ -51,6 +51,7 @@
 - [ ] Apply production migrations, including:
   `20260324174500_move_lead_followup_to_supabase_cron.sql`
   `20260330150000_centralize_tier_limits.sql`
+- [ ] Verify hosted Supabase auth settings directly in the live project dashboard
 - [ ] Verify RLS / tenant isolation in the live database
 - [ ] Confirm `tier_limits` contains the expected free/pro plan rows
 - [ ] Create or verify Vault secrets:
