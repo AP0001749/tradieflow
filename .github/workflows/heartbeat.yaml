@@ -9,6 +9,25 @@ jobs:
   invoke-follow-up-processor:
     runs-on: ubuntu-latest
     steps:
+      - name: Probe deployed follow-up route
+        env:
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+        run: |
+          APP_URL="${APP_BASE_URL:-https://gettradieflow.com}"
+          STATUS="$(curl -sS -D probe.headers -o probe.json -w '%{http_code}' -X POST "${APP_URL}/api/cron/leads-followup" || true)"
+          ROUTE_HEADER="$(grep -i '^x-tradieflow-followup-route:' probe.headers | tail -n1 | cut -d':' -f2- | xargs)"
+          AUTH_HEADER="$(grep -i '^x-tradieflow-followup-auth:' probe.headers | tail -n1 | cut -d':' -f2- | xargs)"
+          BODY="$(tr '\n' ' ' < probe.json | sed 's/[[:space:]]\+/ /g' | cut -c1-400)"
+          {
+            echo "## TradieFlow Follow-up Route Probe"
+            echo
+            echo "- URL: ${APP_URL}/api/cron/leads-followup"
+            echo "- Probe Status: ${STATUS}"
+            echo "- Probe Route Header: ${ROUTE_HEADER:-missing}"
+            echo "- Probe Auth Header: ${AUTH_HEADER:-missing}"
+            echo "- Probe Response: ${BODY}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Validate required secrets
         env:
           APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
