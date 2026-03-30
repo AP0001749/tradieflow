@@ -13,6 +13,7 @@ import { DeleteClientButton } from "./delete-client-button";
 import { EditClientDialog } from "./edit-client-dialog";
 import { SubscriptionBanner } from "@/components/subscription-banner";
 import { checkSubscriptionLimits } from "@/lib/subscription";
+import { getLimitReachedMessage, getResourceLimit } from "@/lib/subscription-limits";
 
 export default async function ClientsPage() {
   const supabase = await createClient();
@@ -36,12 +37,13 @@ export default async function ClientsPage() {
   }
 
   const subscription = await checkSubscriptionLimits();
+  const clientLimit = getResourceLimit(subscription.limits, "clients");
   const hasReachedFreeTierLimit =
     !subscription.isPro &&
     (subscription.current?.clients ?? 0) >=
-      (subscription.limits?.maxClients ?? Number.POSITIVE_INFINITY);
-  const createDisabledReason = hasReachedFreeTierLimit
-    ? "Free plan limited to 3 clients. Upgrade to Pro for unlimited clients."
+      (clientLimit ?? Number.POSITIVE_INFINITY);
+  const createDisabledReason = hasReachedFreeTierLimit && typeof clientLimit === "number"
+    ? getLimitReachedMessage("clients", clientLimit)
     : undefined;
 
   return (

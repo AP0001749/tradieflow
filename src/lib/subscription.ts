@@ -1,15 +1,44 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import type { SubscriptionStatus, TierLimits } from "@/lib/subscription-limits";
 
-// Free tier limits
-const FREE_TIER_LIMITS = {
-  maxClients: 3,
-  maxJobs: 5,
-  maxInvoices: 10,
+type TierLimitRow = {
+  tier: string;
+  max_clients: number | null;
+  max_jobs: number | null;
+  max_invoices: number | null;
+  unlimited: boolean | null;
 };
 
-export async function checkSubscriptionLimits() {
+const ACTIVE_PRO_STATUSES = new Set(["active", "trialing", "past_due"]);
+
+function normalizeTierLimits(row: TierLimitRow): TierLimits {
+  return {
+    tier: row.tier,
+    maxClients: row.max_clients,
+    maxJobs: row.max_jobs,
+    maxInvoices: row.max_invoices,
+    unlimited: Boolean(row.unlimited),
+  };
+}
+
+async function getTierLimitsForTier(tier: string): Promise<TierLimits | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_tier_limits", {
+    p_tier: tier,
+  });
+
+  if (error) {
+    console.error("Error fetching tier limits:", error);
+    return null;
+  }
+
+  const row = ((data as TierLimitRow[] | null) || [])[0] ?? null;
+  return row ? normalizeTierLimits(row) : null;
+}
+
+export async function checkSubscriptionLimits(): Promise<SubscriptionStatus> {
   const supabase = await createClient();
 
   const {
@@ -17,10 +46,10 @@ export async function checkSubscriptionLimits() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { 
-      canProceed: false, 
+    return {
+      canProceed: false,
       error: "Unauthorized",
-      isPro: false 
+      isPro: false,
     };
   }
 
@@ -33,15 +62,18 @@ export async function checkSubscriptionLimits() {
 
   const tier = (profile as { subscription_tier?: string | null; subscription_status?: string | null } | null)?.subscription_tier ?? "free";
   const status = (profile as { subscription_tier?: string | null; subscription_status?: string | null } | null)?.subscription_status ?? null;
-  
-  // Pro users with active or trialing subscriptions have no limits
-  // Also allow "past_due" to give users grace period to update payment
-  if (tier === "pro" && (!status || status === "active" || status === "trialing" || status === "past_due")) {
-    return { 
-      canProceed: true, 
+
+  const hasUnlimitedProAccess = tier === "pro" && (!status || ACTIVE_PRO_STATUSES.has(status));
+  const effectiveTier = hasUnlimitedProAccess ? "pro" : "free";
+  const limits = await getTierLimitsForTier(effectiveTier);
+
+  if (hasUnlimitedProAccess) {
+    return {
+      canProceed: true,
       isPro: true,
       tier: "pro",
-      status
+      status,
+      limits: limits ?? undefined,
     };
   }
 
@@ -56,7 +88,8 @@ export async function checkSubscriptionLimits() {
     canProceed: true,
     isPro: false,
     tier: "free",
-    limits: FREE_TIER_LIMITS,
+    status,
+    limits: limits ?? undefined,
     current: {
       clients: clientsResult.count ?? 0,
       jobs: jobsResult.count ?? 0,

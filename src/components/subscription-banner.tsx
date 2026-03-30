@@ -5,19 +5,14 @@ import { AlertCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { checkSubscriptionLimits } from "@/lib/subscription";
-
-interface SubscriptionStatus {
-  canProceed: boolean;
-  isPro: boolean;
-  tier?: string;
-  status?: string | null;
-  error?: string;
-  limits?: { maxClients: number; maxJobs: number; maxInvoices: number };
-  current?: { clients: number; jobs: number; invoices: number };
-}
+import {
+  getResourceLimit,
+  type ResourceType,
+  type SubscriptionStatus,
+} from "@/lib/subscription-limits";
 
 interface SubscriptionBannerProps {
-  resourceType: "clients" | "jobs" | "invoices";
+  resourceType: ResourceType;
 }
 
 export function SubscriptionBanner({ resourceType }: SubscriptionBannerProps) {
@@ -43,8 +38,7 @@ export function SubscriptionBanner({ resourceType }: SubscriptionBannerProps) {
   }
 
   const current = status.current?.[resourceType] ?? 0;
-  const limitKey = `max${resourceType.charAt(0).toUpperCase() + resourceType.slice(1)}` as keyof NonNullable<SubscriptionStatus["limits"]>;
-  const limit = status.limits?.[limitKey] ?? 0;
+  const limit = getResourceLimit(status.limits, resourceType) ?? 0;
   const percentage = limit > 0 ? (current / limit) * 100 : 0;
 
   // Only show when approaching or at limit

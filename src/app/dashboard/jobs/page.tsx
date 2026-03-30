@@ -16,6 +16,7 @@ import EditJobDialog from "./edit-job-dialog";
 import { SubscriptionBanner } from "@/components/subscription-banner";
 import Link from "next/link";
 import { checkSubscriptionLimits } from "@/lib/subscription";
+import { getLimitReachedMessage, getResourceLimit } from "@/lib/subscription-limits";
 
 const statusConfig: Record<
   JobStatus,
@@ -67,12 +68,13 @@ export default async function JobsPage() {
   }
 
   const subscription = await checkSubscriptionLimits();
+  const jobLimit = getResourceLimit(subscription.limits, "jobs");
   const hasReachedFreeTierLimit =
     !subscription.isPro &&
     (subscription.current?.jobs ?? 0) >=
-      (subscription.limits?.maxJobs ?? Number.POSITIVE_INFINITY);
-  const createDisabledReason = hasReachedFreeTierLimit
-    ? "Free plan limited to 5 jobs. Upgrade to Pro for unlimited jobs."
+      (jobLimit ?? Number.POSITIVE_INFINITY);
+  const createDisabledReason = hasReachedFreeTierLimit && typeof jobLimit === "number"
+    ? getLimitReachedMessage("jobs", jobLimit)
     : undefined;
 
   return (

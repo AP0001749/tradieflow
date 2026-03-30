@@ -17,6 +17,7 @@ import EditInvoiceDialog from "./edit-invoice-dialog";
 import { InvoiceStatus, InvoiceWithJobClient } from "@/types";
 import { SubscriptionBanner } from "@/components/subscription-banner";
 import { checkSubscriptionLimits } from "@/lib/subscription";
+import { getLimitReachedMessage, getResourceLimit } from "@/lib/subscription-limits";
 
 const statusConfig: Record<
   InvoiceStatus,
@@ -94,12 +95,13 @@ export default async function InvoicesPage() {
 
   const rows: InvoiceWithJobClient[] = invoices || [];
   const subscription = await checkSubscriptionLimits();
+  const invoiceLimit = getResourceLimit(subscription.limits, "invoices");
   const hasReachedFreeTierLimit =
     !subscription.isPro &&
     (subscription.current?.invoices ?? 0) >=
-      (subscription.limits?.maxInvoices ?? Number.POSITIVE_INFINITY);
-  const createDisabledReason = hasReachedFreeTierLimit
-    ? "Free plan limited to 10 invoices. Upgrade to Pro for unlimited invoices."
+      (invoiceLimit ?? Number.POSITIVE_INFINITY);
+  const createDisabledReason = hasReachedFreeTierLimit && typeof invoiceLimit === "number"
+    ? getLimitReachedMessage("invoices", invoiceLimit)
     : undefined;
 
   return (
