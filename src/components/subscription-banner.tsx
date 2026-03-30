@@ -37,6 +37,10 @@ export function SubscriptionBanner({ resourceType }: SubscriptionBannerProps) {
     return null;
   }
 
+  if (status.error || !status.limits) {
+    return null;
+  }
+
   const current = status.current?.[resourceType] ?? 0;
   const limit = getResourceLimit(status.limits, resourceType) ?? 0;
   const percentage = limit > 0 ? (current / limit) * 100 : 0;

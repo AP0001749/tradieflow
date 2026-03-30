@@ -74,10 +74,13 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
     }
   };
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || '';
   const effectiveSlug =
     bookingSlug || normalizeBookingUrlSlug(profile?.business_name || '') || 'your-business';
-  const onboardingFormUrl = appUrl ? `${appUrl}/book/${effectiveSlug}` : `/book/${effectiveSlug}`;
+  const normalizedAppUrl = appUrl.replace(/\/+$/, '');
+  const onboardingFormUrl = normalizedAppUrl
+    ? `${normalizedAppUrl}/book/${effectiveSlug}`
+    : `/book/${effectiveSlug}`;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -204,6 +207,7 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
             <Button
               type="button"
               variant="outline"
+              disabled={!normalizedAppUrl}
               onClick={async () => {
                 try {
                   await navigator.clipboard.writeText(onboardingFormUrl);
@@ -216,6 +220,11 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
               Copy
             </Button>
           </div>
+          {!normalizedAppUrl ? (
+            <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
+              Set <code>NEXT_PUBLIC_APP_URL</code> to generate a shareable absolute booking link.
+            </p>
+          ) : null}
           {copyMessage ? (
             <p className="text-xs text-muted-foreground mt-2">{copyMessage}</p>
           ) : null}
