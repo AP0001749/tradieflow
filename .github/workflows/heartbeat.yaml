@@ -25,6 +25,8 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           APP_URL="${APP_BASE_URL:-https://gettradieflow.com}"
+          LAST_STATUS=""
+          LAST_BODY=""
           mapfile -t SECRETS < <(printf '%s\n%s\n' "$LEAD_FOLLOWUP_SECRET" "$CRON_SECRET" | awk 'NF && !seen[$0]++')
           for SECRET in "${SECRETS[@]}"; do
             echo "Trying /api/cron/leads-followup with one configured secret candidate..."
@@ -33,12 +35,30 @@ jobs:
               -H "x-cron-secret: ${SECRET}" \
               --retry 2 \
               --retry-delay 5 || true)"
+            BODY="$(tr '\n' ' ' < response.json | sed 's/[[:space:]]\+/ /g' | cut -c1-400)"
             echo "HTTP ${STATUS}"
             cat response.json
             echo
             if [ "${STATUS}" -ge 200 ] && [ "${STATUS}" -lt 300 ]; then
+              {
+                echo "## TradieFlow Follow-up Check"
+                echo
+                echo "- URL: ${APP_URL}/api/cron/leads-followup"
+                echo "- Status: ${STATUS}"
+                echo "- Response: ${BODY}"
+              } >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
+            LAST_STATUS="${STATUS}"
+            LAST_BODY="${BODY}"
           done
+          echo "::error title=TradieFlow follow-up route rejected workflow secret::HTTP ${LAST_STATUS}. Response: ${LAST_BODY}"
+          {
+            echo "## TradieFlow Follow-up Check"
+            echo
+            echo "- URL: ${APP_URL}/api/cron/leads-followup"
+            echo "- Final Status: ${LAST_STATUS}"
+            echo "- Final Response: ${LAST_BODY}"
+          } >> "$GITHUB_STEP_SUMMARY"
           echo "All configured follow-up secrets were rejected by the app host."
           exit 1
