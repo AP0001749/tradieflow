@@ -13,7 +13,7 @@ jobs:
         env:
           APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
         run: |
-          APP_URL="${APP_BASE_URL:-https://gettradieflow.com}"
+          APP_URL="$(printf '%s' "${APP_BASE_URL:-https://gettradieflow.com}" | tr -d '\r\n' | xargs)"
           STATUS="$(curl -sS -D probe.headers -o probe.json -w '%{http_code}' -X POST "${APP_URL}/api/cron/leads-followup" || true)"
           ROUTE_HEADER="$(grep -i '^x-tradieflow-followup-route:' probe.headers | tail -n1 | cut -d':' -f2- | xargs)"
           AUTH_HEADER="$(grep -i '^x-tradieflow-followup-auth:' probe.headers | tail -n1 | cut -d':' -f2- | xargs)"
@@ -43,7 +43,13 @@ jobs:
           LEAD_FOLLOWUP_SECRET: ${{ secrets.LEAD_FOLLOWUP_SECRET }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          APP_URL="${APP_BASE_URL:-https://gettradieflow.com}"
+          normalize_secret() {
+            printf '%s' "$1" | tr -d '\r\n' | sed -E 's/^["'\''](.*)["'\'']$/\1/' | xargs
+          }
+
+          APP_URL="$(printf '%s' "${APP_BASE_URL:-https://gettradieflow.com}" | tr -d '\r\n' | xargs)"
+          LEAD_FOLLOWUP_SECRET="$(normalize_secret "$LEAD_FOLLOWUP_SECRET")"
+          CRON_SECRET="$(normalize_secret "$CRON_SECRET")"
           LAST_STATUS=""
           LAST_BODY=""
           LAST_LABEL=""
