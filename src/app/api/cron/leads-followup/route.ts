@@ -65,7 +65,11 @@ function secretsMatch(candidate: string | null, configuredSecrets: string[]) {
   });
 }
 
-function jsonResponse(body: Record<string, unknown>, status = 200) {
+function jsonResponse(
+  body: Record<string, unknown>,
+  status = 200,
+  extraHeaders?: HeadersInit,
+) {
   return NextResponse.json(body, {
     status,
     headers: {
@@ -73,6 +77,7 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
       Allow: "GET, POST",
       "X-TradieFlow-Followup-Auth": "bearer-or-x-cron-secret",
       "X-TradieFlow-Followup-Route": ROUTE_VERSION,
+      ...extraHeaders,
     },
   });
 }
@@ -196,6 +201,7 @@ async function handleFollowupRequest(request: Request) {
     return jsonResponse(
       { error: "Cron route not configured" },
       500,
+      { "X-TradieFlow-Followup-Secret-Count": "0" },
     );
   }
 
@@ -204,7 +210,11 @@ async function handleFollowupRequest(request: Request) {
     .some((value) => secretsMatch(value, cronSecrets));
 
   if (!isAuthorized) {
-    return jsonResponse({ error: "Unauthorized" }, 401);
+    return jsonResponse(
+      { error: "Unauthorized" },
+      401,
+      { "X-TradieFlow-Followup-Secret-Count": String(cronSecrets.length) },
+    );
   }
 
   try {
@@ -219,7 +229,11 @@ async function handleFollowupRequest(request: Request) {
 
     if (claimError) {
       console.error("Claim error:", claimError);
-      return jsonResponse({ error: "Failed to claim leads" }, 500);
+      return jsonResponse(
+        { error: "Failed to claim leads" },
+        500,
+        { "X-TradieFlow-Followup-Secret-Count": String(cronSecrets.length) },
+      );
     }
 
     const results: LeadResults = {
@@ -313,7 +327,7 @@ async function handleFollowupRequest(request: Request) {
       timestamp: new Date().toISOString(),
       source: "next-cron-route",
       method: request.method,
-    });
+    }, 200, { "X-TradieFlow-Followup-Secret-Count": String(cronSecrets.length) });
   } catch (error) {
     console.error("Lead follow-up route error:", error);
     return jsonResponse(
@@ -322,6 +336,7 @@ async function handleFollowupRequest(request: Request) {
         message: error instanceof Error ? error.message : "Unknown error",
       },
       500,
+      { "X-TradieFlow-Followup-Secret-Count": String(cronSecrets.length) },
     );
   }
 }

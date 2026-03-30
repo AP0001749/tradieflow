@@ -17,6 +17,7 @@ jobs:
           STATUS="$(curl -sS -D probe.headers -o probe.json -w '%{http_code}' -X POST "${APP_URL}/api/cron/leads-followup" || true)"
           ROUTE_HEADER="$(grep -i '^x-tradieflow-followup-route:' probe.headers | tail -n1 | cut -d':' -f2- | xargs)"
           AUTH_HEADER="$(grep -i '^x-tradieflow-followup-auth:' probe.headers | tail -n1 | cut -d':' -f2- | xargs)"
+          SECRET_COUNT_HEADER="$(grep -i '^x-tradieflow-followup-secret-count:' probe.headers | tail -n1 | cut -d':' -f2- | xargs)"
           BODY="$(tr '\n' ' ' < probe.json | sed 's/[[:space:]]\+/ /g' | cut -c1-400)"
           {
             echo "## TradieFlow Follow-up Route Probe"
@@ -25,6 +26,7 @@ jobs:
             echo "- Probe Status: ${STATUS}"
             echo "- Probe Route Header: ${ROUTE_HEADER:-missing}"
             echo "- Probe Auth Header: ${AUTH_HEADER:-missing}"
+            echo "- Probe Secret Count: ${SECRET_COUNT_HEADER:-missing}"
             echo "- Probe Response: ${BODY}"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -69,6 +71,7 @@ jobs:
             BODY="$(tr '\n' ' ' < response.json | sed 's/[[:space:]]\+/ /g' | cut -c1-400)"
             ROUTE_HEADER="$(grep -i '^x-tradieflow-followup-route:' response.headers | tail -n1 | cut -d':' -f2- | xargs)"
             AUTH_HEADER="$(grep -i '^x-tradieflow-followup-auth:' response.headers | tail -n1 | cut -d':' -f2- | xargs)"
+            SECRET_COUNT_HEADER="$(grep -i '^x-tradieflow-followup-secret-count:' response.headers | tail -n1 | cut -d':' -f2- | xargs)"
             echo "HTTP ${STATUS}"
             cat response.headers
             echo
@@ -83,6 +86,7 @@ jobs:
                 echo "- Status: ${STATUS}"
                 echo "- Route Header: ${ROUTE_HEADER:-missing}"
                 echo "- Auth Header: ${AUTH_HEADER:-missing}"
+                echo "- Secret Count Header: ${SECRET_COUNT_HEADER:-missing}"
                 echo "- Response: ${BODY}"
               } >> "$GITHUB_STEP_SUMMARY"
               exit 0
@@ -98,7 +102,7 @@ jobs:
             try_secret "$CRON_SECRET" "CRON_SECRET" || true
           fi
 
-          echo "::error title=TradieFlow follow-up route rejected workflow secret::Candidate=${LAST_LABEL:-none}. HTTP ${LAST_STATUS}. Route=${ROUTE_HEADER:-missing}. Auth=${AUTH_HEADER:-missing}. Response: ${LAST_BODY}"
+          echo "::error title=TradieFlow follow-up route rejected workflow secret::Candidate=${LAST_LABEL:-none}. HTTP ${LAST_STATUS}. Route=${ROUTE_HEADER:-missing}. Auth=${AUTH_HEADER:-missing}. SecretCount=${SECRET_COUNT_HEADER:-missing}. Response: ${LAST_BODY}"
           {
             echo "## TradieFlow Follow-up Check"
             echo
@@ -107,6 +111,7 @@ jobs:
             echo "- Final Status: ${LAST_STATUS}"
             echo "- Final Route Header: ${ROUTE_HEADER:-missing}"
             echo "- Final Auth Header: ${AUTH_HEADER:-missing}"
+            echo "- Final Secret Count Header: ${SECRET_COUNT_HEADER:-missing}"
             echo "- Final Response: ${LAST_BODY}"
           } >> "$GITHUB_STEP_SUMMARY"
           echo "All configured follow-up secrets were rejected by the app host."
