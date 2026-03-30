@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Probe deployed follow-up route
+        id: probe_route
         env:
           APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
         run: |
@@ -31,21 +32,32 @@ jobs:
             echo "- Probe Secret Sources: ${SECRET_SOURCES_HEADER:-missing}"
             echo "- Probe Response: ${BODY}"
           } >> "$GITHUB_STEP_SUMMARY"
+          echo "secret_sources=${SECRET_SOURCES_HEADER}" >> "$GITHUB_OUTPUT"
 
       - name: Validate required secrets
         env:
           APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
           LEAD_FOLLOWUP_SECRET: ${{ secrets.LEAD_FOLLOWUP_SECRET }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          PROBE_SECRET_SOURCES: ${{ steps.probe_route.outputs.secret_sources }}
         run: |
           test -n "${APP_BASE_URL:-https://gettradieflow.com}" || (echo "Missing app URL" && exit 1)
           test -n "$LEAD_FOLLOWUP_SECRET$CRON_SECRET" || (echo "Missing LEAD_FOLLOWUP_SECRET/CRON_SECRET secret" && exit 1)
+          if [ "$PROBE_SECRET_SOURCES" = "CRON_SECRET" ] && [ -z "$CRON_SECRET" ]; then
+            echo "App host reports CRON_SECRET only, but the GitHub CRON_SECRET repo secret is empty."
+            exit 1
+          fi
+          if [ "$PROBE_SECRET_SOURCES" = "LEAD_FOLLOWUP_SECRET" ] && [ -z "$LEAD_FOLLOWUP_SECRET" ]; then
+            echo "App host reports LEAD_FOLLOWUP_SECRET only, but the GitHub LEAD_FOLLOWUP_SECRET repo secret is empty."
+            exit 1
+          fi
 
       - name: Invoke TradieFlow Lead Follow-up Route
         env:
           APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
           LEAD_FOLLOWUP_SECRET: ${{ secrets.LEAD_FOLLOWUP_SECRET }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          PROBE_SECRET_SOURCES: ${{ steps.probe_route.outputs.secret_sources }}
         run: |
           normalize_secret() {
             printf '%s' "$1" | tr -d '\r\n' | sed -E 's/^["'\''](.*)["'\'']$/\1/' | xargs
@@ -101,9 +113,21 @@ jobs:
             return 1
           }
 
-          try_secret "$LEAD_FOLLOWUP_SECRET" "LEAD_FOLLOWUP_SECRET" || true
-          if [ -n "$CRON_SECRET" ] && [ "$CRON_SECRET" != "$LEAD_FOLLOWUP_SECRET" ]; then
+          if [ "$PROBE_SECRET_SOURCES" = "CRON_SECRET" ]; then
             try_secret "$CRON_SECRET" "CRON_SECRET" || true
+            if [ -n "$LEAD_FOLLOWUP_SECRET" ] && [ "$LEAD_FOLLOWUP_SECRET" != "$CRON_SECRET" ]; then
+              try_secret "$LEAD_FOLLOWUP_SECRET" "LEAD_FOLLOWUP_SECRET" || true
+            fi
+          elif [ "$PROBE_SECRET_SOURCES" = "LEAD_FOLLOWUP_SECRET" ]; then
+            try_secret "$LEAD_FOLLOWUP_SECRET" "LEAD_FOLLOWUP_SECRET" || true
+            if [ -n "$CRON_SECRET" ] && [ "$CRON_SECRET" != "$LEAD_FOLLOWUP_SECRET" ]; then
+              try_secret "$CRON_SECRET" "CRON_SECRET" || true
+            fi
+          else
+            try_secret "$LEAD_FOLLOWUP_SECRET" "LEAD_FOLLOWUP_SECRET" || true
+            if [ -n "$CRON_SECRET" ] && [ "$CRON_SECRET" != "$LEAD_FOLLOWUP_SECRET" ]; then
+              try_secret "$CRON_SECRET" "CRON_SECRET" || true
+            fi
           fi
 
           echo "::error title=TradieFlow follow-up route rejected workflow secret::Candidate=${LAST_LABEL:-none}. HTTP ${LAST_STATUS}. Route=${ROUTE_HEADER:-missing}. Auth=${AUTH_HEADER:-missing}. SecretCount=${SECRET_COUNT_HEADER:-missing}. SecretSources=${SECRET_SOURCES_HEADER:-missing}. Response: ${LAST_BODY}"
