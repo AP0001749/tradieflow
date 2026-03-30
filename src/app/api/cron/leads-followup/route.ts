@@ -44,6 +44,20 @@ function getCronSecrets() {
   return Array.from(new Set(configuredSecrets));
 }
 
+function getCronSecretSources() {
+  const sources: string[] = [];
+
+  if (process.env.LEAD_FOLLOWUP_SECRET?.trim()) {
+    sources.push("LEAD_FOLLOWUP_SECRET");
+  }
+
+  if (process.env.CRON_SECRET?.trim()) {
+    sources.push("CRON_SECRET");
+  }
+
+  return sources;
+}
+
 function normalizeIncomingSecret(value: string | null) {
   return value?.trim().replace(/^(['"])(.*)\1$/, "$2").trim() || null;
 }
@@ -189,6 +203,7 @@ function buildEmailPayload(lead: ClaimedLead, results: LeadResults) {
 
 async function handleFollowupRequest(request: Request) {
   const cronSecrets = getCronSecrets();
+  const cronSecretSources = getCronSecretSources();
   const authHeader = request.headers.get("authorization");
   const bearerSecret = normalizeIncomingSecret(
     authHeader?.replace(/^Bearer\s+/i, "") || null,
@@ -201,7 +216,10 @@ async function handleFollowupRequest(request: Request) {
     return jsonResponse(
       { error: "Cron route not configured" },
       500,
-      { "X-TradieFlow-Followup-Secret-Count": "0" },
+      {
+        "X-TradieFlow-Followup-Secret-Count": "0",
+        "X-TradieFlow-Followup-Secret-Sources": "none",
+      },
     );
   }
 
@@ -213,7 +231,11 @@ async function handleFollowupRequest(request: Request) {
     return jsonResponse(
       { error: "Unauthorized" },
       401,
-      { "X-TradieFlow-Followup-Secret-Count": String(cronSecrets.length) },
+      {
+        "X-TradieFlow-Followup-Secret-Count": String(cronSecrets.length),
+        "X-TradieFlow-Followup-Secret-Sources":
+          cronSecretSources.join(",") || "none",
+      },
     );
   }
 
@@ -232,7 +254,11 @@ async function handleFollowupRequest(request: Request) {
       return jsonResponse(
         { error: "Failed to claim leads" },
         500,
-        { "X-TradieFlow-Followup-Secret-Count": String(cronSecrets.length) },
+        {
+          "X-TradieFlow-Followup-Secret-Count": String(cronSecrets.length),
+          "X-TradieFlow-Followup-Secret-Sources":
+            cronSecretSources.join(",") || "none",
+        },
       );
     }
 
@@ -327,7 +353,11 @@ async function handleFollowupRequest(request: Request) {
       timestamp: new Date().toISOString(),
       source: "next-cron-route",
       method: request.method,
-    }, 200, { "X-TradieFlow-Followup-Secret-Count": String(cronSecrets.length) });
+    }, 200, {
+      "X-TradieFlow-Followup-Secret-Count": String(cronSecrets.length),
+      "X-TradieFlow-Followup-Secret-Sources":
+        cronSecretSources.join(",") || "none",
+    });
   } catch (error) {
     console.error("Lead follow-up route error:", error);
     return jsonResponse(
@@ -336,7 +366,11 @@ async function handleFollowupRequest(request: Request) {
         message: error instanceof Error ? error.message : "Unknown error",
       },
       500,
-      { "X-TradieFlow-Followup-Secret-Count": String(cronSecrets.length) },
+      {
+        "X-TradieFlow-Followup-Secret-Count": String(cronSecrets.length),
+        "X-TradieFlow-Followup-Secret-Sources":
+          cronSecretSources.join(",") || "none",
+      },
     );
   }
 }
