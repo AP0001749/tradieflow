@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getResend, getResendSenderEmail } from "@/lib/resend";
 
@@ -45,6 +46,23 @@ function getCronSecrets() {
 
 function normalizeIncomingSecret(value: string | null) {
   return value?.trim().replace(/^(['"])(.*)\1$/, "$2").trim() || null;
+}
+
+function secretsMatch(candidate: string | null, configuredSecrets: string[]) {
+  if (!candidate) {
+    return false;
+  }
+
+  const candidateBuffer = Buffer.from(candidate);
+
+  return configuredSecrets.some((secret) => {
+    const secretBuffer = Buffer.from(secret);
+
+    return (
+      candidateBuffer.length === secretBuffer.length &&
+      timingSafeEqual(candidateBuffer, secretBuffer)
+    );
+  });
 }
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
@@ -183,7 +201,7 @@ async function handleFollowupRequest(request: Request) {
 
   const isAuthorized = [bearerSecret, headerSecret]
     .filter((value): value is string => Boolean(value))
-    .some((value) => cronSecrets.includes(value));
+    .some((value) => secretsMatch(value, cronSecrets));
 
   if (!isAuthorized) {
     return jsonResponse({ error: "Unauthorized" }, 401);
