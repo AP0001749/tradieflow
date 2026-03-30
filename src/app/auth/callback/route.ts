@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { ensureProfileExists } from "@/lib/profiles";
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -38,11 +39,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", requestUrl.origin));
   }
 
-  // Check if this is a new user (created in the last 10 seconds)
+  // Ensure the app profile exists before redirecting into billing/dashboard flows.
   if (data.user) {
-    const createdAt = new Date(data.user.created_at);
-    const now = new Date();
-    const isNewUser = (now.getTime() - createdAt.getTime()) < 10000; // 10 seconds
+    const profileResult = await ensureProfileExists(data.user);
+    const isNewUser = profileResult.created;
 
     if (isNewUser) {
       redirectPath = "/welcome";

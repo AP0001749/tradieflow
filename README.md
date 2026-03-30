@@ -135,6 +135,7 @@ Relevant files:
 - `supabase/functions/lead-followup/index.ts`
 - `supabase/migrations/20260324153000_hardening_patch.sql`
 - `supabase/migrations/20260324174500_move_lead_followup_to_supabase_cron.sql`
+- `supabase/migrations/20260330150000_centralize_tier_limits.sql`
 
 The old Next.js cron route is intentionally retired so there is only one production follow-up processor.
 
@@ -170,6 +171,7 @@ select vault.create_secret('YOUR_LEAD_FOLLOWUP_SECRET', 'lead_followup_secret');
 Apply:
 
 - `supabase/migrations/20260324174500_move_lead_followup_to_supabase_cron.sql`
+- `supabase/migrations/20260330150000_centralize_tier_limits.sql`
 
 If the Vault secrets did not exist when the migration ran:
 

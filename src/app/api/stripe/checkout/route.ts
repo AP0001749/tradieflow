@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
+import { ensureProfileExists } from "@/lib/profiles";
 import { getStripeServer } from "@/utils/stripe/server";
 
 export const runtime = "nodejs";
@@ -31,6 +32,8 @@ export async function POST(request: Request) {
     if (userId !== user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+
+    await ensureProfileExists(user);
 
     const stripe = getStripeServer();
 
