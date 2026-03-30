@@ -350,6 +350,14 @@ export async function uploadJobPhoto(formData: FormData): Promise<UploadPhotoRes
 
     if (urlError || !signedUrlData) {
       console.error("Error creating signed URL:", urlError);
+      const { error: cleanupError } = await supabase.storage
+        .from("job-photos")
+        .remove([filePath]);
+
+      if (cleanupError) {
+        console.warn("Failed to clean up uploaded photo after signed URL error:", cleanupError);
+      }
+
       return { success: false, error: "Failed to generate file URL" };
     }
 

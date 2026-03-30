@@ -100,7 +100,8 @@ export async function updateBusinessProfile(formData: {
     const { error } = await supabase
       .from('business_profile')
       .update(payload)
-      .eq('id', existing.id);
+      .eq('id', existing.id)
+      .eq('user_id', user.id);
 
     if (error) throw error;
   } else {
