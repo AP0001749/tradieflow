@@ -57,13 +57,21 @@ export async function POST(request: Request) {
 
       stripeCustomerId = customer.id;
 
-      const { error: updateError } = await supabase
+      const { data: updatedProfile, error: updateError } = await supabase
         .from("profiles")
         .update({ stripe_customer_id: stripeCustomerId })
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .select("user_id")
+        .maybeSingle();
 
       if (updateError) {
         console.error("Error saving stripe_customer_id:", updateError);
+        return NextResponse.json({ error: "Failed to save billing profile" }, { status: 500 });
+      }
+
+      if (!updatedProfile) {
+        console.error("No profile row matched while saving stripe_customer_id:", user.id);
+        return NextResponse.json({ error: "Billing profile not found" }, { status: 500 });
       }
     }
 

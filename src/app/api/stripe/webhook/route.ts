@@ -8,6 +8,32 @@ import Stripe from "stripe";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+async function updateProfileByUserId(
+  supabaseAdmin: ReturnType<typeof createAdminClient>,
+  userId: string,
+  update: Record<string, unknown>
+) {
+  const { data: updatedProfile, error: updateError } = await supabaseAdmin
+    .from("profiles")
+    .update(update)
+    .eq("user_id", userId)
+    .select("user_id")
+    .maybeSingle();
+
+  if (updateError) {
+    return { error: updateError, updatedProfile: null };
+  }
+
+  if (!updatedProfile) {
+    return {
+      error: new Error(`Profile not found for user_id ${userId}`),
+      updatedProfile: null,
+    };
+  }
+
+  return { error: null, updatedProfile };
+}
+
 export async function POST(request: Request) {
   const stripe = getStripeServer();
   const supabaseAdmin = createAdminClient();
@@ -80,10 +106,11 @@ export async function POST(request: Request) {
           update.subscription_start_date = new Date().toISOString();
         }
 
-        const { error: updateError } = await supabaseAdmin
-          .from("profiles")
-          .update(update)
-          .eq("user_id", userId);
+        const { error: updateError } = await updateProfileByUserId(
+          supabaseAdmin,
+          userId,
+          update
+        );
 
         if (updateError) {
           console.error("Error updating profile after checkout:", updateError);
@@ -106,11 +133,16 @@ export async function POST(request: Request) {
         }
 
         // Find user by stripe_customer_id
-        const { data: profile } = await supabaseAdmin
+        const { data: profile, error: profileLookupError } = await supabaseAdmin
           .from("profiles")
           .select("user_id")
           .eq("stripe_customer_id", customerId)
           .maybeSingle();
+
+        if (profileLookupError) {
+          console.error("Error looking up profile by customer ID:", profileLookupError);
+          return NextResponse.json({ error: "DB lookup failed" }, { status: 500 });
+        }
 
         if (!profile) {
           console.error("No profile found for customer:", customerId);
@@ -136,10 +168,11 @@ export async function POST(request: Request) {
           update.subscription_end_date = new Date(periodEnd * 1000).toISOString();
         }
 
-        const { error: updateError } = await supabaseAdmin
-          .from("profiles")
-          .update(update)
-          .eq("user_id", (profile as { user_id: string }).user_id);
+        const { error: updateError } = await updateProfileByUserId(
+          supabaseAdmin,
+          (profile as { user_id: string }).user_id,
+          update
+        );
 
         if (updateError) {
           console.error("Error updating subscription:", updateError);
@@ -161,11 +194,16 @@ export async function POST(request: Request) {
         }
 
         // Find user by stripe_customer_id
-        const { data: profile } = await supabaseAdmin
+        const { data: profile, error: profileLookupError } = await supabaseAdmin
           .from("profiles")
           .select("user_id")
           .eq("stripe_customer_id", customerId)
           .maybeSingle();
+
+        if (profileLookupError) {
+          console.error("Error looking up profile for deleted subscription:", profileLookupError);
+          return NextResponse.json({ error: "DB lookup failed" }, { status: 500 });
+        }
 
         if (!profile) {
           console.error("No profile found for customer:", customerId);
@@ -173,14 +211,15 @@ export async function POST(request: Request) {
         }
 
         // Downgrade to free tier when subscription is deleted
-        const { error: updateError } = await supabaseAdmin
-          .from("profiles")
-          .update({
+        const { error: updateError } = await updateProfileByUserId(
+          supabaseAdmin,
+          (profile as { user_id: string }).user_id,
+          {
             subscription_tier: "free",
             subscription_status: "canceled",
             subscription_end_date: new Date().toISOString(),
-          })
-          .eq("user_id", (profile as { user_id: string }).user_id);
+          }
+        );
 
         if (updateError) {
           console.error("Error downgrading subscription:", updateError);
