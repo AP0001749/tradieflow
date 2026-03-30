@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getResend, getResendSenderEmail } from "@/lib/resend";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 type ClaimedLead = {
   id: string;
   business_id: string;
@@ -36,6 +39,15 @@ function getCronSecrets() {
     .filter(Boolean);
 
   return Array.from(new Set(configuredSecrets));
+}
+
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return NextResponse.json(body, {
+    status,
+    headers: {
+      "Cache-Control": "no-store",
+    },
+  });
 }
 
 function immediateFollowupHtml(lead: ClaimedLead, businessName: string) {
@@ -143,16 +155,16 @@ function buildEmailPayload(lead: ClaimedLead, results: LeadResults) {
   };
 }
 
-export async function GET(request: Request) {
+async function handleFollowupRequest(request: Request) {
   const cronSecrets = getCronSecrets();
   const authHeader = request.headers.get("authorization");
   const bearerSecret = authHeader?.replace(/^Bearer\s+/i, "").trim();
   const headerSecret = request.headers.get("x-cron-secret");
 
   if (cronSecrets.length === 0) {
-    return NextResponse.json(
+    return jsonResponse(
       { error: "Cron route not configured" },
-      { status: 500 },
+      500,
     );
   }
 
@@ -161,7 +173,7 @@ export async function GET(request: Request) {
     .some((value) => cronSecrets.includes(value));
 
   if (!isAuthorized) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
   try {
@@ -176,7 +188,7 @@ export async function GET(request: Request) {
 
     if (claimError) {
       console.error("Claim error:", claimError);
-      return NextResponse.json({ error: "Failed to claim leads" }, { status: 500 });
+      return jsonResponse({ error: "Failed to claim leads" }, 500);
     }
 
     const results: LeadResults = {
@@ -264,20 +276,29 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.json({
+    return jsonResponse({
       success: true,
       results,
       timestamp: new Date().toISOString(),
       source: "next-cron-route",
+      method: request.method,
     });
   } catch (error) {
     console.error("Lead follow-up route error:", error);
-    return NextResponse.json(
+    return jsonResponse(
       {
         error: "Lead follow-up failed",
         message: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 },
+      500,
     );
   }
+}
+
+export async function GET(request: Request) {
+  return handleFollowupRequest(request);
+}
+
+export async function POST(request: Request) {
+  return handleFollowupRequest(request);
 }

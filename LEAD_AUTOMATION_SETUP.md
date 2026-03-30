@@ -105,6 +105,7 @@ Important:
 
 - The GitHub Actions secret must be accepted by the app-host route configuration.
 - The route can accept both `LEAD_FOLLOWUP_SECRET` and `CRON_SECRET` during cutover.
+- Prefer `POST /api/cron/leads-followup`. `GET` remains available only as a compatibility alias.
 - The route accepts either `Authorization: Bearer <secret>` or `x-cron-secret: <secret>`.
 - Once Supabase Cron is healthy, you can keep the workflow only as a manual check or disable its schedule.
 

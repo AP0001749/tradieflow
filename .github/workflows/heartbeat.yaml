@@ -23,7 +23,7 @@ jobs:
           LEAD_FOLLOWUP_SECRET: ${{ secrets.LEAD_FOLLOWUP_SECRET || secrets.CRON_SECRET }}
         run: |
           APP_URL="${APP_BASE_URL:-https://gettradieflow.com}"
-          curl -X GET "${APP_URL}/api/cron/leads-followup" \
+          curl -X POST "${APP_URL}/api/cron/leads-followup" \
             -H "Authorization: Bearer ${LEAD_FOLLOWUP_SECRET}" \
             -H "x-cron-secret: ${LEAD_FOLLOWUP_SECRET}" \
             --retry 2 \

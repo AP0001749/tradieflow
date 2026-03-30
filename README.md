@@ -150,7 +150,7 @@ Relevant files:
 - `supabase/migrations/20260324174500_move_lead_followup_to_supabase_cron.sql`
 - `supabase/migrations/20260330150000_centralize_tier_limits.sql`
 
-The compatibility route exists so follow-up automation can still run while hosted Supabase Cron or the Edge Function rollout catches up. It accepts either `Authorization: Bearer <secret>` or `x-cron-secret: <secret>`, and it will honor both configured secret names during cutover.
+The compatibility route exists so follow-up automation can still run while hosted Supabase Cron or the Edge Function rollout catches up. Prefer `POST /api/cron/leads-followup`. The route also accepts `GET` for compatibility, and it honors either `Authorization: Bearer <secret>` or `x-cron-secret: <secret>` across both configured secret names during cutover.
 
 ## Supabase Cron Rollout
 

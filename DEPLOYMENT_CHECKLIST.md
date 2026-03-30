@@ -46,7 +46,7 @@
   `NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL` if using lead conversion tracking
   `NEXT_PUBLIC_GOOGLE_ADS_SUBSCRIBE_LABEL` if using subscription conversion tracking
 - [ ] Verify `/login`, `/signup`, and `/dashboard` behave correctly after deploy
-- [ ] Verify `/api/cron/leads-followup` returns an authenticated success response if you are using the hosted compatibility processor
+- [ ] Verify `POST /api/cron/leads-followup` returns an authenticated success response if you are using the hosted compatibility processor
 - [ ] If using GitHub Actions fallback scheduling, confirm repo secrets:
   `APP_BASE_URL`
   `LEAD_FOLLOWUP_SECRET` or `CRON_SECRET`
