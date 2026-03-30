@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import {
   Table,
   TableBody,
@@ -127,9 +128,9 @@ export default function LeadsTable({ leads, bookingUrlSlug }: LeadsTableProps) {
           ) : (
             <>
               Set your booking link in{' '}
-              <a href={onboardingFormUrl} className="font-medium underline">
+              <Link href={onboardingFormUrl} className="font-medium underline">
                 Settings
-              </a>
+              </Link>
               .
             </>
           )}

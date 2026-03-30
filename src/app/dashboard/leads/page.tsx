@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { getLeads } from './actions';
 import LeadsTable from './leads-table';
 
@@ -40,9 +41,9 @@ export default async function LeadsPage() {
         <section className="section-card">
           <p className="text-sm text-yellow-800">
             You need to set up your business profile first.{' '}
-            <a href="/dashboard/settings" className="underline font-medium">
+            <Link href="/dashboard/settings" className="underline font-medium">
               Go to Settings
-            </a>
+            </Link>
           </p>
         </section>
       )}
