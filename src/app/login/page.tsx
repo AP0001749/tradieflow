@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getAppOrigin } from "@/lib/app-origin";
 import { createClient } from "@/lib/supabase/server";
 import LoginForm from "./login-form";
 
@@ -8,11 +9,7 @@ async function signInWithGoogle() {
 
   // Always use the configured app URL for OAuth redirects to prevent open redirect
   // attacks via x-forwarded-host header manipulation.
-  const origin = process.env.NEXT_PUBLIC_APP_URL;
-
-  if (!origin) {
-    throw new Error("Missing app origin for OAuth redirect — set NEXT_PUBLIC_APP_URL");
-  }
+  const origin = getAppOrigin();
 
   const { data } = await supabase.auth.signInWithOAuth({
     provider: "google",
@@ -23,7 +20,7 @@ async function signInWithGoogle() {
       },
     },
   });
-  
+
   if (data.url) {
     redirect(data.url);
   }

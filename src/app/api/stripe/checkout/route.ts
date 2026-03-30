@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getAppOrigin } from "@/lib/app-origin";
 import { createClient } from "@/lib/supabase/server";
 import { ensureProfileExists } from "@/lib/profiles";
 import { getStripeServer } from "@/utils/stripe/server";
@@ -66,9 +67,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const origin =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      "http://localhost:3000";
+    const origin = getAppOrigin();
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",

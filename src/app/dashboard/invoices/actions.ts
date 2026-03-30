@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getAppOrigin } from "@/lib/app-origin";
 import { createClient } from "@/lib/supabase/server";
 import { InvoiceStatus, InvoiceUpdate } from "@/types";
 import { getResend, getResendSenderEmail } from "@/lib/resend";
@@ -358,7 +359,7 @@ export async function sendInvoiceEmail(invoiceId: string) {
       })
     : "Upon Receipt";
 
-  const invoiceUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/invoices/${invoiceId}`;
+  const invoiceUrl = `${getAppOrigin()}/dashboard/invoices/${invoiceId}`;
 
   try {
     const resend = getResend();
