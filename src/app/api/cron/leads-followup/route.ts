@@ -37,10 +37,14 @@ function getCronSecrets() {
     process.env.CRON_SECRET,
   ]
     .flatMap((value) => (value || "").split(","))
-    .map((value) => value.trim())
+    .map((value) => value.trim().replace(/^(['"])(.*)\1$/, "$2").trim())
     .filter(Boolean);
 
   return Array.from(new Set(configuredSecrets));
+}
+
+function normalizeIncomingSecret(value: string | null) {
+  return value?.trim().replace(/^(['"])(.*)\1$/, "$2").trim() || null;
 }
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
@@ -163,8 +167,12 @@ function buildEmailPayload(lead: ClaimedLead, results: LeadResults) {
 async function handleFollowupRequest(request: Request) {
   const cronSecrets = getCronSecrets();
   const authHeader = request.headers.get("authorization");
-  const bearerSecret = authHeader?.replace(/^Bearer\s+/i, "").trim();
-  const headerSecret = request.headers.get("x-cron-secret");
+  const bearerSecret = normalizeIncomingSecret(
+    authHeader?.replace(/^Bearer\s+/i, "") || null,
+  );
+  const headerSecret = normalizeIncomingSecret(
+    request.headers.get("x-cron-secret"),
+  );
 
   if (cronSecrets.length === 0) {
     return jsonResponse(
