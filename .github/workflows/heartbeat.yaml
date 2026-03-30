@@ -1,31 +1,28 @@
 name: TradieFlow Supabase Follow-up Check
 
 on:
+  schedule:
+    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 jobs:
-  invoke-supabase-edge-function:
+  invoke-follow-up-processor:
     runs-on: ubuntu-latest
     steps:
       - name: Validate required secrets
         env:
-          SUPABASE_PROJECT_URL: ${{ secrets.SUPABASE_PROJECT_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          LEAD_FOLLOWUP_SECRET: ${{ secrets.LEAD_FOLLOWUP_SECRET }}
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+          LEAD_FOLLOWUP_SECRET: ${{ secrets.LEAD_FOLLOWUP_SECRET || secrets.CRON_SECRET }}
         run: |
-          test -n "$SUPABASE_PROJECT_URL" || (echo "Missing SUPABASE_PROJECT_URL secret" && exit 1)
-          test -n "$SUPABASE_ANON_KEY" || (echo "Missing SUPABASE_ANON_KEY secret" && exit 1)
+          test -n "${APP_BASE_URL:-https://gettradieflow.com}" || (echo "Missing app URL" && exit 1)
           test -n "$LEAD_FOLLOWUP_SECRET" || (echo "Missing LEAD_FOLLOWUP_SECRET secret" && exit 1)
 
-      - name: Invoke Supabase Lead Follow-up Edge Function
+      - name: Invoke TradieFlow Lead Follow-up Route
         env:
-          SUPABASE_PROJECT_URL: ${{ secrets.SUPABASE_PROJECT_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          LEAD_FOLLOWUP_SECRET: ${{ secrets.LEAD_FOLLOWUP_SECRET }}
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+          LEAD_FOLLOWUP_SECRET: ${{ secrets.LEAD_FOLLOWUP_SECRET || secrets.CRON_SECRET }}
         run: |
-          curl -X POST "${SUPABASE_PROJECT_URL}/functions/v1/lead-followup" \
-            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
-            -H "Content-Type: application/json" \
-            -H "x-cron-secret: ${LEAD_FOLLOWUP_SECRET}" \
-            -d '{"source":"github-workflow-dispatch"}' \
+          APP_URL="${APP_BASE_URL:-https://gettradieflow.com}"
+          curl -X GET "${APP_URL}/api/cron/leads-followup" \
+            -H "Authorization: Bearer ${LEAD_FOLLOWUP_SECRET}" \
             --fail --silent --show-error
