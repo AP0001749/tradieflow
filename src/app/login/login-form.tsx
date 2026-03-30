@@ -31,6 +31,7 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const router = useRouter();
+  const appOrigin = process.env.NEXT_PUBLIC_APP_URL?.trim();
 
   function validateCredentials() {
     const trimmedEmail = email.trim();
@@ -79,11 +80,17 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
     setError(null);
     setNotice(null);
 
+    if (!appOrigin) {
+      setError("App URL is not configured. Set NEXT_PUBLIC_APP_URL.");
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
-        emailRedirectTo: `${location.origin}/auth/callback`,
+        emailRedirectTo: `${appOrigin.replace(/\/+$/, "")}/auth/callback`,
       },
     });
 

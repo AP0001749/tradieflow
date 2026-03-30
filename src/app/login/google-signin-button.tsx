@@ -9,19 +9,23 @@ import { Loader2 } from "lucide-react";
 export function GoogleSignInButton() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const appOrigin = process.env.NEXT_PUBLIC_APP_URL?.trim();
 
   async function onGoogleSignIn() {
     setError(null);
     setLoading(true);
 
     try {
+      if (!appOrigin) {
+        throw new Error("App URL is not configured. Set NEXT_PUBLIC_APP_URL.");
+      }
+
       const supabase = createClient();
-      const origin = window.location.origin;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${origin}/auth/callback`,
+          redirectTo: `${appOrigin.replace(/\/+$/, "")}/auth/callback`,
         },
       });
 
