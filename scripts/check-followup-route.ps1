@@ -48,16 +48,16 @@ if ($WithAuth) {
 
 try {
     $response = Invoke-WebRequest -Uri $uri -Method Post -Headers $headers -UseBasicParsing
+    $body = $response.Content
 } catch {
     if (-not $_.Exception.Response) {
         throw
     }
 
     $response = $_.Exception.Response
+    $bodyReader = New-Object IO.StreamReader($response.GetResponseStream())
+    $body = $bodyReader.ReadToEnd()
 }
-
-$bodyReader = New-Object IO.StreamReader($response.GetResponseStream())
-$body = $bodyReader.ReadToEnd()
 $output = [pscustomobject]@{
     uri = $uri
     withAuth = [bool]$WithAuth
