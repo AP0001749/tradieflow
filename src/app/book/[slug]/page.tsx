@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import { BookingRequestForm } from "@/components/book/booking-request-form";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database.generated";
+
+type PublicBookingProfile =
+  Database["public"]["Functions"]["get_public_business_profile_by_slug"]["Returns"][number];
 
 export default async function BookSlugPage({
   params,
@@ -8,13 +12,15 @@ export default async function BookSlugPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
-  const { data: profile, error } = await supabase
-    .from("business_profile")
-    .select("business_name, booking_url_slug")
-    .eq("booking_url_slug", slug)
+  const { data, error } = await supabase
+    .rpc("get_public_business_profile_by_slug", {
+      p_booking_url_slug: slug,
+    })
     .maybeSingle();
+
+  const profile = data as PublicBookingProfile | null;
 
   if (error || !profile) {
     notFound();

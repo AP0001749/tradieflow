@@ -495,6 +495,13 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_public_business_profile_by_slug: {
+        Args: { p_booking_url_slug: string }
+        Returns: {
+          booking_url_slug: string
+          business_name: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
