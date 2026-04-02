@@ -4,12 +4,27 @@ import { useState } from "react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import type { PlanKey } from "@/lib/pricing";
 
-export function SubscribeButton() {
+interface SubscribeButtonProps {
+  planKey: PlanKey;
+  label?: string;
+  disabled?: boolean;
+}
+
+export function SubscribeButton({
+  planKey,
+  label = "Upgrade Now",
+  disabled = false,
+}: SubscribeButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubscribe() {
+    if (disabled) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -17,7 +32,7 @@ export function SubscribeButton() {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ planKey }),
       });
 
       const data = (await res.json()) as {
@@ -43,8 +58,8 @@ export function SubscribeButton() {
 
   return (
     <div className="space-y-2">
-      <Button onClick={handleSubscribe} disabled={loading} className="w-full">
-        {loading ? "Redirecting..." : "Upgrade Now"}
+      <Button onClick={handleSubscribe} disabled={loading || disabled} className="w-full">
+        {loading ? "Redirecting..." : label}
       </Button>
 
       <p className="text-xs text-muted-foreground">

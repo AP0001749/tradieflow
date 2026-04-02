@@ -33,7 +33,7 @@ export const FortyEightHourFollowupEmail = ({
           </Text>
 
           <Text style={text}>
-            <strong>Reply &ldquo;YES&rdquo; if you still want to get set up</strong> - otherwise I&apos;ll close this request.
+            <strong>Reply &ldquo;YES&rdquo; if you still want to plug missed-call leaks and get set up</strong> - otherwise I&apos;ll close this request.
           </Text>
 
           <Text style={text}>

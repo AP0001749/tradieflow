@@ -19,6 +19,7 @@ const leadSchema = z.object({
 });
 
 let ratelimit: Ratelimit | null = null;
+let slugRatelimit: Ratelimit | null = null;
 
 function getLeadRateLimit() {
   if (ratelimit) {
@@ -32,9 +33,28 @@ function getLeadRateLimit() {
   ratelimit = new Ratelimit({
     redis: Redis.fromEnv(),
     limiter: Ratelimit.slidingWindow(5, "10 s"),
+    prefix: "rl:lead:ip",
   });
 
   return ratelimit;
+}
+
+function getSlugRateLimit() {
+  if (slugRatelimit) {
+    return slugRatelimit;
+  }
+
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return null;
+  }
+
+  slugRatelimit = new Ratelimit({
+    redis: Redis.fromEnv(),
+    limiter: Ratelimit.slidingWindow(30, "60 s"),
+    prefix: "rl:lead:slug",
+  });
+
+  return slugRatelimit;
 }
 
 function getClientIp(request: NextRequest) {
@@ -65,15 +85,25 @@ export async function POST(request: NextRequest) {
     }
 
     const ip = getClientIp(request);
-    const { success } = await limiter.limit(ip);
+    const { success: ipOk } = await limiter.limit(ip);
 
-    if (!success) {
+    if (!ipOk) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
     const bookingUrlSlug = normalizeBookingUrlSlug(parsed.data.booking_url_slug);
     if (!bookingUrlSlug) {
       return NextResponse.json({ error: "Missing booking_url_slug" }, { status: 400 });
+    }
+
+    // Secondary guard: cap submissions per booking slug across all IPs so that
+    // a distributed botnet cannot flood a single tradie's form.
+    const slugLimiter = getSlugRateLimit();
+    if (slugLimiter) {
+      const { success: slugOk } = await slugLimiter.limit(bookingUrlSlug);
+      if (!slugOk) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+      }
     }
 
     const supabase = createAdminClient();

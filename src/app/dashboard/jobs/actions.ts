@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { JobStatus } from "@/types";
+import { JobStatus, JobUpdate } from "@/types";
 import {
   ALLOWED_JOB_PHOTO_MIME_TYPES,
   MAX_JOB_PHOTO_SIZE_BYTES,
@@ -15,6 +15,15 @@ const debugLog = (...args: unknown[]) => {
     console.log(...args);
   }
 };
+
+function revalidateJobSurfaces(jobId?: string) {
+  revalidatePath("/dashboard/jobs");
+  revalidatePath("/dashboard");
+
+  if (jobId) {
+    revalidatePath(`/dashboard/jobs/${jobId}`);
+  }
+}
 
 export async function createJob(formData: FormData) {
   const supabase = await createClient();
@@ -89,8 +98,7 @@ export async function createJob(formData: FormData) {
     return { error: error.message };
   }
 
-  revalidatePath("/dashboard/jobs");
-  revalidatePath("/dashboard");
+  revalidateJobSurfaces();
   return { success: true };
 }
 
@@ -135,8 +143,7 @@ export async function deleteJob(jobId: string) {
     return { success: false, error: error.message };
   }
 
-  revalidatePath("/dashboard/jobs");
-  revalidatePath("/dashboard");
+  revalidateJobSurfaces();
   return { success: true };
 }
 
@@ -241,9 +248,100 @@ export async function updateJob(
     return { error: error.message };
   }
 
-  revalidatePath("/dashboard/jobs");
-  revalidatePath(`/dashboard/jobs/${jobId}`);
-  revalidatePath("/dashboard");
+  revalidateJobSurfaces(jobId);
+  return { success: true };
+}
+
+export async function toggleQuoteSent(jobId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
+
+  const { data: job, error: jobError } = await supabase
+    .from("jobs")
+    .select("id, quote_sent_at, quote_followup_sent_at")
+    .eq("id", jobId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (jobError || !job) {
+    return { error: "Job not found" };
+  }
+
+  const payload: JobUpdate = job.quote_sent_at
+    ? {
+        quote_sent_at: null,
+        quote_followup_sent_at: null,
+      }
+    : {
+        quote_sent_at: new Date().toISOString(),
+      };
+
+  const { error } = await supabase
+    .from("jobs")
+    .update(payload)
+    .eq("id", jobId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error updating quote sent timestamp:", error);
+    return { error: error.message };
+  }
+
+  revalidateJobSurfaces(jobId);
+  return { success: true };
+}
+
+export async function toggleQuoteFollowupSent(jobId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
+
+  const { data: job, error: jobError } = await supabase
+    .from("jobs")
+    .select("id, quote_sent_at, quote_followup_sent_at")
+    .eq("id", jobId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (jobError || !job) {
+    return { error: "Job not found" };
+  }
+
+  if (!job.quote_sent_at) {
+    return { error: "Mark the quote as sent before logging a follow-up." };
+  }
+
+  const payload: JobUpdate = {
+    quote_followup_sent_at: job.quote_followup_sent_at
+      ? null
+      : new Date().toISOString(),
+  };
+
+  const { error } = await supabase
+    .from("jobs")
+    .update(payload)
+    .eq("id", jobId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error updating quote follow-up timestamp:", error);
+    return { error: error.message };
+  }
+
+  revalidateJobSurfaces(jobId);
   return { success: true };
 }
 

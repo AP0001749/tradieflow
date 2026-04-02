@@ -9,8 +9,8 @@ export default function BookIndexPage() {
         <p className="hero-pill">Booking Links</p>
         <h1 className="tf-display text-4xl md:text-5xl">Use your unique booking URL</h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Booking forms are now business-specific. Open the full URL from your dashboard
-          settings so leads route to the correct business every time.
+          Demo and lead-capture forms are business-specific. Open the full URL from your
+          dashboard settings so every request lands in the correct workspace.
         </p>
       </div>
 
@@ -26,7 +26,7 @@ export default function BookIndexPage() {
             <Button className="primary-btn">Sign in</Button>
           </Link>
           <p className="text-sm text-muted-foreground">
-            Example format: <span className="font-mono">/book/bright-clean-co</span>
+            Example format: <span className="font-mono">/book/western-climate-air</span>
           </p>
         </CardContent>
       </Card>

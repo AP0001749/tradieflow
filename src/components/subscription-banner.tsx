@@ -82,7 +82,7 @@ export function SubscriptionBanner({ resourceType }: SubscriptionBannerProps) {
             {isAtLimit
               ? `You've reached the free plan limit of ${limit} ${resourceType}. `
               : `You're using ${current} of ${limit} ${resourceType} on the free plan. `}
-            Upgrade to Pro for unlimited access.
+            Upgrade to Baseline for unlimited access.
           </p>
           <div className="mt-3 flex items-center gap-3">
             <div className="flex-1 h-2 bg-background/50 rounded-full overflow-hidden">

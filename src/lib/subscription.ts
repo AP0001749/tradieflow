@@ -1,5 +1,9 @@
 "use server";
 
+import {
+  getEffectiveSubscriptionPlanKey,
+  type SubscriptionPlanKey,
+} from "@/lib/pricing";
 import { createClient } from "@/lib/supabase/server";
 import type { SubscriptionStatus, TierLimits } from "@/lib/subscription-limits";
 
@@ -11,7 +15,6 @@ type TierLimitRow = {
   unlimited: boolean | null;
 };
 
-const ACTIVE_PRO_STATUSES = new Set(["active", "trialing", "past_due"]);
 const LEGACY_TIER_LIMITS: Record<string, TierLimits> = {
   free: {
     tier: "free",
@@ -19,6 +22,20 @@ const LEGACY_TIER_LIMITS: Record<string, TierLimits> = {
     maxJobs: 5,
     maxInvoices: 10,
     unlimited: false,
+  },
+  baseline: {
+    tier: "baseline",
+    maxClients: null,
+    maxJobs: null,
+    maxInvoices: null,
+    unlimited: true,
+  },
+  apex: {
+    tier: "apex",
+    maxClients: null,
+    maxJobs: null,
+    maxInvoices: null,
+    unlimited: true,
   },
   pro: {
     tier: "pro",
@@ -54,6 +71,21 @@ async function getTierLimitsForTier(tier: string): Promise<TierLimits | null> {
   return row ? normalizeTierLimits(row) : (LEGACY_TIER_LIMITS[tier] ?? null);
 }
 
+function getPaidStatusResult(
+  planKey: SubscriptionPlanKey,
+  status: string | null,
+  limits: TierLimits | null,
+): SubscriptionStatus {
+  return {
+    canProceed: true,
+    isPro: true,
+    tier: planKey,
+    planKey,
+    status,
+    limits: limits ?? undefined,
+  };
+}
+
 export async function checkSubscriptionLimits(): Promise<SubscriptionStatus> {
   const supabase = await createClient();
 
@@ -66,44 +98,45 @@ export async function checkSubscriptionLimits(): Promise<SubscriptionStatus> {
       canProceed: false,
       error: "Unauthorized",
       isPro: false,
+      planKey: "free",
     };
   }
 
-  // Get user's subscription tier
   const { data: profile } = await supabase
     .from("profiles")
-    .select("subscription_tier, subscription_status")
+    .select("subscription_tier, subscription_plan_key, subscription_status")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  const tier = (profile as { subscription_tier?: string | null; subscription_status?: string | null } | null)?.subscription_tier ?? "free";
-  const status = (profile as { subscription_tier?: string | null; subscription_status?: string | null } | null)?.subscription_status ?? null;
+  const typedProfile = profile as {
+    subscription_tier?: string | null;
+    subscription_plan_key?: string | null;
+    subscription_status?: string | null;
+  } | null;
+  const status = typedProfile?.subscription_status ?? null;
+  const effectivePlanKey = getEffectiveSubscriptionPlanKey({
+    subscriptionPlanKey: typedProfile?.subscription_plan_key,
+    subscriptionTier: typedProfile?.subscription_tier,
+    subscriptionStatus: status,
+  });
+  const isPaidPlan = effectivePlanKey !== "free";
+  const limits = await getTierLimitsForTier(effectivePlanKey);
 
-  const hasUnlimitedProAccess = tier === "pro" && (!status || ACTIVE_PRO_STATUSES.has(status));
-  const effectiveTier = hasUnlimitedProAccess ? "pro" : "free";
-  const limits = await getTierLimitsForTier(effectiveTier);
-
-  if (!limits && !hasUnlimitedProAccess) {
+  if (!limits && !isPaidPlan) {
     return {
       canProceed: false,
       isPro: false,
-      tier: effectiveTier,
+      tier: "free",
+      planKey: "free",
       status,
       error: "Could not load plan limits",
     };
   }
 
-  if (hasUnlimitedProAccess) {
-    return {
-      canProceed: true,
-      isPro: true,
-      tier: "pro",
-      status,
-      limits: limits ?? undefined,
-    };
+  if (isPaidPlan) {
+    return getPaidStatusResult(effectivePlanKey, status, limits);
   }
 
-  // For free tier, check current counts
   const [clientsResult, jobsResult, invoicesResult] = await Promise.all([
     supabase.from("clients").select("id", { count: "exact", head: true }).eq("user_id", user.id),
     supabase.from("jobs").select("id", { count: "exact", head: true }).eq("user_id", user.id),
@@ -119,6 +152,7 @@ export async function checkSubscriptionLimits(): Promise<SubscriptionStatus> {
       canProceed: false,
       isPro: false,
       tier: "free",
+      planKey: "free",
       status,
       limits: limits ?? undefined,
       error: "Could not load current usage",
@@ -129,6 +163,7 @@ export async function checkSubscriptionLimits(): Promise<SubscriptionStatus> {
     canProceed: true,
     isPro: false,
     tier: "free",
+    planKey: "free",
     status,
     limits: limits ?? undefined,
     current: {

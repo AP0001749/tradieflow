@@ -2,6 +2,12 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Users, Briefcase, TrendingUp } from "lucide-react";
 import { RevenueChart } from "@/components/revenue-chart";
+import { ZeroLeakQueue } from "@/components/dashboard/zero-leak-queue";
+import {
+  formatAutomationTimestamp,
+  getAutomationDueAt,
+  isAutomationDue,
+} from "@/lib/zero-leak";
 
 interface MonthlyRevenue {
   name: string;
@@ -19,6 +25,29 @@ type RecentSale = {
   } | null;
 };
 
+type QueueJob = {
+  id: string;
+  title: string;
+  quote_sent_at: string | null;
+  quote_followup_sent_at: string | null;
+  clients: {
+    name: string | null;
+  } | null;
+};
+
+type QueueInvoice = {
+  id: string;
+  amount: number;
+  paid_at: string | null;
+  review_request_sent_at: string | null;
+  job: {
+    title: string;
+    client: {
+      name: string | null;
+    } | null;
+  } | null;
+};
+
 export default async function DashboardPage() {
   const supabase = await createClient();
   const {
@@ -30,7 +59,15 @@ export default async function DashboardPage() {
   }
 
   // Fetch all data in parallel
-  const [clientsResult, jobsResult, invoicesResult, recentSalesResult] = await Promise.all([
+  const [
+    clientsResult,
+    jobsResult,
+    invoicesResult,
+    recentSalesResult,
+    businessProfileResult,
+    quoteQueueResult,
+    reviewQueueResult,
+  ] = await Promise.all([
     // Total clients count
     supabase.from("clients").select("*", { count: "exact", head: true }).eq("user_id", user.id),
     
@@ -68,6 +105,49 @@ export default async function DashboardPage() {
       .eq("status", "paid")
       .order("created_at", { ascending: false })
       .limit(5),
+
+    supabase
+      .from("business_profile")
+      .select("quote_followup_enabled, quote_followup_delay_hours, review_request_enabled, review_request_delay_hours, google_review_url")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+
+    supabase
+      .from("jobs")
+      .select(`
+        id,
+        title,
+        quote_sent_at,
+        quote_followup_sent_at,
+        clients:client_id (
+          name
+        )
+      `)
+      .eq("user_id", user.id)
+      .not("quote_sent_at", "is", null)
+      .is("quote_followup_sent_at", null)
+      .order("quote_sent_at", { ascending: true })
+      .limit(6),
+
+    supabase
+      .from("invoices")
+      .select(`
+        id,
+        amount,
+        paid_at,
+        review_request_sent_at,
+        job:job_id (
+          title,
+          client:client_id (
+            name
+          )
+        )
+      `)
+      .eq("user_id", user.id)
+      .not("paid_at", "is", null)
+      .is("review_request_sent_at", null)
+      .order("paid_at", { ascending: true })
+      .limit(6),
   ]);
 
   // Calculate total revenue from paid invoices only
@@ -133,6 +213,42 @@ export default async function DashboardPage() {
   ];
 
   const recentSales = (recentSalesResult.data || []) as unknown as RecentSale[];
+  const businessProfile = businessProfileResult.data;
+  const quoteFollowupDelayHours = businessProfile?.quote_followup_delay_hours ?? 48;
+  const reviewRequestDelayHours = businessProfile?.review_request_delay_hours ?? 24;
+  const quoteFollowupEnabled = Boolean(businessProfile?.quote_followup_enabled);
+  const reviewRequestEnabled =
+    Boolean(businessProfile?.review_request_enabled) &&
+    Boolean(businessProfile?.google_review_url?.trim());
+  const quoteQueue = (quoteQueueResult.data || []) as unknown as QueueJob[];
+  const reviewQueue = (reviewQueueResult.data || []) as unknown as QueueInvoice[];
+
+  const quoteItems = quoteQueue.map((job) => {
+    const dueAt = getAutomationDueAt(job.quote_sent_at, quoteFollowupDelayHours);
+    return {
+      id: job.id,
+      href: `/dashboard/jobs/${job.id}`,
+      title: job.title,
+      subtitle: job.clients?.name || "Client not linked",
+      dueLabel: dueAt ? formatAutomationTimestamp(dueAt) : "No timer",
+      isDue: isAutomationDue(dueAt),
+    };
+  });
+
+  const reviewItems = reviewQueue.map((invoice) => {
+    const dueAt = getAutomationDueAt(invoice.paid_at, reviewRequestDelayHours);
+    return {
+      id: invoice.id,
+      href: `/dashboard/invoices/${invoice.id}`,
+      title: invoice.job?.title || `Invoice ${invoice.id.slice(0, 8).toUpperCase()}`,
+      subtitle: invoice.job?.client?.name || "Client not linked",
+      dueLabel: dueAt ? formatAutomationTimestamp(dueAt) : "No timer",
+      isDue: isAutomationDue(dueAt),
+    };
+  });
+
+  const quoteDueNow = quoteItems.filter((item) => item.isDue).length;
+  const reviewDueNow = reviewItems.filter((item) => item.isDue).length;
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -178,6 +294,17 @@ export default async function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      <ZeroLeakQueue
+        quoteFollowupEnabled={quoteFollowupEnabled}
+        reviewRequestEnabled={reviewRequestEnabled}
+        quoteDueNow={quoteDueNow}
+        quoteScheduled={Math.max(quoteItems.length - quoteDueNow, 0)}
+        reviewDueNow={reviewDueNow}
+        reviewScheduled={Math.max(reviewItems.length - reviewDueNow, 0)}
+        quoteItems={quoteItems}
+        reviewItems={reviewItems}
+      />
 
       {/* Main Content Grid */}
       <div className="grid gap-4 md:gap-6 lg:grid-cols-7 animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>

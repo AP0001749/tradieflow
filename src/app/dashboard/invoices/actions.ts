@@ -154,7 +154,7 @@ export async function markAsPaid(invoiceId: string): Promise<void> {
 
   const { data: invoice, error: invoiceError } = await supabase
     .from("invoices")
-    .select("id, status")
+    .select("id, status, paid_at, review_request_sent_at")
     .eq("id", invoiceId)
     .eq("user_id", user.id)
     .single();
@@ -164,10 +164,15 @@ export async function markAsPaid(invoiceId: string): Promise<void> {
   }
 
   const nextStatus: InvoiceStatus = invoice.status === "paid" ? "unpaid" : "paid";
+  const nextPaidAt = nextStatus === "paid" ? new Date().toISOString() : null;
 
   const { error } = await supabase
     .from("invoices")
-    .update({ status: nextStatus })
+    .update({
+      status: nextStatus,
+      paid_at: nextPaidAt,
+      review_request_sent_at: nextStatus === "paid" ? invoice.review_request_sent_at : null,
+    })
     .eq("id", invoiceId)
     .eq("user_id", user.id);
 
@@ -180,6 +185,58 @@ export async function markAsPaid(invoiceId: string): Promise<void> {
   revalidatePath(`/dashboard/invoices/${invoiceId}`);
   revalidatePath("/dashboard");
   return;
+}
+
+export async function toggleReviewRequestSent(invoiceId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
+
+  const { data: invoice, error: invoiceError } = await supabase
+    .from("invoices")
+    .select("id, status, paid_at, review_request_sent_at")
+    .eq("id", invoiceId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (invoiceError || !invoice) {
+    return { error: "Invoice not found" };
+  }
+
+  const isPaid = invoice.status === "paid" || Boolean(invoice.paid_at);
+
+  if (!isPaid) {
+    return { error: "Mark the invoice as paid before logging a review request." };
+  }
+
+  const now = new Date().toISOString();
+  const payload: InvoiceUpdate = {
+    paid_at: invoice.paid_at || now,
+    review_request_sent_at: invoice.review_request_sent_at ? null : now,
+  };
+
+  const { error } = await supabase
+    .from("invoices")
+    .update(payload)
+    .eq("id", invoiceId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error updating review request timestamp:", error);
+    return { error: error.message };
+  }
+
+  revalidatePath("/dashboard/invoices");
+  revalidatePath(`/dashboard/invoices/${invoiceId}`);
+  revalidatePath("/dashboard");
+
+  return { success: true };
 }
 
 export async function deleteInvoice(invoiceId: string) {

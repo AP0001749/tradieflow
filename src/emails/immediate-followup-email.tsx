@@ -34,7 +34,7 @@ export const ImmediateFollowupEmail = ({
           <Text style={text}>Hi {name},</Text>
           
           <Text style={text}>
-            We received your setup request for {jobType?.replace('_', ' ') || 'cleaning services'} in {suburb || 'your service area'}.
+            We received your setup request for {jobType?.replace('_', ' ') || 'your trade business'} in {suburb || 'your service area'}.
           </Text>
 
           <Text style={text}>
@@ -42,14 +42,14 @@ export const ImmediateFollowupEmail = ({
           </Text>
 
           <Section style={list}>
-            <Text style={listItem}>* Team size (solo, 2-5, or 6+ cleaners)</Text>
-            <Text style={listItem}>* Main services you want to prioritize</Text>
+            <Text style={listItem}>* Team size (solo, 2-5, or 6+ techs)</Text>
+            <Text style={listItem}>* Main services or callouts you want to prioritize</Text>
             <Text style={listItem}>* Best contact number for onboarding</Text>
             <Text style={listItem}>* Preferred time for a quick setup call</Text>
           </Section>
 
           <Text style={text}>
-            We&apos;ll configure your TradieFlow workspace and send your next steps within one business day.
+            We&apos;ll configure your TradieFlow workspace around lead recovery, quote follow-up, and invoicing, then send next steps within one business day.
           </Text>
 
           <Hr style={hr} />

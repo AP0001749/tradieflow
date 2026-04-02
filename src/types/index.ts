@@ -36,7 +36,12 @@ export interface Profile {
   email: string | null;
   phone: string | null;
   subscription_tier: "free" | "pro";
+  subscription_plan_key: "free" | "baseline" | "apex";
   stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  subscription_status: string | null;
+  subscription_start_date: string | null;
+  subscription_end_date: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -49,7 +54,12 @@ export interface ProfileInsert {
   email?: string | null;
   phone?: string | null;
   subscription_tier?: "free" | "pro";
+  subscription_plan_key?: "free" | "baseline" | "apex";
   stripe_customer_id?: string | null;
+  stripe_subscription_id?: string | null;
+  subscription_status?: string | null;
+  subscription_start_date?: string | null;
+  subscription_end_date?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -60,7 +70,12 @@ export interface ProfileUpdate {
   email?: string | null;
   phone?: string | null;
   subscription_tier?: "free" | "pro";
+  subscription_plan_key?: "free" | "baseline" | "apex";
   stripe_customer_id?: string | null;
+  stripe_subscription_id?: string | null;
+  subscription_status?: string | null;
+  subscription_start_date?: string | null;
+  subscription_end_date?: string | null;
   updated_at?: string;
 }
 
@@ -112,6 +127,8 @@ export interface Job {
   start_date: string | null;
   end_date: string | null;
   price: number | null;
+  quote_sent_at: string | null;
+  quote_followup_sent_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -133,6 +150,8 @@ export interface JobInsert {
   start_date?: string | null;
   end_date?: string | null;
   price?: number | null;
+  quote_sent_at?: string | null;
+  quote_followup_sent_at?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -145,6 +164,8 @@ export interface JobUpdate {
   start_date?: string | null;
   end_date?: string | null;
   price?: number | null;
+  quote_sent_at?: string | null;
+  quote_followup_sent_at?: string | null;
   updated_at?: string;
 }
 
@@ -159,6 +180,8 @@ export interface Invoice {
   status: InvoiceStatus;
   due_date: string | null;
   notes: string | null;
+  paid_at: string | null;
+  review_request_sent_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -171,6 +194,8 @@ export interface InvoiceInsert {
   status?: InvoiceStatus;
   due_date?: string | null;
   notes?: string | null;
+  paid_at?: string | null;
+  review_request_sent_at?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -181,6 +206,8 @@ export interface InvoiceUpdate {
   status?: InvoiceStatus;
   due_date?: string | null;
   notes?: string | null;
+  paid_at?: string | null;
+  review_request_sent_at?: string | null;
   updated_at?: string;
 }
 

@@ -1,13 +1,22 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { updateBusinessProfile } from './actions';
-import { useRouter } from 'next/navigation';
+import { Select } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { normalizeBookingUrlSlug } from '@/lib/booking';
+import {
+  DEFAULT_MISSED_CALL_TEXT_TEMPLATE,
+  DEFAULT_QUOTE_FOLLOWUP_TEMPLATE,
+  DEFAULT_REVIEW_REQUEST_TEMPLATE,
+  coerceAutomationTemplate,
+} from '@/lib/zero-leak';
+import { updateBusinessProfile } from './actions';
 
 interface BusinessProfile {
   id: string;
@@ -17,10 +26,27 @@ interface BusinessProfile {
   service_area_postcodes: string[];
   default_job_types: string[];
   booking_url_slug: string | null;
+  missed_call_text_enabled: boolean | null;
+  missed_call_text_template: string | null;
+  quote_followup_enabled: boolean | null;
+  quote_followup_delay_hours: number | null;
+  quote_followup_template: string | null;
+  review_request_enabled: boolean | null;
+  review_request_delay_hours: number | null;
+  review_request_template: string | null;
 }
 
 interface SettingsFormProps {
   profile: BusinessProfile | null;
+}
+
+function parsePositiveInteger(value: FormDataEntryValue | null, fallback: number) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  return Math.round(parsed);
 }
 
 export default function SettingsForm({ profile }: SettingsFormProps) {
@@ -62,6 +88,29 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
         service_area_postcodes: postcodes,
         default_job_types: jobTypes,
         booking_url_slug: normalizedSlug,
+        missed_call_text_enabled: formData.get('missed_call_text_enabled') === 'enabled',
+        missed_call_text_template: coerceAutomationTemplate(
+          formData.get('missed_call_text_template') as string,
+          DEFAULT_MISSED_CALL_TEXT_TEMPLATE
+        ),
+        quote_followup_enabled: formData.get('quote_followup_enabled') === 'enabled',
+        quote_followup_delay_hours: parsePositiveInteger(
+          formData.get('quote_followup_delay_hours'),
+          48
+        ),
+        quote_followup_template: coerceAutomationTemplate(
+          formData.get('quote_followup_template') as string,
+          DEFAULT_QUOTE_FOLLOWUP_TEMPLATE
+        ),
+        review_request_enabled: formData.get('review_request_enabled') === 'enabled',
+        review_request_delay_hours: parsePositiveInteger(
+          formData.get('review_request_delay_hours'),
+          24
+        ),
+        review_request_template: coerceAutomationTemplate(
+          formData.get('review_request_template') as string,
+          DEFAULT_REVIEW_REQUEST_TEMPLATE
+        ),
       });
 
       setBookingSlug(normalizedSlug);
@@ -88,7 +137,7 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
         <CardHeader>
           <CardTitle>Business Information</CardTitle>
           <CardDescription>
-            This information is used in automated emails sent to your leads
+            This information powers your public funnel and automated follow-up
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -99,7 +148,7 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
               name="business_name"
               required
               defaultValue={profile?.business_name || ''}
-              placeholder="ABC Cleaning Services"
+              placeholder="Western Climate Air"
             />
           </div>
 
@@ -113,11 +162,11 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
               onChange={(event) => {
                 setBookingSlug(normalizeBookingUrlSlug(event.target.value));
               }}
-              placeholder="abc-cleaning-services"
+              placeholder="western-climate-air"
             />
             <p className="text-xs text-muted-foreground">
               Lowercase letters, numbers, and hyphens only. This becomes your public
-              booking link.
+              demo and lead-capture link.
             </p>
           </div>
 
@@ -132,7 +181,7 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
               placeholder="hello@yourcompany.com"
             />
             <p className="text-xs text-muted-foreground">
-              Leads will reply to this email address
+              Leads and quote replies will route to this address
             </p>
           </div>
 
@@ -146,7 +195,7 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
               placeholder="https://g.page/r/..."
             />
             <p className="text-xs text-muted-foreground">
-              This will be sent to clients after job completion (future feature)
+              This is used for the post-payment review extractor flow
             </p>
           </div>
         </CardContent>
@@ -156,7 +205,7 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
         <CardHeader>
           <CardTitle>Service Areas</CardTitle>
           <CardDescription>
-            Configure which areas you service (optional)
+            Configure the suburbs and job types you want the funnel to speak to
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -166,10 +215,10 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
               id="service_area_postcodes"
               name="service_area_postcodes"
               defaultValue={profile?.service_area_postcodes?.join(', ') || ''}
-              placeholder="2000, 2010, 2015"
+              placeholder="3029, 3030, 3038"
             />
             <p className="text-xs text-muted-foreground">
-              Comma-separated list of postcodes (future: can be used for lead filtering)
+              Comma-separated list of postcodes for your response footprint
             </p>
           </div>
 
@@ -179,9 +228,10 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
               id="default_job_types"
               name="default_job_types"
               defaultValue={
-                profile?.default_job_types?.join(', ') || 'end_of_lease, regular, deep_clean'
+                profile?.default_job_types?.join(', ') ||
+                'split_system_service, emergency_callout, hot_water_service'
               }
-              placeholder="end_of_lease, regular, deep_clean"
+              placeholder="split_system_service, emergency_callout, hot_water_service"
             />
             <p className="text-xs text-muted-foreground">
               Comma-separated list of job types you offer
@@ -192,18 +242,161 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Onboarding Form</CardTitle>
+          <CardTitle>Zero-Leak Automations</CardTitle>
           <CardDescription>
-            Share this URL to receive setup/demo requests
+            Set the copy and timing for missed-call recovery, quote nurture, and review extraction
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="rounded-xl border border-sky-500/20 bg-sky-500/5 p-4 text-sm text-muted-foreground">
+            These settings define the workflow blueprint and customer-facing message copy.
+            Delivery integrations such as SMS or call-routing can be connected on top of
+            this configuration next.
+          </div>
+
+          <div className="rounded-xl border border-border/60 p-4 space-y-4">
+            <div className="space-y-1">
+              <h3 className="text-base font-semibold">Missed Call Text Back</h3>
+              <p className="text-sm text-muted-foreground">
+                Configure the message you want TradieFlow to send when a tradie cannot answer immediately.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="missed_call_text_enabled">Status</Label>
+              <Select
+                id="missed_call_text_enabled"
+                name="missed_call_text_enabled"
+                defaultValue={profile?.missed_call_text_enabled ? 'enabled' : 'disabled'}
+              >
+                <option value="disabled">Disabled</option>
+                <option value="enabled">Enabled</option>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="missed_call_text_template">Message Template</Label>
+              <Textarea
+                id="missed_call_text_template"
+                name="missed_call_text_template"
+                rows={4}
+                defaultValue={coerceAutomationTemplate(
+                  profile?.missed_call_text_template,
+                  DEFAULT_MISSED_CALL_TEXT_TEMPLATE
+                )}
+              />
+              <p className="text-xs text-muted-foreground">
+                Supported placeholders: <code>{'{{business_name}}'}</code>
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border/60 p-4 space-y-4">
+            <div className="space-y-1">
+              <h3 className="text-base font-semibold">Quote Nurture</h3>
+              <p className="text-sm text-muted-foreground">
+                Schedule the follow-up copy you want sent after a quote goes quiet.
+              </p>
+            </div>
+            <div className="form-grid">
+              <div className="space-y-2">
+                <Label htmlFor="quote_followup_enabled">Status</Label>
+                <Select
+                  id="quote_followup_enabled"
+                  name="quote_followup_enabled"
+                  defaultValue={profile?.quote_followup_enabled ? 'enabled' : 'disabled'}
+                >
+                  <option value="disabled">Disabled</option>
+                  <option value="enabled">Enabled</option>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quote_followup_delay_hours">Delay (hours)</Label>
+                <Input
+                  id="quote_followup_delay_hours"
+                  name="quote_followup_delay_hours"
+                  type="number"
+                  min={1}
+                  step={1}
+                  defaultValue={profile?.quote_followup_delay_hours ?? 48}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quote_followup_template">Message Template</Label>
+              <Textarea
+                id="quote_followup_template"
+                name="quote_followup_template"
+                rows={4}
+                defaultValue={coerceAutomationTemplate(
+                  profile?.quote_followup_template,
+                  DEFAULT_QUOTE_FOLLOWUP_TEMPLATE
+                )}
+              />
+              <p className="text-xs text-muted-foreground">
+                Supported placeholders: <code>{'{{contact_name}}'}</code>, <code>{'{{business_name}}'}</code>
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border/60 p-4 space-y-4">
+            <div className="space-y-1">
+              <h3 className="text-base font-semibold">Review Extractor</h3>
+              <p className="text-sm text-muted-foreground">
+                Configure the follow-up request that goes out after a paid invoice lands.
+              </p>
+            </div>
+            <div className="form-grid">
+              <div className="space-y-2">
+                <Label htmlFor="review_request_enabled">Status</Label>
+                <Select
+                  id="review_request_enabled"
+                  name="review_request_enabled"
+                  defaultValue={profile?.review_request_enabled ? 'enabled' : 'disabled'}
+                >
+                  <option value="disabled">Disabled</option>
+                  <option value="enabled">Enabled</option>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="review_request_delay_hours">Delay (hours)</Label>
+                <Input
+                  id="review_request_delay_hours"
+                  name="review_request_delay_hours"
+                  type="number"
+                  min={1}
+                  step={1}
+                  defaultValue={profile?.review_request_delay_hours ?? 24}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="review_request_template">Message Template</Label>
+              <Textarea
+                id="review_request_template"
+                name="review_request_template"
+                rows={4}
+                defaultValue={coerceAutomationTemplate(
+                  profile?.review_request_template,
+                  DEFAULT_REVIEW_REQUEST_TEMPLATE
+                )}
+              />
+              <p className="text-xs text-muted-foreground">
+                Supported placeholders: <code>{'{{contact_name}}'}</code>, <code>{'{{business_name}}'}</code>, <code>{'{{google_review_url}}'}</code>
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Demo / Lead Capture Form</CardTitle>
+          <CardDescription>
+            Share this URL to receive demo requests and routed leads
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2">
-            <Input
-              readOnly
-              value={onboardingFormUrl}
-              className="font-mono text-sm"
-            />
+            <Input readOnly value={onboardingFormUrl} className="font-mono text-sm" />
             <Button
               type="button"
               variant="outline"
@@ -221,32 +414,32 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
             </Button>
           </div>
           {!normalizedAppUrl ? (
-            <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
+            <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
               Set <code>NEXT_PUBLIC_APP_URL</code> to generate a shareable absolute booking link.
             </p>
           ) : null}
           {copyMessage ? (
-            <p className="text-xs text-muted-foreground mt-2">{copyMessage}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{copyMessage}</p>
           ) : null}
-          <p className="text-xs text-muted-foreground mt-2">
-            Use this URL in your Google Ads campaigns and website CTAs
+          <p className="mt-2 text-xs text-muted-foreground">
+            Use this URL in Google Ads, website CTAs, and QR handouts
           </p>
         </CardContent>
       </Card>
 
-      {error && (
-        <div className="p-3 rounded-md border border-destructive/30 bg-destructive/10">
+      {error ? (
+        <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3">
           <p className="text-sm text-destructive">{error}</p>
         </div>
-      )}
+      ) : null}
 
-      {success && (
-        <div className="p-3 rounded-md border border-emerald-500/30 bg-emerald-500/10">
+      {success ? (
+        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3">
           <p className="text-sm text-emerald-700 dark:text-emerald-200">
             Settings saved successfully!
           </p>
         </div>
-      )}
+      ) : null}
 
       <div className="flex justify-end">
         <Button type="submit" disabled={isSubmitting}>

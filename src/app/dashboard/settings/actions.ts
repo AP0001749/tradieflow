@@ -3,6 +3,12 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { normalizeBookingUrlSlug } from '@/lib/booking';
+import {
+  DEFAULT_MISSED_CALL_TEXT_TEMPLATE,
+  DEFAULT_QUOTE_FOLLOWUP_TEMPLATE,
+  DEFAULT_REVIEW_REQUEST_TEMPLATE,
+  coerceAutomationTemplate,
+} from '@/lib/zero-leak';
 import { revalidatePath } from 'next/cache';
 
 async function generateAvailableBookingSlug(
@@ -66,6 +72,14 @@ export async function updateBusinessProfile(formData: {
   service_area_postcodes?: string[];
   default_job_types?: string[];
   booking_url_slug?: string;
+  missed_call_text_enabled?: boolean;
+  missed_call_text_template?: string;
+  quote_followup_enabled?: boolean;
+  quote_followup_delay_hours?: number;
+  quote_followup_template?: string;
+  review_request_enabled?: boolean;
+  review_request_delay_hours?: number;
+  review_request_template?: string;
 }) {
   const supabase = await createClient();
 
@@ -94,6 +108,23 @@ export async function updateBusinessProfile(formData: {
     service_area_postcodes: formData.service_area_postcodes || [],
     default_job_types: formData.default_job_types || [],
     booking_url_slug: bookingUrlSlug,
+    missed_call_text_enabled: Boolean(formData.missed_call_text_enabled),
+    missed_call_text_template: coerceAutomationTemplate(
+      formData.missed_call_text_template,
+      DEFAULT_MISSED_CALL_TEXT_TEMPLATE
+    ),
+    quote_followup_enabled: Boolean(formData.quote_followup_enabled),
+    quote_followup_delay_hours: Math.max(1, Math.round(formData.quote_followup_delay_hours || 48)),
+    quote_followup_template: coerceAutomationTemplate(
+      formData.quote_followup_template,
+      DEFAULT_QUOTE_FOLLOWUP_TEMPLATE
+    ),
+    review_request_enabled: Boolean(formData.review_request_enabled),
+    review_request_delay_hours: Math.max(1, Math.round(formData.review_request_delay_hours || 24)),
+    review_request_template: coerceAutomationTemplate(
+      formData.review_request_template,
+      DEFAULT_REVIEW_REQUEST_TEMPLATE
+    ),
   };
 
   if (existing?.id) {

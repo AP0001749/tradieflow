@@ -1,6 +1,6 @@
 # TradieFlow
 
-TradieFlow is a SaaS job management and lead follow-up platform for Australian tradies. It combines a public booking flow, tenant-safe lead capture, client and job management, invoicing, Stripe billing, and automated lead follow-up.
+TradieFlow is a SaaS job management and lead recovery platform for Australian tradies. It combines a public booking flow, tenant-safe lead capture, client and job management, invoicing, Stripe billing, and automated follow-up for high-urgency trades such as HVAC, plumbing, and electrical.
 
 ## Status
 
@@ -12,6 +12,9 @@ Completed in the repo:
 - anti-spam protection with Zod validation, honeypot, and Upstash rate limiting
 - Stripe webhook dedupe with retry-safe processing
 - atomic free-tier quota enforcement through database RPCs
+- Baseline/Apex billing state persisted via `profiles.subscription_plan_key`
+- workspace-level Zero-Leak automation settings stored on `business_profile`
+- quote and review automation milestones tracked on jobs and invoices
 - upload validation and signed URL hardening
 - middleware fail-closed behavior for protected routes
 - Supabase Cron migration path with a Supabase Edge Function for follow-up automation
@@ -34,6 +37,7 @@ Still required before calling the rollout fully complete:
 - Dashboard for clients, jobs, invoices, and leads
 - Public booking pages at `/book/[booking_url_slug]`
 - Multi-tenant lead capture and follow-up sequencing
+- HVAC-ready public funnel with a pricing simulator and Baseline/Apex positioning
 - Job photo uploads
 - Stripe subscriptions and billing portal
 - Google Ads conversion tracking
@@ -104,6 +108,8 @@ Billing:
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+NEXT_PUBLIC_STRIPE_BASELINE_PRICE_ID=
+NEXT_PUBLIC_STRIPE_APEX_PRICE_ID=
 NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=
 ```
 
@@ -149,6 +155,9 @@ Relevant files:
 - `supabase/migrations/20260324153000_hardening_patch.sql`
 - `supabase/migrations/20260324174500_move_lead_followup_to_supabase_cron.sql`
 - `supabase/migrations/20260330150000_centralize_tier_limits.sql`
+- `supabase/migrations/20260401064500_add_zero_leak_automation_settings.sql`
+- `supabase/migrations/20260401061000_add_subscription_plan_key.sql`
+- `supabase/migrations/20260401073000_add_automation_tracking_fields.sql`
 
 The compatibility route exists so follow-up automation can still run while hosted Supabase Cron or the Edge Function rollout catches up. Prefer `POST /api/cron/leads-followup`. The route also accepts `GET` for compatibility, and it honors either `Authorization: Bearer <secret>` or `x-cron-secret: <secret>` across both configured secret names during cutover.
 
@@ -185,6 +194,9 @@ Apply:
 
 - `supabase/migrations/20260324174500_move_lead_followup_to_supabase_cron.sql`
 - `supabase/migrations/20260330150000_centralize_tier_limits.sql`
+- `supabase/migrations/20260401064500_add_zero_leak_automation_settings.sql`
+- `supabase/migrations/20260401061000_add_subscription_plan_key.sql`
+- `supabase/migrations/20260401073000_add_automation_tracking_fields.sql`
 
 If the Vault secrets did not exist when the migration ran:
 

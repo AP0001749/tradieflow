@@ -22,7 +22,15 @@ export type Database = {
           default_job_types: string[] | null
           google_review_url: string | null
           id: string
+          missed_call_text_enabled: boolean
+          missed_call_text_template: string | null
+          quote_followup_delay_hours: number
+          quote_followup_enabled: boolean
+          quote_followup_template: string | null
           reply_to_email: string | null
+          review_request_delay_hours: number
+          review_request_enabled: boolean
+          review_request_template: string | null
           service_area_postcodes: string[] | null
           updated_at: string | null
           user_id: string
@@ -34,7 +42,15 @@ export type Database = {
           default_job_types?: string[] | null
           google_review_url?: string | null
           id?: string
+          missed_call_text_enabled?: boolean
+          missed_call_text_template?: string | null
+          quote_followup_delay_hours?: number
+          quote_followup_enabled?: boolean
+          quote_followup_template?: string | null
           reply_to_email?: string | null
+          review_request_delay_hours?: number
+          review_request_enabled?: boolean
+          review_request_template?: string | null
           service_area_postcodes?: string[] | null
           updated_at?: string | null
           user_id: string
@@ -46,7 +62,15 @@ export type Database = {
           default_job_types?: string[] | null
           google_review_url?: string | null
           id?: string
+          missed_call_text_enabled?: boolean
+          missed_call_text_template?: string | null
+          quote_followup_delay_hours?: number
+          quote_followup_enabled?: boolean
+          quote_followup_template?: string | null
           reply_to_email?: string | null
+          review_request_delay_hours?: number
+          review_request_enabled?: boolean
+          review_request_template?: string | null
           service_area_postcodes?: string[] | null
           updated_at?: string | null
           user_id?: string
@@ -94,6 +118,8 @@ export type Database = {
           id: string
           job_id: string
           notes: string | null
+          paid_at: string | null
+          review_request_sent_at: string | null
           status: string | null
           updated_at: string | null
           user_id: string
@@ -105,6 +131,8 @@ export type Database = {
           id?: string
           job_id: string
           notes?: string | null
+          paid_at?: string | null
+          review_request_sent_at?: string | null
           status?: string | null
           updated_at?: string | null
           user_id: string
@@ -116,6 +144,8 @@ export type Database = {
           id?: string
           job_id?: string
           notes?: string | null
+          paid_at?: string | null
+          review_request_sent_at?: string | null
           status?: string | null
           updated_at?: string | null
           user_id?: string
@@ -139,6 +169,8 @@ export type Database = {
           end_date: string | null
           id: string
           price: number | null
+          quote_followup_sent_at: string | null
+          quote_sent_at: string | null
           start_date: string | null
           status: string | null
           title: string
@@ -152,6 +184,8 @@ export type Database = {
           end_date?: string | null
           id?: string
           price?: number | null
+          quote_followup_sent_at?: string | null
+          quote_sent_at?: string | null
           start_date?: string | null
           status?: string | null
           title: string
@@ -165,6 +199,8 @@ export type Database = {
           end_date?: string | null
           id?: string
           price?: number | null
+          quote_followup_sent_at?: string | null
+          quote_sent_at?: string | null
           start_date?: string | null
           status?: string | null
           title?: string

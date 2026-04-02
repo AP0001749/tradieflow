@@ -97,7 +97,7 @@ function jsonResponse(
 }
 
 function immediateFollowupHtml(lead: ClaimedLead, businessName: string) {
-  const jobType = lead.job_type?.replaceAll("_", " ") || "cleaning services";
+  const jobType = lead.job_type?.replaceAll("_", " ") || "your trade business";
   const suburb = lead.suburb || "your service area";
 
   return `
@@ -109,12 +109,12 @@ function immediateFollowupHtml(lead: ClaimedLead, businessName: string) {
           <p>We received your setup request for ${jobType} in ${suburb}.</p>
           <p><strong>To set up your workspace, please reply with:</strong></p>
           <ul>
-            <li>Team size (solo, 2-5, or 6+ cleaners)</li>
-            <li>Main services you want to prioritize</li>
+            <li>Team size (solo, 2-5, or 6+ techs)</li>
+            <li>Main services or callouts you want to prioritize</li>
             <li>Best contact number for onboarding</li>
             <li>Preferred time for a quick setup call</li>
           </ul>
-          <p>We'll configure your TradieFlow workspace and send your next steps within one business day.</p>
+          <p>We'll configure your TradieFlow workspace around lead recovery, quote follow-up, and invoicing, then send your next steps within one business day.</p>
           <hr style="border:none;border-top:1px solid #e6ebf1;margin:24px 0;" />
           <p style="color:#8898aa;font-size:12px;line-height:16px;">${businessName}<br />Reply to this email to continue onboarding</p>
         </div>
@@ -124,7 +124,7 @@ function immediateFollowupHtml(lead: ClaimedLead, businessName: string) {
 }
 
 function twentyFourHourFollowupHtml(lead: ClaimedLead, businessName: string) {
-  const jobType = lead.job_type?.replaceAll("_", " ") || "your cleaning business";
+  const jobType = lead.job_type?.replaceAll("_", " ") || "your trade business";
 
   return `
     <html>
@@ -133,7 +133,7 @@ function twentyFourHourFollowupHtml(lead: ClaimedLead, businessName: string) {
           <h1 style="color:#333333;">Quick follow-up</h1>
           <p>Hi ${lead.name},</p>
           <p>Just checking in on your TradieFlow setup request for ${jobType}.</p>
-          <p><strong>Ready to get started?</strong> Reply "YES" and share the best time for onboarding.</p>
+          <p><strong>Ready to get started?</strong> Reply "YES" and share the best time to map your missed-call and follow-up workflow.</p>
           <p>If timing changed or you no longer need help, just reply and I'll close the request.</p>
           <hr style="border:none;border-top:1px solid #e6ebf1;margin:24px 0;" />
           <p style="color:#8898aa;font-size:12px;line-height:16px;">${businessName}<br />Reply to this email to continue setup</p>
@@ -151,7 +151,7 @@ function fortyEightHourFollowupHtml(lead: ClaimedLead, businessName: string) {
           <h1 style="color:#333333;">Last check-in</h1>
           <p>Hi ${lead.name},</p>
           <p>I haven't heard back about your TradieFlow setup request.</p>
-          <p><strong>Reply "YES" if you still want to get set up</strong> - otherwise I'll close this request.</p>
+          <p><strong>Reply "YES" if you still want to plug missed-call leaks and get set up</strong> - otherwise I'll close this request.</p>
           <p>No pressure either way. If you want to start later, just reply and we can reopen it anytime.</p>
           <hr style="border:none;border-top:1px solid #e6ebf1;margin:24px 0;" />
           <p style="color:#8898aa;font-size:12px;line-height:16px;">${businessName}<br />Reply to this email if you still want setup</p>

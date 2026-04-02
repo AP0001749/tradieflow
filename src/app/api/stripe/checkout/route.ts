@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getAppOrigin } from "@/lib/app-origin";
+import { getPlanPriceId, normalizePlanKey } from "@/lib/pricing";
 import { createClient } from "@/lib/supabase/server";
 import { ensureProfileExists } from "@/lib/profiles";
 import { getStripeServer } from "@/utils/stripe/server";
@@ -19,13 +20,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await request.json().catch(() => null);
+    const body = (await request.json().catch(() => null)) as {
+      planKey?: string;
+    } | null;
 
-    const priceId = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID;
+    const planKey = normalizePlanKey(body?.planKey);
+    const priceId = getPlanPriceId(planKey);
 
     if (!priceId) {
       return NextResponse.json(
-        { error: "Billing is not configured" },
+        { error: `Billing is not configured for the ${planKey} plan` },
         { status: 503 }
       );
     }
@@ -81,11 +85,11 @@ export async function POST(request: Request) {
       mode: "subscription",
       customer: stripeCustomerId,
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${origin}/dashboard/billing?success=true`,
+      success_url: `${origin}/dashboard/billing?success=true&plan=${planKey}`,
       cancel_url: `${origin}/dashboard/billing?canceled=true`,
-      metadata: { userId: user.id },
+      metadata: { userId: user.id, planKey },
       subscription_data: {
-        metadata: { userId: user.id },
+        metadata: { userId: user.id, planKey },
       },
       client_reference_id: user.id,
       allow_promotion_codes: true,

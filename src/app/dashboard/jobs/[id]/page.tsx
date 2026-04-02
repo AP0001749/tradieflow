@@ -3,9 +3,16 @@ import { notFound } from "next/navigation";
 import { JobPhotos } from "@/components/job-photos";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/back-button";
 import { Calendar, DollarSign, User, FileText } from "lucide-react";
 import { JobStatus } from "@/types";
+import { toggleQuoteFollowupSent, toggleQuoteSent } from "../actions";
+import {
+  formatAutomationTimestamp,
+  getAutomationDueAt,
+  isAutomationDue,
+} from "@/lib/zero-leak";
 
 interface JobDetailPageProps {
   params: Promise<{
@@ -41,6 +48,12 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
   if (error || !job) {
     notFound();
   }
+
+  const { data: businessProfile } = await supabase
+    .from("business_profile")
+    .select("quote_followup_enabled, quote_followup_delay_hours")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
   // Fetch existing photos from storage
   const { data: files } = await supabase.storage
@@ -80,6 +93,21 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
 
   const status =
     statusConfig[(job.status as JobStatus) ?? "draft"] ?? statusConfig.draft;
+  const quoteSentLogged = Boolean(job.quote_sent_at);
+  const quoteFollowupDelayHours = businessProfile?.quote_followup_delay_hours ?? 48;
+  const quoteFollowupDueAt = getAutomationDueAt(
+    job.quote_sent_at,
+    quoteFollowupDelayHours
+  );
+  const quoteFollowupIsDue = isAutomationDue(quoteFollowupDueAt);
+  const toggleQuoteSentAction = async () => {
+    "use server";
+    await toggleQuoteSent(job.id);
+  };
+  const toggleQuoteFollowupSentAction = async () => {
+    "use server";
+    await toggleQuoteFollowupSent(job.id);
+  };
 
   return (
     <div className="space-y-8">
@@ -173,6 +201,98 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card
+        className="shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700"
+        style={{ animationDelay: "300ms", animationFillMode: "backwards" }}
+      >
+        <CardHeader>
+          <CardTitle>Quote Automation</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-border/70 bg-muted/30 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">Quote Sent</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Timestamp used to start the nurture timer.
+                  </p>
+                </div>
+                <Badge variant={job.quote_sent_at ? "completed" : "outline"}>
+                  {job.quote_sent_at ? "Logged" : "Open"}
+                </Badge>
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                {formatAutomationTimestamp(job.quote_sent_at)}
+              </p>
+
+              <form action={toggleQuoteSentAction}>
+                <Button type="submit" size="sm" variant={job.quote_sent_at ? "outline" : "default"}>
+                  {job.quote_sent_at ? "Clear Quote Timestamp" : "Mark Quote Sent"}
+                </Button>
+              </form>
+            </div>
+
+            <div className="rounded-xl border border-border/70 bg-muted/30 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">Quote Follow-up</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Manual log for the nurture message after the quote goes out.
+                  </p>
+                </div>
+                <Badge
+                  variant={
+                    job.quote_followup_sent_at
+                      ? "completed"
+                      : !quoteSentLogged
+                        ? "outline"
+                      : quoteFollowupIsDue
+                        ? "destructive"
+                        : "outline"
+                  }
+                >
+                  {job.quote_followup_sent_at
+                    ? "Logged"
+                    : !quoteSentLogged
+                      ? "Waiting"
+                      : quoteFollowupIsDue
+                      ? "Due"
+                      : "Queued"}
+                </Badge>
+              </div>
+
+              <div className="space-y-1 text-sm text-muted-foreground">
+                <p>{formatAutomationTimestamp(job.quote_followup_sent_at)}</p>
+                {quoteSentLogged ? (
+                  <p>
+                    {businessProfile?.quote_followup_enabled
+                      ? `Queue target: ${formatAutomationTimestamp(quoteFollowupDueAt)}`
+                      : `Workflow disabled in settings. Current timer remains ${quoteFollowupDelayHours} hours.`}
+                  </p>
+                ) : (
+                  <p>Log the quote first to arm the follow-up queue.</p>
+                )}
+              </div>
+
+              <form action={toggleQuoteFollowupSentAction}>
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant={job.quote_followup_sent_at ? "outline" : "default"}
+                  disabled={!quoteSentLogged}
+                >
+                  {job.quote_followup_sent_at
+                    ? "Clear Follow-up Timestamp"
+                    : "Mark Follow-up Sent"}
+                </Button>
+              </form>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

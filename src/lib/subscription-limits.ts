@@ -12,6 +12,7 @@ export interface SubscriptionStatus {
   canProceed: boolean;
   isPro: boolean;
   tier?: string;
+  planKey?: string;
   status?: string | null;
   error?: string;
   limits?: TierLimits;
@@ -29,5 +30,5 @@ export function getResourceLimit(
 }
 
 export function getLimitReachedMessage(resourceType: ResourceType, limit: number) {
-  return `Free plan limited to ${limit} ${resourceType}. Upgrade to Pro for unlimited ${resourceType}.`;
+  return `Free plan limited to ${limit} ${resourceType}. Upgrade to Baseline for unlimited ${resourceType}.`;
 }

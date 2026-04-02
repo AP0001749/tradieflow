@@ -18,7 +18,7 @@ interface SubscriptionSuccessTrackerProps {
 export function SubscriptionSuccessTracker({ 
   userEmail, 
   userName,
-  subscriptionValue = 29
+  subscriptionValue = 299
 }: SubscriptionSuccessTrackerProps) {
   const searchParams = useSearchParams();
   const success = searchParams.get("success");

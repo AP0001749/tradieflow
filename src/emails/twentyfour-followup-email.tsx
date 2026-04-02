@@ -31,11 +31,11 @@ export const TwentyFourHourFollowupEmail = ({
           <Text style={text}>Hi {name},</Text>
           
           <Text style={text}>
-            Just checking in on your TradieFlow setup request for {jobType?.replace('_', ' ') || 'your cleaning business'}.
+            Just checking in on your TradieFlow setup request for {jobType?.replace('_', ' ') || 'your trade business'}.
           </Text>
 
           <Text style={text}>
-            <strong>Ready to get started?</strong> Reply &ldquo;YES&rdquo; and share the best time for onboarding.
+            <strong>Ready to get started?</strong> Reply &ldquo;YES&rdquo; and share the best time to map your missed-call and follow-up workflow.
           </Text>
 
           <Text style={text}>

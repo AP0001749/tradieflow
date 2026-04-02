@@ -102,14 +102,15 @@ export function BookingRequestForm({
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <Card className="glass-card max-w-md w-full">
           <CardHeader>
-            <CardTitle className="text-2xl text-center">Request Received!</CardTitle>
+            <CardTitle className="text-2xl text-center">Demo Request Received</CardTitle>
             <CardDescription className="text-center">
-              Thanks for contacting {businessName}. We&apos;ll reach out within 24 hours.
+              Thanks for contacting {businessName}. The team will reach out shortly with
+              next steps for your Zero-Leak Funnel walkthrough.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-sm text-muted-foreground">
-              Check your email for the next steps.
+              Keep an eye on your phone and email for the follow-up.
             </p>
           </CardContent>
         </Card>
@@ -120,9 +121,10 @@ export function BookingRequestForm({
   return (
     <Card className="glass-card w-full">
       <CardHeader className="space-y-2">
-        <CardTitle className="text-2xl">Request setup for your cleaning business</CardTitle>
+        <CardTitle className="text-2xl">Request a Zero-Leak Funnel demo</CardTitle>
         <CardDescription>
-          Tell {businessName} a few details and they&apos;ll get back to you shortly.
+          Tell {businessName} where calls and quotes are slipping through the cracks, and
+          they&apos;ll show you how TradieFlow can tighten the workflow.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -144,7 +146,7 @@ export function BookingRequestForm({
                 id="business_name"
                 name="business_name"
                 required
-                placeholder="e.g. Bright Clean Co"
+                placeholder="e.g. Western Climate Air"
               />
             </div>
             <div className="space-y-2">
@@ -179,36 +181,35 @@ export function BookingRequestForm({
                 id="service_area"
                 name="service_area"
                 required
-                placeholder="e.g. Tarneit, Point Cook, Werribee"
+                placeholder="e.g. Tarneit, Point Cook, Werribee, Geelong"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="abn">ABN (optional)</Label>
               <Input id="abn" name="abn" placeholder="11 digits" />
               <p className="text-xs text-muted-foreground">
-                Include your ABN so we can prefill your first invoice without chasing
-                paperwork.
+                Include your ABN so your workspace and invoice settings can be prefilled.
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="service_type">Cleaning service type *</Label>
+              <Label htmlFor="service_type">Primary trade *</Label>
               <Select id="service_type" name="service_type" required>
-                <option value="">Select service</option>
-                <option value="residential">Residential cleaning</option>
-                <option value="end_of_lease">End of lease / bond cleaning</option>
-                <option value="commercial">Commercial / office cleaning</option>
-                <option value="airbnb">Airbnb / short-stay</option>
-                <option value="mixed">Mixed services</option>
+                <option value="">Select trade</option>
+                <option value="hvac_service">HVAC service & breakdowns</option>
+                <option value="hvac_install">Heating / cooling installs</option>
+                <option value="emergency_plumbing">Emergency plumbing</option>
+                <option value="electrical">Electrical & switchboards</option>
+                <option value="mixed_trade">Mixed trade services</option>
               </Select>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes">Anything we should know? (optional)</Label>
+            <Label htmlFor="notes">Biggest call leak or follow-up issue? (optional)</Label>
             <Textarea
               id="notes"
               name="notes"
-              placeholder="Small teams, current tools, or what you want automated"
+              placeholder="Missed after-hours calls, quote delays, dispatch bottlenecks, or review follow-up gaps"
               rows={4}
             />
           </div>
@@ -220,11 +221,12 @@ export function BookingRequestForm({
           )}
 
           <Button type="submit" className="primary-btn w-full" disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Request Setup Demo"}
+            {isSubmitting ? "Submitting..." : "Request Zero-Leak Demo"}
           </Button>
 
           <p className="form-note text-center">
-            We&apos;ll set up your TradieFlow workspace and get you running in minutes.
+            We&apos;ll map the new workflow around missed calls, quote follow-up, and paid
+            review requests.
             <br />
             By submitting, you agree to be contacted about your TradieFlow account.
           </p>

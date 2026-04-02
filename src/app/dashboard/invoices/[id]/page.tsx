@@ -1,11 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BackButton } from "@/components/back-button";
 import { InvoiceWithJobClient, InvoiceStatus } from "@/types";
-import { markAsPaid } from "../actions";
+import { markAsPaid, toggleReviewRequestSent } from "../actions";
 import { PrintButton } from "./print-button";
 import { SendEmailButton } from "./send-email-button";
+import {
+  formatAutomationTimestamp,
+  getAutomationDueAt,
+  isAutomationDue,
+} from "@/lib/zero-leak";
 
 const statusConfig: Record<
   InvoiceStatus,
@@ -52,6 +58,8 @@ export default async function InvoiceViewPage({
         status,
         due_date,
         notes,
+        paid_at,
+        review_request_sent_at,
         created_at,
         updated_at,
         job:job_id (
@@ -84,6 +92,11 @@ export default async function InvoiceViewPage({
     .select("business_name, full_name, email, phone")
     .eq("user_id", user.id)
     .maybeSingle();
+  const { data: businessProfile } = await supabase
+    .from("business_profile")
+    .select("review_request_enabled, review_request_delay_hours, google_review_url")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
   const businessName =
     profile?.business_name || profile?.full_name || "TradieFlow";
@@ -95,6 +108,17 @@ export default async function InvoiceViewPage({
     : "--";
 
   const status = statusConfig[invoice.status] ?? statusConfig.unpaid;
+  const paymentLogged = invoice.status === "paid" || Boolean(invoice.paid_at);
+  const reviewWorkflowReady =
+    Boolean(businessProfile?.review_request_enabled) &&
+    Boolean(businessProfile?.google_review_url?.trim());
+  const reviewDelayHours = businessProfile?.review_request_delay_hours ?? 24;
+  const reviewDueAt = getAutomationDueAt(invoice.paid_at, reviewDelayHours);
+  const reviewIsDue = isAutomationDue(reviewDueAt);
+  const toggleReviewRequestSentAction = async () => {
+    "use server";
+    await toggleReviewRequestSent(invoice.id);
+  };
 
   return (
     <div className="space-y-4">
@@ -117,6 +141,105 @@ export default async function InvoiceViewPage({
           </form>
         </div>
       </div>
+
+      <Card
+        className="shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700"
+        style={{ animationDelay: "100ms", animationFillMode: "backwards" }}
+        data-print-hidden="true"
+      >
+        <CardHeader>
+          <CardTitle>Review Automation</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-border/70 bg-muted/30 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">Payment Logged</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Used to start the review request timer.
+                  </p>
+                </div>
+                <Badge variant={paymentLogged ? "completed" : "outline"}>
+                  {paymentLogged ? "Logged" : "Open"}
+                </Badge>
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                {paymentLogged
+                  ? invoice.paid_at
+                    ? formatAutomationTimestamp(invoice.paid_at)
+                    : "Marked paid before automation tracking was added"
+                  : "Not logged"}
+              </p>
+
+              <p className="text-xs text-muted-foreground">
+                Toggle payment from the toolbar above to arm or disarm the review queue.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border/70 bg-muted/30 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">Review Request</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Manual log for the SMS or email that asks for a Google review.
+                  </p>
+                </div>
+                <Badge
+                  variant={
+                    invoice.review_request_sent_at
+                      ? "completed"
+                      : !paymentLogged
+                        ? "outline"
+                      : reviewIsDue
+                        ? "destructive"
+                        : "outline"
+                  }
+                >
+                  {invoice.review_request_sent_at
+                    ? "Logged"
+                    : !paymentLogged
+                      ? "Waiting"
+                      : reviewIsDue
+                      ? "Due"
+                      : "Queued"}
+                </Badge>
+              </div>
+
+              <div className="space-y-1 text-sm text-muted-foreground">
+                <p>{formatAutomationTimestamp(invoice.review_request_sent_at)}</p>
+                {paymentLogged ? (
+                  <p>
+                    {reviewWorkflowReady && reviewDueAt
+                      ? `Queue target: ${formatAutomationTimestamp(reviewDueAt)}`
+                      : reviewWorkflowReady
+                        ? "Payment is marked paid, but the paid timestamp needs to be refreshed to start the review timer."
+                      : businessProfile?.review_request_enabled
+                        ? "Add a Google review URL in settings to fully arm this workflow."
+                        : `Workflow disabled in settings. Current timer remains ${reviewDelayHours} hours.`}
+                  </p>
+                ) : (
+                  <p>Mark the invoice as paid first to arm the review queue.</p>
+                )}
+              </div>
+
+              <form action={toggleReviewRequestSentAction}>
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant={invoice.review_request_sent_at ? "outline" : "default"}
+                  disabled={!paymentLogged}
+                >
+                  {invoice.review_request_sent_at
+                    ? "Clear Review Timestamp"
+                    : "Mark Review Request Sent"}
+                </Button>
+              </form>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* A4 Paper */}
       <div

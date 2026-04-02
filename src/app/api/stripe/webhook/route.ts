@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { headers } from "next/headers";
+import {
+  getPlanKeyForPriceId,
+  getEffectiveSubscriptionPlanKey,
+  normalizePlanKey,
+} from "@/lib/pricing";
 import { getStripeServer } from "@/utils/stripe/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import Stripe from "stripe";
@@ -8,17 +13,50 @@ import Stripe from "stripe";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+function isMissingSubscriptionPlanKeyColumnError(error: unknown) {
+  if (!error || typeof error !== "object" || !("message" in error)) {
+    return false;
+  }
+
+  return String(error.message).includes("subscription_plan_key");
+}
+
+function getPlanKeyFromSubscription(subscription: Stripe.Subscription) {
+  const activePriceId = subscription.items.data[0]?.price?.id;
+  return (
+    getPlanKeyForPriceId(activePriceId) ??
+    normalizePlanKey(subscription.metadata?.planKey)
+  );
+}
+
 async function updateProfileByUserId(
   supabaseAdmin: ReturnType<typeof createAdminClient>,
   userId: string,
   update: Record<string, unknown>
 ) {
-  const { data: updatedProfile, error: updateError } = await supabaseAdmin
-    .from("profiles")
-    .update(update)
-    .eq("user_id", userId)
-    .select("user_id")
-    .maybeSingle();
+  const runUpdate = async (payload: Record<string, unknown>) =>
+    supabaseAdmin
+      .from("profiles")
+      .update(payload)
+      .eq("user_id", userId)
+      .select("user_id")
+      .maybeSingle();
+
+  let { data: updatedProfile, error: updateError } = await runUpdate(update);
+
+  if (
+    updateError &&
+    "subscription_plan_key" in update &&
+    isMissingSubscriptionPlanKeyColumnError(updateError)
+  ) {
+    console.warn(
+      "profiles.subscription_plan_key is missing; retrying webhook profile update without plan key.",
+    );
+
+    const legacyUpdate = { ...update };
+    delete legacyUpdate.subscription_plan_key;
+    ({ data: updatedProfile, error: updateError } = await runUpdate(legacyUpdate));
+  }
 
   if (updateError) {
     return { error: updateError, updatedProfile: null };
@@ -77,10 +115,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
+    // Claim the event BEFORE processing so that any Stripe retry hits the
+    // idempotency check above and returns 200 without reprocessing.
+    // Profile/subscription updates are idempotent, but stripe_events acts as
+    // the authoritative guard against double-execution.
+    const { error: claimError } = await supabaseAdmin
+      .from("stripe_events")
+      .insert({ id: event.id, event_type: event.type });
+
+    if (claimError && claimError.code !== "23505") {
+      console.error("Failed to claim Stripe event:", claimError);
+      return NextResponse.json({ error: "Webhook event claim failed" }, { status: 500 });
+    }
+
+    // Duplicate delivery: another worker already claimed this event.
+    if (claimError?.code === "23505") {
+      return NextResponse.json({ received: true });
+    }
+
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session?.metadata?.userId as string | undefined;
+        const userId =
+          (session?.metadata?.userId as string | undefined) ||
+          (typeof session?.client_reference_id === "string"
+            ? session.client_reference_id
+            : undefined);
         const customerId =
           typeof session?.customer === "string" ? (session.customer as string) : undefined;
         const subscriptionId =
@@ -93,8 +153,10 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: "Missing userId in metadata" }, { status: 400 });
         }
 
+        const planKey = normalizePlanKey(session?.metadata?.planKey);
         const update: Record<string, unknown> = {
           subscription_tier: "pro",
+          subscription_plan_key: planKey,
           subscription_status: "active",
         };
 
@@ -144,16 +206,30 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: "DB lookup failed" }, { status: 500 });
         }
 
-        if (!profile) {
+        const metadataUserId =
+          typeof subscription.metadata?.userId === "string"
+            ? subscription.metadata.userId
+            : undefined;
+        const resolvedUserId = (profile as { user_id?: string } | null)?.user_id ?? metadataUserId;
+
+        if (!resolvedUserId) {
           console.error("No profile found for customer:", customerId);
           return NextResponse.json({ received: true });
         }
 
         const isActive = subscription.status === "active" || subscription.status === "trialing" || subscription.status === "past_due";
+        const planKey = getPlanKeyFromSubscription(subscription);
+        const effectivePlanKey = getEffectiveSubscriptionPlanKey({
+          subscriptionPlanKey: planKey,
+          subscriptionTier: isActive ? "pro" : "free",
+          subscriptionStatus: subscription.status,
+        });
 
         const update: Record<string, unknown> = {
           subscription_tier: isActive ? "pro" : "free",
+          subscription_plan_key: effectivePlanKey,
           subscription_status: subscription.status,
+          stripe_customer_id: customerId,
           stripe_subscription_id: subscription.id,
         };
 
@@ -170,7 +246,7 @@ export async function POST(request: Request) {
 
         const { error: updateError } = await updateProfileByUserId(
           supabaseAdmin,
-          (profile as { user_id: string }).user_id,
+          resolvedUserId,
           update
         );
 
@@ -205,7 +281,13 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: "DB lookup failed" }, { status: 500 });
         }
 
-        if (!profile) {
+        const metadataUserId =
+          typeof subscription.metadata?.userId === "string"
+            ? subscription.metadata.userId
+            : undefined;
+        const resolvedUserId = (profile as { user_id?: string } | null)?.user_id ?? metadataUserId;
+
+        if (!resolvedUserId) {
           console.error("No profile found for customer:", customerId);
           return NextResponse.json({ received: true });
         }
@@ -213,10 +295,12 @@ export async function POST(request: Request) {
         // Downgrade to free tier when subscription is deleted
         const { error: updateError } = await updateProfileByUserId(
           supabaseAdmin,
-          (profile as { user_id: string }).user_id,
+          resolvedUserId,
           {
             subscription_tier: "free",
+            subscription_plan_key: "free",
             subscription_status: "canceled",
+            stripe_customer_id: customerId,
             subscription_end_date: new Date().toISOString(),
           }
         );
@@ -230,18 +314,6 @@ export async function POST(request: Request) {
 
       default:
         console.log(`Unhandled event type: ${event.type}`);
-    }
-
-    const { error: eventInsertError } = await supabaseAdmin
-      .from("stripe_events")
-      .insert({
-        id: event.id,
-        event_type: event.type,
-      });
-
-    if (eventInsertError && eventInsertError.code !== "23505") {
-      console.error("Failed to persist Stripe event:", eventInsertError);
-      return NextResponse.json({ error: "Webhook event persistence failed" }, { status: 500 });
     }
 
     return NextResponse.json({ received: true });
