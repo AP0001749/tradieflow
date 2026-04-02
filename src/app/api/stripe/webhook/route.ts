@@ -13,6 +13,16 @@ import Stripe from "stripe";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const TERMINAL_WEBHOOK_STATUSES = new Set(["processed", "ignored"]);
+
+type StripeEventLog = {
+  delivery_count: number | null;
+  id: string;
+  status: string | null;
+};
+
+type StripeEventOutcomeStatus = "processed" | "failed" | "ignored";
+
 function isMissingSubscriptionPlanKeyColumnError(error: unknown) {
   if (!error || typeof error !== "object" || !("message" in error)) {
     return false;
@@ -27,6 +37,57 @@ function getPlanKeyFromSubscription(subscription: Stripe.Subscription) {
     getPlanKeyForPriceId(activePriceId) ??
     normalizePlanKey(subscription.metadata?.planKey)
   );
+}
+
+function getWebhookDiagnostic(error: unknown) {
+  if (error instanceof Error) {
+    const details = error.stack || error.message;
+    return details.slice(0, 2000);
+  }
+
+  if (typeof error === "string") {
+    return error.slice(0, 2000);
+  }
+
+  try {
+    return JSON.stringify(error).slice(0, 2000);
+  } catch {
+    return "Unknown webhook error";
+  }
+}
+
+function getStripeObjectId(event: Stripe.Event) {
+  const object = event.data.object as { id?: unknown } | undefined;
+  return typeof object?.id === "string" ? object.id : null;
+}
+
+async function recordStripeEventOutcome(
+  supabaseAdmin: ReturnType<typeof createAdminClient>,
+  event: Stripe.Event,
+  existingEvent: StripeEventLog | null,
+  status: StripeEventOutcomeStatus,
+  details: string | null = null
+) {
+  const now = new Date().toISOString();
+  const { error } = await supabaseAdmin
+    .from("stripe_events")
+    .upsert(
+      {
+        id: event.id,
+        event_type: event.type,
+        object_id: getStripeObjectId(event),
+        status,
+        processed_at: status === "failed" ? null : now,
+        last_delivery_at: now,
+        delivery_count: Math.max(existingEvent?.delivery_count ?? 0, 0) + 1,
+        last_error: details,
+      },
+      { onConflict: "id" }
+    );
+
+  if (error) {
+    throw error;
+  }
 }
 
 async function updateProfileByUserId(
@@ -72,6 +133,46 @@ async function updateProfileByUserId(
   return { error: null, updatedProfile };
 }
 
+async function resolveProfileUserIdForSubscriptionEvent(
+  supabaseAdmin: ReturnType<typeof createAdminClient>,
+  customerId: string | undefined,
+  subscriptionId: string,
+  metadataUserId: string | undefined
+) {
+  if (customerId) {
+    const { data: customerProfile, error: customerLookupError } = await supabaseAdmin
+      .from("profiles")
+      .select("user_id")
+      .eq("stripe_customer_id", customerId)
+      .maybeSingle();
+
+    if (customerLookupError) {
+      throw new Error(
+        `Failed to look up profile by customer ID ${customerId}: ${getWebhookDiagnostic(customerLookupError)}`
+      );
+    }
+
+    const resolvedCustomerUserId = (customerProfile as { user_id?: string } | null)?.user_id;
+    if (resolvedCustomerUserId) {
+      return resolvedCustomerUserId;
+    }
+  }
+
+  const { data: subscriptionProfile, error: subscriptionLookupError } = await supabaseAdmin
+    .from("profiles")
+    .select("user_id")
+    .eq("stripe_subscription_id", subscriptionId)
+    .maybeSingle();
+
+  if (subscriptionLookupError) {
+    throw new Error(
+      `Failed to look up profile by subscription ID ${subscriptionId}: ${getWebhookDiagnostic(subscriptionLookupError)}`
+    );
+  }
+
+  return (subscriptionProfile as { user_id?: string } | null)?.user_id ?? metadataUserId ?? null;
+}
+
 export async function POST(request: Request) {
   const stripe = getStripeServer();
   const supabaseAdmin = createAdminClient();
@@ -99,10 +200,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
+  let existingEvent: StripeEventLog | null = null;
+
   try {
-    const { data: existingEvent, error: existingEventError } = await supabaseAdmin
+    const { data: existingEventRow, error: existingEventError } = await supabaseAdmin
       .from("stripe_events")
-      .select("id")
+      .select("id, status, delivery_count")
       .eq("id", event.id)
       .maybeSingle();
 
@@ -111,27 +214,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Webhook event lookup failed" }, { status: 500 });
     }
 
-    if (existingEvent) {
+    existingEvent = existingEventRow as StripeEventLog | null;
+
+    if (existingEvent && TERMINAL_WEBHOOK_STATUSES.has(existingEvent.status ?? "")) {
       return NextResponse.json({ received: true });
     }
 
-    // Claim the event BEFORE processing so that any Stripe retry hits the
-    // idempotency check above and returns 200 without reprocessing.
-    // Profile/subscription updates are idempotent, but stripe_events acts as
-    // the authoritative guard against double-execution.
-    const { error: claimError } = await supabaseAdmin
-      .from("stripe_events")
-      .insert({ id: event.id, event_type: event.type });
-
-    if (claimError && claimError.code !== "23505") {
-      console.error("Failed to claim Stripe event:", claimError);
-      return NextResponse.json({ error: "Webhook event claim failed" }, { status: 500 });
-    }
-
-    // Duplicate delivery: another worker already claimed this event.
-    if (claimError?.code === "23505") {
-      return NextResponse.json({ received: true });
-    }
+    let outcomeStatus: StripeEventOutcomeStatus = "processed";
+    let outcomeDetails: string | null = null;
 
     switch (event.type) {
       case "checkout.session.completed": {
@@ -149,8 +239,10 @@ export async function POST(request: Request) {
             : undefined;
 
         if (!userId) {
-          console.error("checkout.session.completed missing metadata.userId");
-          return NextResponse.json({ error: "Missing userId in metadata" }, { status: 400 });
+          outcomeStatus = "ignored";
+          outcomeDetails =
+            "checkout.session.completed missing metadata.userId and client_reference_id";
+          break;
         }
 
         const planKey = normalizePlanKey(session?.metadata?.planKey);
@@ -175,8 +267,9 @@ export async function POST(request: Request) {
         );
 
         if (updateError) {
-          console.error("Error updating profile after checkout:", updateError);
-          return NextResponse.json({ error: "DB update failed" }, { status: 500 });
+          throw new Error(
+            `Failed to update checkout profile for user ${userId}: ${getWebhookDiagnostic(updateError)}`
+          );
         }
         break;
       }
@@ -189,32 +282,21 @@ export async function POST(request: Request) {
             ? (subscription.customer as string)
             : undefined;
 
-        if (!customerId) {
-          console.error("Subscription event missing customer ID");
-          return NextResponse.json({ received: true });
-        }
-
-        // Find user by stripe_customer_id
-        const { data: profile, error: profileLookupError } = await supabaseAdmin
-          .from("profiles")
-          .select("user_id")
-          .eq("stripe_customer_id", customerId)
-          .maybeSingle();
-
-        if (profileLookupError) {
-          console.error("Error looking up profile by customer ID:", profileLookupError);
-          return NextResponse.json({ error: "DB lookup failed" }, { status: 500 });
-        }
-
         const metadataUserId =
           typeof subscription.metadata?.userId === "string"
             ? subscription.metadata.userId
             : undefined;
-        const resolvedUserId = (profile as { user_id?: string } | null)?.user_id ?? metadataUserId;
+        const resolvedUserId = await resolveProfileUserIdForSubscriptionEvent(
+          supabaseAdmin,
+          customerId,
+          subscription.id,
+          metadataUserId
+        );
 
         if (!resolvedUserId) {
-          console.error("No profile found for customer:", customerId);
-          return NextResponse.json({ received: true });
+          outcomeStatus = "ignored";
+          outcomeDetails = `No profile found for subscription event ${event.type} (customer ${customerId ?? "unknown"}, subscription ${subscription.id})`;
+          break;
         }
 
         const isActive = subscription.status === "active" || subscription.status === "trialing" || subscription.status === "past_due";
@@ -229,9 +311,12 @@ export async function POST(request: Request) {
           subscription_tier: isActive ? "pro" : "free",
           subscription_plan_key: effectivePlanKey,
           subscription_status: subscription.status,
-          stripe_customer_id: customerId,
           stripe_subscription_id: subscription.id,
         };
+
+        if (customerId) {
+          update.stripe_customer_id = customerId;
+        }
 
         // Add period dates - Stripe timestamps are in seconds
         const periodStart = (subscription as unknown as Record<string, unknown>).current_period_start as number | undefined;
@@ -251,8 +336,9 @@ export async function POST(request: Request) {
         );
 
         if (updateError) {
-          console.error("Error updating subscription:", updateError);
-          return NextResponse.json({ error: "DB update failed" }, { status: 500 });
+          throw new Error(
+            `Failed to update subscription ${subscription.id}: ${getWebhookDiagnostic(updateError)}`
+          );
         }
         break;
       }
@@ -264,32 +350,21 @@ export async function POST(request: Request) {
             ? (subscription.customer as string)
             : undefined;
 
-        if (!customerId) {
-          console.error("Subscription deleted event missing customer ID");
-          return NextResponse.json({ received: true });
-        }
-
-        // Find user by stripe_customer_id
-        const { data: profile, error: profileLookupError } = await supabaseAdmin
-          .from("profiles")
-          .select("user_id")
-          .eq("stripe_customer_id", customerId)
-          .maybeSingle();
-
-        if (profileLookupError) {
-          console.error("Error looking up profile for deleted subscription:", profileLookupError);
-          return NextResponse.json({ error: "DB lookup failed" }, { status: 500 });
-        }
-
         const metadataUserId =
           typeof subscription.metadata?.userId === "string"
             ? subscription.metadata.userId
             : undefined;
-        const resolvedUserId = (profile as { user_id?: string } | null)?.user_id ?? metadataUserId;
+        const resolvedUserId = await resolveProfileUserIdForSubscriptionEvent(
+          supabaseAdmin,
+          customerId,
+          subscription.id,
+          metadataUserId
+        );
 
         if (!resolvedUserId) {
-          console.error("No profile found for customer:", customerId);
-          return NextResponse.json({ received: true });
+          outcomeStatus = "ignored";
+          outcomeDetails = `No profile found for deleted subscription ${subscription.id} (customer ${customerId ?? "unknown"})`;
+          break;
         }
 
         // Downgrade to free tier when subscription is deleted
@@ -301,23 +376,50 @@ export async function POST(request: Request) {
             subscription_plan_key: "free",
             subscription_status: "canceled",
             stripe_customer_id: customerId,
+            stripe_subscription_id: subscription.id,
             subscription_end_date: new Date().toISOString(),
           }
         );
 
         if (updateError) {
-          console.error("Error downgrading subscription:", updateError);
-          return NextResponse.json({ error: "DB update failed" }, { status: 500 });
+          throw new Error(
+            `Failed to downgrade subscription ${subscription.id}: ${getWebhookDiagnostic(updateError)}`
+          );
         }
         break;
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        outcomeStatus = "ignored";
+        outcomeDetails = `Unhandled event type: ${event.type}`;
+    }
+
+    await recordStripeEventOutcome(
+      supabaseAdmin,
+      event,
+      existingEvent,
+      outcomeStatus,
+      outcomeDetails
+    );
+
+    if (outcomeStatus === "ignored" && outcomeDetails) {
+      console.warn(outcomeDetails);
     }
 
     return NextResponse.json({ received: true });
   } catch (error) {
+    try {
+      await recordStripeEventOutcome(
+        supabaseAdmin,
+        event,
+        existingEvent,
+        "failed",
+        getWebhookDiagnostic(error)
+      );
+    } catch (eventLogError) {
+      console.error("Failed to persist Stripe event failure:", eventLogError);
+    }
+
     console.error("Webhook handler error:", error);
     return NextResponse.json({ error: "Webhook handler failed" }, { status: 500 });
   }

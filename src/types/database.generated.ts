@@ -376,19 +376,34 @@ export type Database = {
       }
       stripe_events: {
         Row: {
+          delivery_count: number
           event_type: string
           id: string
-          processed_at: string
+          last_delivery_at: string
+          last_error: string | null
+          object_id: string | null
+          processed_at: string | null
+          status: string
         }
         Insert: {
+          delivery_count?: number
           event_type: string
           id: string
-          processed_at?: string
+          last_delivery_at?: string
+          last_error?: string | null
+          object_id?: string | null
+          processed_at?: string | null
+          status?: string
         }
         Update: {
+          delivery_count?: number
           event_type?: string
           id?: string
-          processed_at?: string
+          last_delivery_at?: string
+          last_error?: string | null
+          object_id?: string | null
+          processed_at?: string | null
+          status?: string
         }
         Relationships: []
       }
