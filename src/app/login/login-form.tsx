@@ -134,7 +134,7 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
             Welcome to TradieFlow
           </CardTitle>
           <CardDescription className="text-muted-foreground text-sm pt-1">
-            Recover missed calls, send invoices, and manage urgent trade work in one place
+            Recover missed calls, run quote follow-up, and manage urgent trade work in one place
           </CardDescription>
         </CardHeader>
 
@@ -196,7 +196,7 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
           </form>
 
           <p className="text-center text-xs text-muted-foreground">
-            One click to sign in. Start capturing emergency leads and invoicing immediately.
+            One click to sign in. Start capturing emergency leads, dispatch-ready workflows, and invoicing immediately.
           </p>
 
           <div className="relative py-3">

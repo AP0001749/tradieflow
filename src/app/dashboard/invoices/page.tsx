@@ -37,7 +37,11 @@ function formatMoney(amount: number) {
   }).format(amount);
 }
 
-export default async function InvoicesPage() {
+export default async function InvoicesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ job?: string; create?: string }>;
+}) {
   const supabase = await createClient();
 
   const {
@@ -94,6 +98,7 @@ export default async function InvoicesPage() {
   }
 
   const rows: InvoiceWithJobClient[] = invoices || [];
+  const params = searchParams ? await searchParams : undefined;
   const subscription = await checkSubscriptionLimits();
   const invoiceLimit = getResourceLimit(subscription.limits, "invoices");
   const hasReachedFreeTierLimit =
@@ -118,7 +123,11 @@ export default async function InvoicesPage() {
           </p>
         </div>
         <div className="shrink-0">
-          <CreateInvoiceDialog disabledReason={createDisabledReason} />
+          <CreateInvoiceDialog
+            disabledReason={createDisabledReason}
+            initialJobId={params?.job ?? null}
+            initialOpen={params?.create === "1"}
+          />
         </div>
       </div>
 

@@ -1,13 +1,24 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DispatchProfileCard } from "@/components/dashboard/dispatch-profile-card";
+import { DispatchBoard } from "@/components/dashboard/dispatch-board";
+import { CrewLoadboard } from "@/components/dashboard/crew-loadboard";
+import { EmergencyLeadQueue } from "@/components/dashboard/emergency-lead-queue";
 import { DollarSign, Users, Briefcase, TrendingUp } from "lucide-react";
+import { GoLiveChecklist } from "@/components/dashboard/go-live-checklist";
 import { RevenueChart } from "@/components/revenue-chart";
 import { ZeroLeakQueue } from "@/components/dashboard/zero-leak-queue";
+import { hasDispatchProfile } from "@/lib/dispatch-profile";
 import {
   formatAutomationTimestamp,
   getAutomationDueAt,
   isAutomationDue,
 } from "@/lib/zero-leak";
+import {
+  getEffectiveSubscriptionPlanKey,
+  hasApexAutomationAccess,
+  hasBaselineAutomationAccess,
+} from "@/lib/pricing";
 
 interface MonthlyRevenue {
   name: string;
@@ -48,6 +59,48 @@ type QueueInvoice = {
   } | null;
 };
 
+type DispatchBoardJob = {
+  id: string;
+  title: string;
+  status: string | null;
+  start_date: string | null;
+  dispatch_check_in_status: string | null;
+  dispatch_eta_note: string | null;
+  dispatch_last_checked_in_at: string | null;
+  dispatch_last_known_location: string | null;
+  dispatch_geo_latitude: number | null;
+  dispatch_geo_longitude: number | null;
+  dispatch_geo_accuracy_meters: number | null;
+  dispatch_geo_captured_at: string | null;
+  dispatch_sequence: number | null;
+  dispatch_priority: string | null;
+  service_window: string | null;
+  assigned_technician: string | null;
+  trade_vertical: string | null;
+  clients: {
+    name: string | null;
+    address: string | null;
+  } | null;
+};
+
+type DashboardEmergencyLead = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  suburb: string | null;
+  postcode: string | null;
+  job_type: string | null;
+  lead_urgency: string | null;
+  response_due_at: string | null;
+  triage_problem: string | null;
+  triage_safety_risk: boolean | null;
+  status: string | null;
+  first_responded_at: string | null;
+  last_contacted_at: string | null;
+  created_at: string | null;
+};
+
 export default async function DashboardPage() {
   const supabase = await createClient();
   const {
@@ -61,12 +114,16 @@ export default async function DashboardPage() {
   // Fetch all data in parallel
   const [
     clientsResult,
-    jobsResult,
+    activeJobsResult,
+    leadsResult,
+    allJobsResult,
     invoicesResult,
     recentSalesResult,
     businessProfileResult,
+    subscriptionProfileResult,
     quoteQueueResult,
     reviewQueueResult,
+    dispatchBoardResult,
   ] = await Promise.all([
     // Total clients count
     supabase.from("clients").select("*", { count: "exact", head: true }).eq("user_id", user.id),
@@ -77,6 +134,10 @@ export default async function DashboardPage() {
       .select("*", { count: "exact", head: true })
       .eq("user_id", user.id)
       .eq("status", "in_progress"),
+
+    supabase.from("leads").select("*", { count: "exact", head: true }).eq("user_id", user.id),
+
+    supabase.from("jobs").select("*", { count: "exact", head: true }).eq("user_id", user.id),
     
     // All invoices for revenue, chart, and sales count calculation
     supabase
@@ -108,7 +169,13 @@ export default async function DashboardPage() {
 
     supabase
       .from("business_profile")
-      .select("quote_followup_enabled, quote_followup_delay_hours, review_request_enabled, review_request_delay_hours, google_review_url")
+      .select("id, booking_url_slug, primary_trade_focus, service_area_postcodes, default_job_types, team_size, after_hours_coverage, dispatch_radius, dispatch_roster, missed_call_text_enabled, missed_call_forwarding_number, twilio_phone_number, quote_followup_enabled, quote_followup_delay_hours, review_request_enabled, review_request_delay_hours, google_review_url")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+
+    supabase
+      .from("profiles")
+      .select("subscription_tier, subscription_plan_key, subscription_status")
       .eq("user_id", user.id)
       .maybeSingle(),
 
@@ -126,6 +193,7 @@ export default async function DashboardPage() {
       .eq("user_id", user.id)
       .not("quote_sent_at", "is", null)
       .is("quote_followup_sent_at", null)
+      .eq("quote_followup_processing", false)
       .order("quote_sent_at", { ascending: true })
       .limit(6),
 
@@ -146,8 +214,39 @@ export default async function DashboardPage() {
       .eq("user_id", user.id)
       .not("paid_at", "is", null)
       .is("review_request_sent_at", null)
+      .eq("review_request_processing", false)
       .order("paid_at", { ascending: true })
       .limit(6),
+
+    supabase
+      .from("jobs")
+      .select(`
+        id,
+        title,
+        status,
+        start_date,
+        dispatch_check_in_status,
+        dispatch_eta_note,
+        dispatch_last_checked_in_at,
+        dispatch_last_known_location,
+        dispatch_geo_latitude,
+        dispatch_geo_longitude,
+        dispatch_geo_accuracy_meters,
+        dispatch_geo_captured_at,
+        dispatch_sequence,
+        dispatch_priority,
+        service_window,
+        assigned_technician,
+        trade_vertical,
+        clients:client_id (
+          name,
+          address
+        )
+      `)
+      .eq("user_id", user.id)
+      .not("status", "in", '("completed","cancelled")')
+      .order("start_date", { ascending: true })
+      .limit(12),
   ]);
 
   // Calculate total revenue from paid invoices only
@@ -198,7 +297,7 @@ export default async function DashboardPage() {
     },
     {
       title: "Active Jobs",
-      value: jobsResult.count || 0,
+      value: activeJobsResult.count || 0,
       icon: Briefcase,
       change: "",
       changeType: "neutral" as const,
@@ -214,14 +313,67 @@ export default async function DashboardPage() {
 
   const recentSales = (recentSalesResult.data || []) as unknown as RecentSale[];
   const businessProfile = businessProfileResult.data;
+  const subscriptionProfile = subscriptionProfileResult.data;
+  const subscriptionPlanKey = getEffectiveSubscriptionPlanKey({
+    subscriptionPlanKey: subscriptionProfile?.subscription_plan_key,
+    subscriptionTier: subscriptionProfile?.subscription_tier,
+    subscriptionStatus: subscriptionProfile?.subscription_status,
+  });
+  const canUseBaselineAutomations = hasBaselineAutomationAccess(subscriptionPlanKey);
+  const canUseApexAutomations = hasApexAutomationAccess(subscriptionPlanKey);
+  const emergencyLeadsResult = businessProfile?.id
+    ? await supabase
+        .from("leads")
+        .select(`
+          id,
+          name,
+          email,
+          phone,
+          suburb,
+          postcode,
+          job_type,
+          lead_urgency,
+          response_due_at,
+          triage_problem,
+          triage_safety_risk,
+          status,
+          first_responded_at,
+          last_contacted_at,
+          created_at
+        `)
+        .eq("business_id", businessProfile.id)
+        .not("status", "in", '("won","lost","stale")')
+        .order("response_due_at", { ascending: true })
+        .limit(12)
+    : { data: [] };
+  const leadCount = leadsResult.count || 0;
+  const allJobsCount = allJobsResult.count || 0;
+  const serviceAreaCount = businessProfile?.service_area_postcodes?.length ?? 0;
+  const defaultJobTypeCount = businessProfile?.default_job_types?.length ?? 0;
+  const dispatchProfileReady = hasDispatchProfile({
+    team_size: businessProfile?.team_size,
+    after_hours_coverage: businessProfile?.after_hours_coverage,
+    dispatch_radius: businessProfile?.dispatch_radius,
+  });
+  const missedCallReady =
+    canUseBaselineAutomations &&
+    Boolean(businessProfile?.missed_call_text_enabled) &&
+    Boolean(businessProfile?.missed_call_forwarding_number?.trim()) &&
+    Boolean(businessProfile?.twilio_phone_number?.trim());
   const quoteFollowupDelayHours = businessProfile?.quote_followup_delay_hours ?? 48;
   const reviewRequestDelayHours = businessProfile?.review_request_delay_hours ?? 24;
-  const quoteFollowupEnabled = Boolean(businessProfile?.quote_followup_enabled);
+  const quoteFollowupEnabled =
+    canUseApexAutomations && Boolean(businessProfile?.quote_followup_enabled);
   const reviewRequestEnabled =
+    canUseApexAutomations &&
     Boolean(businessProfile?.review_request_enabled) &&
     Boolean(businessProfile?.google_review_url?.trim());
   const quoteQueue = (quoteQueueResult.data || []) as unknown as QueueJob[];
   const reviewQueue = (reviewQueueResult.data || []) as unknown as QueueInvoice[];
+  const dispatchBoardJobs =
+    (dispatchBoardResult.data || []) as unknown as DispatchBoardJob[];
+  const emergencyLeads =
+    (emergencyLeadsResult.data || []) as unknown as DashboardEmergencyLead[];
 
   const quoteItems = quoteQueue.map((job) => {
     const dueAt = getAutomationDueAt(job.quote_sent_at, quoteFollowupDelayHours);
@@ -249,13 +401,125 @@ export default async function DashboardPage() {
 
   const quoteDueNow = quoteItems.filter((item) => item.isDue).length;
   const reviewDueNow = reviewItems.filter((item) => item.isDue).length;
+  const outreachReady =
+    Boolean(businessProfile?.booking_url_slug) &&
+    serviceAreaCount > 0 &&
+    defaultJobTypeCount > 0 &&
+    (missedCallReady || quoteFollowupEnabled || reviewRequestEnabled);
+  const goLiveChecklistItems = [
+    {
+      id: "public-link",
+      title: "Publish your public lead link",
+      description: businessProfile?.booking_url_slug
+        ? "Your dispatch-audit intake link is ready to share from ads, your website, or QR handouts."
+        : "Create the public intake link so dispatch-audit requests land in the right workspace.",
+      href: "/dashboard/settings",
+      actionLabel: businessProfile?.booking_url_slug ? "Review Settings" : "Set Up Lead Link",
+      complete: Boolean(businessProfile?.booking_url_slug),
+      icon: "public-link" as const,
+    },
+    {
+      id: "service-area",
+      title: "Map your service footprint",
+      description:
+        serviceAreaCount > 0 && defaultJobTypeCount > 0
+          ? `Service coverage is set for ${serviceAreaCount} postcode${serviceAreaCount === 1 ? "" : "s"} and ${defaultJobTypeCount} default job type${defaultJobTypeCount === 1 ? "" : "s"}.`
+          : "Add service-area postcodes and default job types so the funnel matches how your team actually responds.",
+      href: "/dashboard/settings",
+      actionLabel:
+        serviceAreaCount > 0 && defaultJobTypeCount > 0
+          ? "Review Coverage"
+          : "Configure Coverage",
+      complete: serviceAreaCount > 0 && defaultJobTypeCount > 0,
+      icon: "service-area" as const,
+    },
+    {
+      id: "dispatch-profile",
+      title: "Document your dispatch profile",
+      description: dispatchProfileReady
+        ? `Team size, after-hours coverage, and dispatch radius are recorded for this workspace.`
+        : "Store the real team size, after-hours coverage, and dispatch radius so rollout decisions match field operations.",
+      href: "/dashboard/settings",
+      actionLabel: dispatchProfileReady ? "Review Dispatch Profile" : "Set Dispatch Profile",
+      complete: dispatchProfileReady,
+      icon: "dispatch-profile" as const,
+    },
+    {
+      id: "missed-call",
+      title: "Arm missed-call text back",
+      description: missedCallReady
+        ? "Twilio routing and the forwarding number are in place, so missed calls can trigger the recovery text-back."
+        : "Add the Twilio number, forward target, and enabled flag in settings before missed-call recovery can run live.",
+      href: "/dashboard/settings",
+      actionLabel: missedCallReady ? "Review Call Routing" : "Arm Text Back",
+      complete: missedCallReady,
+      icon: "missed-call" as const,
+    },
+    {
+      id: "quote-followup",
+      title: "Arm quote nurture",
+      description: quoteFollowupEnabled
+        ? `Quote nurture is enabled and will fire ${quoteFollowupDelayHours} hours after a quote is sent.`
+        : "Enable quote nurture so install and repair quotes do not go cold after the first send.",
+      href: "/dashboard/settings",
+      actionLabel: quoteFollowupEnabled ? "Review Quote Nurture" : "Enable Quote Nurture",
+      complete: quoteFollowupEnabled,
+      icon: "quote-followup" as const,
+    },
+    {
+      id: "review",
+      title: "Arm review extraction",
+      description: reviewRequestEnabled
+        ? `Review requests are ready to fire ${reviewRequestDelayHours} hours after payment lands.`
+        : "Enable review requests and add your Google review URL so paid jobs can turn into local proof automatically.",
+      href: "/dashboard/settings",
+      actionLabel: reviewRequestEnabled ? "Review Post-Payment Flow" : "Enable Review Flow",
+      complete: reviewRequestEnabled,
+      icon: "review" as const,
+    },
+    {
+      id: "outreach",
+      title: "Prepare dispatch-audit outreach",
+      description: outreachReady
+        ? "The outreach kit has an audit link, service coverage, and at least one Zero-Leak automation to sell against."
+        : "Open the compliant outreach kit before generating demand so every script points back to the dispatch-audit intake.",
+      href: "/dashboard/outreach",
+      actionLabel: outreachReady ? "Open Outreach Kit" : "Prepare Outreach",
+      complete: outreachReady,
+      icon: "outreach" as const,
+    },
+    {
+      id: "lead",
+      title: "Capture your first inbound lead",
+      description:
+        leadCount > 0
+          ? `${leadCount} inbound lead${leadCount === 1 ? "" : "s"} have landed in this workspace so far.`
+          : "Share the public lead link to start collecting dispatch-audit requests, missed-call recoveries, and quote enquiries.",
+      href: "/dashboard/leads",
+      actionLabel: leadCount > 0 ? "Review Leads" : "Open Lead Inbox",
+      complete: leadCount > 0,
+      icon: "lead" as const,
+    },
+    {
+      id: "job",
+      title: "Run the first job through the pipeline",
+      description:
+        allJobsCount > 0
+          ? `${allJobsCount} job${allJobsCount === 1 ? "" : "s"} have been created in the workspace pipeline.`
+          : "Create the first job so quoting, invoicing, and review follow-up can run through the same operating flow.",
+      href: "/dashboard/jobs",
+      actionLabel: allJobsCount > 0 ? "Review Jobs" : "Create First Job",
+      complete: allJobsCount > 0,
+      icon: "job" as const,
+    },
+  ];
 
   return (
     <div className="space-y-6 md:space-y-8">
       <div className="animate-in fade-in slide-in-from-top-4 duration-700">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
         <p className="text-sm md:text-base text-muted-foreground mt-1">
-          Your business at a glance
+          Recovery stack, pipeline, and revenue at a glance
         </p>
       </div>
 
@@ -295,7 +559,38 @@ export default async function DashboardPage() {
         ))}
       </div>
 
+      <GoLiveChecklist items={goLiveChecklistItems} />
+
+      <DispatchProfileCard
+        primaryTradeFocus={businessProfile?.primary_trade_focus}
+        teamSize={businessProfile?.team_size}
+        afterHoursCoverage={businessProfile?.after_hours_coverage}
+        dispatchRadius={businessProfile?.dispatch_radius}
+        dispatchRoster={businessProfile?.dispatch_roster}
+        serviceAreaCount={serviceAreaCount}
+        defaultJobTypeCount={defaultJobTypeCount}
+      />
+
+      <EmergencyLeadQueue leads={emergencyLeads} />
+
+      <DispatchBoard
+        jobs={dispatchBoardJobs}
+        title="Dispatch Snapshot"
+        description="Quick view of urgent, booked, and unassigned field work without leaving the dashboard."
+        maxItemsPerSection={2}
+      />
+
+      <CrewLoadboard
+        jobs={dispatchBoardJobs}
+        dispatchRoster={businessProfile?.dispatch_roster}
+        title="Crew Snapshot"
+        description="Compact crew-by-crew workload view so dispatch pressure is visible from the main dashboard."
+        maxJobsPerCrew={2}
+        compact
+      />
+
       <ZeroLeakQueue
+        canUseApexAutomations={canUseApexAutomations}
         quoteFollowupEnabled={quoteFollowupEnabled}
         reviewRequestEnabled={reviewRequestEnabled}
         quoteDueNow={quoteDueNow}

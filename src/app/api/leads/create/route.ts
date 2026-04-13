@@ -4,6 +4,11 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeBookingUrlSlug } from "@/lib/booking";
+import {
+  LEAD_URGENCY_VALUES,
+  buildLeadResponseDueAt,
+  inferLeadUrgency,
+} from "@/lib/lead-triage";
 
 const leadSchema = z.object({
   booking_url_slug: z.string().trim().min(1),
@@ -14,6 +19,13 @@ const leadSchema = z.object({
   email: z.string().trim().email().max(255),
   service_area: z.string().trim().min(2).max(255),
   service_type: z.string().trim().min(2).max(80),
+  lead_urgency: z.enum(LEAD_URGENCY_VALUES).optional(),
+  triage_problem: z.string().trim().max(1000).optional().default(""),
+  triage_site_risk: z.string().trim().max(1000).optional().default(""),
+  triage_safety_risk: z.boolean().optional().default(false),
+  team_size: z.string().trim().max(80).optional().default(""),
+  after_hours_coverage: z.string().trim().max(80).optional().default(""),
+  dispatch_radius: z.string().trim().max(80).optional().default(""),
   abn: z.string().trim().max(30).optional().default(""),
   notes: z.string().trim().max(2000).optional().default(""),
 });
@@ -55,6 +67,20 @@ function getSlugRateLimit() {
   });
 
   return slugRatelimit;
+}
+
+function getProfileSlaMinutes(profile: {
+  emergency_response_sla_minutes?: number | null;
+  same_day_response_sla_minutes?: number | null;
+  scheduled_response_sla_minutes?: number | null;
+  quote_response_sla_minutes?: number | null;
+}) {
+  return {
+    emergency: profile.emergency_response_sla_minutes,
+    same_day: profile.same_day_response_sla_minutes,
+    scheduled: profile.scheduled_response_sla_minutes,
+    quote: profile.quote_response_sla_minutes,
+  };
 }
 
 function getClientIp(request: NextRequest) {
@@ -110,7 +136,7 @@ export async function POST(request: NextRequest) {
 
     const { data: businessProfile, error: businessError } = await supabase
       .from("business_profile")
-      .select("id")
+      .select("id, emergency_response_sla_minutes, same_day_response_sla_minutes, scheduled_response_sla_minutes, quote_response_sla_minutes")
       .eq("booking_url_slug", bookingUrlSlug)
       .maybeSingle();
 
@@ -127,11 +153,36 @@ export async function POST(request: NextRequest) {
       [
         parsed.data.business_name ? `Business: ${parsed.data.business_name}` : null,
         parsed.data.abn ? `ABN: ${parsed.data.abn}` : null,
+        parsed.data.team_size ? `Team size: ${parsed.data.team_size}` : null,
+        parsed.data.after_hours_coverage
+          ? `After-hours coverage: ${parsed.data.after_hours_coverage}`
+          : null,
+        parsed.data.dispatch_radius
+          ? `Dispatch radius: ${parsed.data.dispatch_radius}`
+          : null,
+        parsed.data.lead_urgency ? `Urgency: ${parsed.data.lead_urgency}` : null,
+        parsed.data.triage_problem ? `Problem: ${parsed.data.triage_problem}` : null,
+        parsed.data.triage_site_risk ? `Risk: ${parsed.data.triage_site_risk}` : null,
+        parsed.data.triage_safety_risk ? "Safety-sensitive: yes" : null,
         parsed.data.notes || null,
       ]
         .filter(Boolean)
         .join(" | ")
         .trim() || null;
+    const leadUrgency =
+      parsed.data.lead_urgency ||
+      inferLeadUrgency(
+        parsed.data.service_type,
+        parsed.data.triage_problem,
+        parsed.data.triage_site_risk,
+        parsed.data.notes,
+      );
+    const createdAt = new Date();
+    const responseDueAt = buildLeadResponseDueAt(
+      createdAt,
+      leadUrgency,
+      getProfileSlaMinutes(businessProfile),
+    );
 
     const { data: lead, error: leadError } = await supabase
       .from("leads")
@@ -148,8 +199,13 @@ export async function POST(request: NextRequest) {
         preferred_date: null,
         preferred_time_window: null,
         notes: combinedNotes,
+        lead_urgency: leadUrgency,
+        response_due_at: responseDueAt,
+        triage_problem: parsed.data.triage_problem || null,
+        triage_site_risk: parsed.data.triage_site_risk || null,
+        triage_safety_risk: parsed.data.triage_safety_risk,
         followup_step: 0,
-        next_followup_at: new Date().toISOString(),
+        next_followup_at: createdAt.toISOString(),
         processing: false,
       })
       .select("id")
@@ -163,7 +219,23 @@ export async function POST(request: NextRequest) {
     await supabase.from("lead_events").insert({
       lead_id: lead.id,
       event_type: "created",
-      meta: { source: "book_page", booking_url_slug: bookingUrlSlug, ip },
+      meta: {
+        source: "book_page",
+        booking_url_slug: bookingUrlSlug,
+        ip,
+        business_name: parsed.data.business_name || null,
+        abn: parsed.data.abn || null,
+        service_area: parsed.data.service_area || null,
+        service_type: parsed.data.service_type || null,
+        lead_urgency: leadUrgency,
+        response_due_at: responseDueAt,
+        triage_problem: parsed.data.triage_problem || null,
+        triage_site_risk: parsed.data.triage_site_risk || null,
+        triage_safety_risk: parsed.data.triage_safety_risk,
+        team_size: parsed.data.team_size || null,
+        after_hours_coverage: parsed.data.after_hours_coverage || null,
+        dispatch_radius: parsed.data.dispatch_radius || null,
+      },
     });
 
     return NextResponse.json({ success: true, lead_id: lead.id });

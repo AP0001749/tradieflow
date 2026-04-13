@@ -14,67 +14,100 @@ export type Database = {
   }
   public: {
     Tables: {
-      business_profile: {
-        Row: {
-          booking_url_slug: string
-          business_name: string
-          created_at: string | null
-          default_job_types: string[] | null
-          google_review_url: string | null
-          id: string
-          missed_call_text_enabled: boolean
-          missed_call_text_template: string | null
-          quote_followup_delay_hours: number
-          quote_followup_enabled: boolean
-          quote_followup_template: string | null
-          reply_to_email: string | null
-          review_request_delay_hours: number
-          review_request_enabled: boolean
-          review_request_template: string | null
-          service_area_postcodes: string[] | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          booking_url_slug: string
-          business_name: string
-          created_at?: string | null
-          default_job_types?: string[] | null
-          google_review_url?: string | null
-          id?: string
-          missed_call_text_enabled?: boolean
-          missed_call_text_template?: string | null
-          quote_followup_delay_hours?: number
-          quote_followup_enabled?: boolean
-          quote_followup_template?: string | null
-          reply_to_email?: string | null
-          review_request_delay_hours?: number
-          review_request_enabled?: boolean
-          review_request_template?: string | null
-          service_area_postcodes?: string[] | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          booking_url_slug?: string
-          business_name?: string
-          created_at?: string | null
-          default_job_types?: string[] | null
-          google_review_url?: string | null
-          id?: string
-          missed_call_text_enabled?: boolean
-          missed_call_text_template?: string | null
-          quote_followup_delay_hours?: number
-          quote_followup_enabled?: boolean
-          quote_followup_template?: string | null
-          reply_to_email?: string | null
-          review_request_delay_hours?: number
-          review_request_enabled?: boolean
-          review_request_template?: string | null
-          service_area_postcodes?: string[] | null
-          updated_at?: string | null
-          user_id?: string
-        }
+        business_profile: {
+          Row: {
+            after_hours_coverage: string | null
+            booking_url_slug: string
+            business_name: string
+            created_at: string | null
+            default_job_types: string[] | null
+            dispatch_roster: string[]
+            dispatch_radius: string | null
+            google_review_url: string | null
+            id: string
+            emergency_response_sla_minutes: number
+            missed_call_text_enabled: boolean
+            missed_call_text_template: string | null
+            missed_call_forwarding_number: string | null
+            primary_trade_focus: string
+            quote_response_sla_minutes: number
+            quote_followup_delay_hours: number
+            quote_followup_enabled: boolean
+            quote_followup_template: string | null
+            reply_to_email: string | null
+            review_request_delay_hours: number
+            review_request_enabled: boolean
+            review_request_template: string | null
+            same_day_response_sla_minutes: number
+            scheduled_response_sla_minutes: number
+            service_area_postcodes: string[] | null
+            team_size: string | null
+            twilio_phone_number: string | null
+            updated_at: string | null
+            user_id: string
+          }
+          Insert: {
+            after_hours_coverage?: string | null
+            booking_url_slug: string
+            business_name: string
+            created_at?: string | null
+            default_job_types?: string[] | null
+            dispatch_roster?: string[]
+            dispatch_radius?: string | null
+            google_review_url?: string | null
+            id?: string
+            emergency_response_sla_minutes?: number
+            missed_call_text_enabled?: boolean
+            missed_call_text_template?: string | null
+            missed_call_forwarding_number?: string | null
+            primary_trade_focus?: string
+            quote_response_sla_minutes?: number
+            quote_followup_delay_hours?: number
+            quote_followup_enabled?: boolean
+            quote_followup_template?: string | null
+            reply_to_email?: string | null
+            review_request_delay_hours?: number
+            review_request_enabled?: boolean
+            review_request_template?: string | null
+            same_day_response_sla_minutes?: number
+            scheduled_response_sla_minutes?: number
+            service_area_postcodes?: string[] | null
+            team_size?: string | null
+            twilio_phone_number?: string | null
+            updated_at?: string | null
+            user_id: string
+          }
+          Update: {
+            after_hours_coverage?: string | null
+            booking_url_slug?: string
+            business_name?: string
+            created_at?: string | null
+            default_job_types?: string[] | null
+            dispatch_roster?: string[]
+            dispatch_radius?: string | null
+            google_review_url?: string | null
+            id?: string
+            emergency_response_sla_minutes?: number
+            missed_call_text_enabled?: boolean
+            missed_call_text_template?: string | null
+            missed_call_forwarding_number?: string | null
+            primary_trade_focus?: string
+            quote_response_sla_minutes?: number
+            quote_followup_delay_hours?: number
+            quote_followup_enabled?: boolean
+            quote_followup_template?: string | null
+            reply_to_email?: string | null
+            review_request_delay_hours?: number
+            review_request_enabled?: boolean
+            review_request_template?: string | null
+            same_day_response_sla_minutes?: number
+            scheduled_response_sla_minutes?: number
+            service_area_postcodes?: string[] | null
+            team_size?: string | null
+            twilio_phone_number?: string | null
+            updated_at?: string | null
+            user_id?: string
+          }
         Relationships: []
       }
       clients: {
@@ -119,6 +152,9 @@ export type Database = {
           job_id: string
           notes: string | null
           paid_at: string | null
+          review_request_last_error: string | null
+          review_request_processing: boolean
+          review_request_processing_started_at: string | null
           review_request_sent_at: string | null
           status: string | null
           updated_at: string | null
@@ -132,6 +168,9 @@ export type Database = {
           job_id: string
           notes?: string | null
           paid_at?: string | null
+          review_request_last_error?: string | null
+          review_request_processing?: boolean
+          review_request_processing_started_at?: string | null
           review_request_sent_at?: string | null
           status?: string | null
           updated_at?: string | null
@@ -145,6 +184,9 @@ export type Database = {
           job_id?: string
           notes?: string | null
           paid_at?: string | null
+          review_request_last_error?: string | null
+          review_request_processing?: boolean
+          review_request_processing_started_at?: string | null
           review_request_sent_at?: string | null
           status?: string | null
           updated_at?: string | null
@@ -162,49 +204,112 @@ export type Database = {
       }
       jobs: {
         Row: {
+          assigned_technician: string | null
           client_id: string | null
           created_at: string
           date_scheduled: string | null
           description: string | null
+          dispatch_check_in_status: string | null
+          dispatch_eta_note: string | null
+          dispatch_geo_accuracy_meters: number | null
+          dispatch_geo_captured_at: string | null
+          dispatch_geo_latitude: number | null
+          dispatch_geo_longitude: number | null
+          dispatch_last_checked_in_at: string | null
+          dispatch_last_known_location: string | null
+          dispatch_sequence: number | null
+          dispatch_share_enabled: boolean
+          dispatch_share_token: string
+          dispatch_priority: string | null
           end_date: string | null
+          equipment_make: string | null
           id: string
           price: number | null
+          quote_followup_last_error: string | null
+          quote_followup_processing: boolean
+          quote_followup_processing_started_at: string | null
           quote_followup_sent_at: string | null
           quote_sent_at: string | null
+          service_window: string | null
+          site_access_notes: string | null
           start_date: string | null
           status: string | null
           title: string
+          trade_vertical: string | null
           user_id: string
+          warranty_status: string | null
         }
         Insert: {
+          assigned_technician?: string | null
           client_id?: string | null
           created_at?: string
           date_scheduled?: string | null
           description?: string | null
+          dispatch_check_in_status?: string | null
+          dispatch_eta_note?: string | null
+          dispatch_geo_accuracy_meters?: number | null
+          dispatch_geo_captured_at?: string | null
+          dispatch_geo_latitude?: number | null
+          dispatch_geo_longitude?: number | null
+          dispatch_last_checked_in_at?: string | null
+          dispatch_last_known_location?: string | null
+          dispatch_sequence?: number | null
+          dispatch_share_enabled?: boolean
+          dispatch_share_token?: string
+          dispatch_priority?: string | null
           end_date?: string | null
+          equipment_make?: string | null
           id?: string
           price?: number | null
+          quote_followup_last_error?: string | null
+          quote_followup_processing?: boolean
+          quote_followup_processing_started_at?: string | null
           quote_followup_sent_at?: string | null
           quote_sent_at?: string | null
+          service_window?: string | null
+          site_access_notes?: string | null
           start_date?: string | null
           status?: string | null
           title: string
+          trade_vertical?: string | null
           user_id?: string
+          warranty_status?: string | null
         }
         Update: {
+          assigned_technician?: string | null
           client_id?: string | null
           created_at?: string
           date_scheduled?: string | null
           description?: string | null
+          dispatch_check_in_status?: string | null
+          dispatch_eta_note?: string | null
+          dispatch_geo_accuracy_meters?: number | null
+          dispatch_geo_captured_at?: string | null
+          dispatch_geo_latitude?: number | null
+          dispatch_geo_longitude?: number | null
+          dispatch_last_checked_in_at?: string | null
+          dispatch_last_known_location?: string | null
+          dispatch_sequence?: number | null
+          dispatch_share_enabled?: boolean
+          dispatch_share_token?: string
+          dispatch_priority?: string | null
           end_date?: string | null
+          equipment_make?: string | null
           id?: string
           price?: number | null
+          quote_followup_last_error?: string | null
+          quote_followup_processing?: boolean
+          quote_followup_processing_started_at?: string | null
           quote_followup_sent_at?: string | null
           quote_sent_at?: string | null
+          service_window?: string | null
+          site_access_notes?: string | null
           start_date?: string | null
           status?: string | null
           title?: string
+          trade_vertical?: string | null
           user_id?: string
+          warranty_status?: string | null
         }
         Relationships: [
           {
@@ -212,6 +317,65 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_dispatch_events: {
+        Row: {
+          created_at: string
+          dispatch_check_in_status: string | null
+          dispatch_eta_note: string | null
+          dispatch_geo_accuracy_meters: number | null
+          dispatch_geo_captured_at: string | null
+          dispatch_geo_latitude: number | null
+          dispatch_geo_longitude: number | null
+          dispatch_last_known_location: string | null
+          event_source: string
+          event_type: string
+          id: string
+          job_id: string
+          metadata: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dispatch_check_in_status?: string | null
+          dispatch_eta_note?: string | null
+          dispatch_geo_accuracy_meters?: number | null
+          dispatch_geo_captured_at?: string | null
+          dispatch_geo_latitude?: number | null
+          dispatch_geo_longitude?: number | null
+          dispatch_last_known_location?: string | null
+          event_source: string
+          event_type: string
+          id?: string
+          job_id: string
+          metadata?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dispatch_check_in_status?: string | null
+          dispatch_eta_note?: string | null
+          dispatch_geo_accuracy_meters?: number | null
+          dispatch_geo_captured_at?: string | null
+          dispatch_geo_latitude?: number | null
+          dispatch_geo_longitude?: number | null
+          dispatch_last_known_location?: string | null
+          event_source?: string
+          event_type?: string
+          id?: string
+          job_id?: string
+          metadata?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_dispatch_events_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
         ]
@@ -254,10 +418,12 @@ export type Database = {
           converted_job_id: string | null
           created_at: string | null
           email: string | null
+          first_responded_at: string | null
           followup_step: number | null
           id: string
           job_type: string | null
           last_contacted_at: string | null
+          lead_urgency: string
           name: string
           next_followup_at: string | null
           notes: string | null
@@ -267,9 +433,21 @@ export type Database = {
           preferred_time_window: string | null
           processing: boolean
           processing_started_at: string | null
+          response_due_at: string | null
+          sms_do_not_contact: boolean
+          sms_do_not_contact_reason: string | null
+          sms_last_inbound_at: string | null
+          sms_last_inbound_from: string | null
+          sms_last_inbound_intent: string | null
+          sms_last_inbound_message: string | null
+          sms_last_inbound_sid: string | null
+          sms_opted_out_at: string | null
           source: string | null
           status: string
           suburb: string | null
+          triage_problem: string | null
+          triage_safety_risk: boolean
+          triage_site_risk: string | null
           updated_at: string | null
         }
         Insert: {
@@ -277,10 +455,12 @@ export type Database = {
           converted_job_id?: string | null
           created_at?: string | null
           email?: string | null
+          first_responded_at?: string | null
           followup_step?: number | null
           id?: string
           job_type?: string | null
           last_contacted_at?: string | null
+          lead_urgency?: string
           name: string
           next_followup_at?: string | null
           notes?: string | null
@@ -290,9 +470,21 @@ export type Database = {
           preferred_time_window?: string | null
           processing?: boolean
           processing_started_at?: string | null
+          response_due_at?: string | null
+          sms_do_not_contact?: boolean
+          sms_do_not_contact_reason?: string | null
+          sms_last_inbound_at?: string | null
+          sms_last_inbound_from?: string | null
+          sms_last_inbound_intent?: string | null
+          sms_last_inbound_message?: string | null
+          sms_last_inbound_sid?: string | null
+          sms_opted_out_at?: string | null
           source?: string | null
           status?: string
           suburb?: string | null
+          triage_problem?: string | null
+          triage_safety_risk?: boolean
+          triage_site_risk?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -300,10 +492,12 @@ export type Database = {
           converted_job_id?: string | null
           created_at?: string | null
           email?: string | null
+          first_responded_at?: string | null
           followup_step?: number | null
           id?: string
           job_type?: string | null
           last_contacted_at?: string | null
+          lead_urgency?: string
           name?: string
           next_followup_at?: string | null
           notes?: string | null
@@ -313,9 +507,21 @@ export type Database = {
           preferred_time_window?: string | null
           processing?: boolean
           processing_started_at?: string | null
+          response_due_at?: string | null
+          sms_do_not_contact?: boolean
+          sms_do_not_contact_reason?: string | null
+          sms_last_inbound_at?: string | null
+          sms_last_inbound_from?: string | null
+          sms_last_inbound_intent?: string | null
+          sms_last_inbound_message?: string | null
+          sms_last_inbound_sid?: string | null
+          sms_opted_out_at?: string | null
           source?: string | null
           status?: string
           suburb?: string | null
+          triage_problem?: string | null
+          triage_safety_risk?: boolean
+          triage_site_risk?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -407,11 +613,105 @@ export type Database = {
         }
         Relationships: []
       }
+      twilio_missed_call_textbacks: {
+        Row: {
+          business_id: string
+          call_sid: string
+          created_at: string
+          dial_status: string
+          from_number: string
+          last_error: string | null
+          lead_id: string
+          processing_started_at: string
+          sent_at: string | null
+          status: string
+          to_number: string
+          twilio_message_sid: string | null
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          call_sid: string
+          created_at?: string
+          dial_status: string
+          from_number: string
+          last_error?: string | null
+          lead_id: string
+          processing_started_at?: string
+          sent_at?: string | null
+          status?: string
+          to_number: string
+          twilio_message_sid?: string | null
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          call_sid?: string
+          created_at?: string
+          dial_status?: string
+          from_number?: string
+          last_error?: string | null
+          lead_id?: string
+          processing_started_at?: string
+          sent_at?: string | null
+          status?: string
+          to_number?: string
+          twilio_message_sid?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "twilio_missed_call_textbacks_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "twilio_missed_call_textbacks_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      claim_missed_call_text_back: {
+        Args: {
+          p_business_id: string
+          p_call_sid: string
+          p_dial_status: string
+          p_from_number: string
+          p_lead_id: string
+          p_to_number: string
+        }
+        Returns: {
+          claim_status: string
+          should_send: boolean
+        }[]
+      }
+      claim_due_quote_followups: {
+        Args: { limit_count?: number }
+        Returns: {
+          business_name: string
+          client_email: string | null
+          client_name: string
+          client_phone: string | null
+          job_id: string
+          job_price: number | null
+          job_title: string
+          quote_followup_template: string | null
+          quote_sent_at: string
+          reply_to_email: string | null
+          twilio_phone_number: string | null
+          user_id: string
+        }[]
+      }
       claim_due_leads: {
         Args: { limit_count?: number }
         Returns: {
@@ -429,6 +729,24 @@ export type Database = {
           reply_to_email: string
           status: string
           suburb: string
+        }[]
+      }
+      claim_due_review_requests: {
+        Args: { limit_count?: number }
+        Returns: {
+          business_name: string
+          client_email: string | null
+          client_name: string
+          client_phone: string | null
+          google_review_url: string
+          invoice_amount: number
+          invoice_id: string
+          job_title: string
+          paid_at: string
+          reply_to_email: string | null
+          review_request_template: string | null
+          twilio_phone_number: string | null
+          user_id: string
         }[]
       }
       create_client_with_limit: {
@@ -483,25 +801,56 @@ export type Database = {
       }
       create_job_with_limit: {
         Args: {
+          p_assigned_technician?: string
           p_client_id: string
           p_description?: string
+          p_dispatch_priority?: string
+          p_equipment_make?: string
           p_price?: number
+          p_service_window?: string
+          p_site_access_notes?: string
           p_start_date?: string
           p_status?: string
+          p_trade_vertical?: string
           p_title: string
+          p_warranty_status?: string
         }
         Returns: {
+          assigned_technician: string | null
           client_id: string | null
           created_at: string
           date_scheduled: string | null
           description: string | null
+          dispatch_check_in_status: string | null
+          dispatch_eta_note: string | null
+          dispatch_geo_accuracy_meters: number | null
+          dispatch_geo_captured_at: string | null
+          dispatch_geo_latitude: number | null
+          dispatch_geo_longitude: number | null
+          dispatch_last_checked_in_at: string | null
+          dispatch_last_known_location: string | null
+          dispatch_sequence: number | null
+          dispatch_share_enabled: boolean
+          dispatch_share_token: string
+          dispatch_priority: string | null
+          equipment_make: string | null
           end_date: string | null
           id: string
           price: number | null
+          quote_followup_last_error: string | null
+          quote_followup_processing: boolean
+          quote_followup_processing_started_at: string | null
+          quote_followup_sent_at: string | null
+          quote_sent_at: string | null
+          service_window: string | null
+          site_access_notes: string | null
           start_date: string | null
           status: string | null
           title: string
+          trade_vertical: string | null
+          updated_at: string
           user_id: string
+          warranty_status: string | null
         }
         SetofOptions: {
           from: "*"
@@ -515,6 +864,8 @@ export type Database = {
         Returns: {
           booking_url_slug: string
           business_name: string
+          default_job_types: string[]
+          primary_trade_focus: string
         }[]
       }
     }

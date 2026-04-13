@@ -17,39 +17,59 @@ interface ImmediateFollowupEmailProps {
   jobType?: string;
 }
 
+const URGENT_JOB_TYPE_PATTERN =
+  /(emergency|callout|blocked drain|fault|breakdown|urgent|no power|no hot water)/i;
+
+function formatJobType(jobType?: string) {
+  return jobType?.replaceAll('_', ' ') || 'your trade work';
+}
+
+function isUrgentJobType(jobType?: string) {
+  return Boolean(jobType && URGENT_JOB_TYPE_PATTERN.test(formatJobType(jobType)));
+}
+
 export const ImmediateFollowupEmail = ({
   name,
   businessName,
   suburb,
   jobType,
 }: ImmediateFollowupEmailProps) => {
+  const formattedJobType = formatJobType(jobType);
+  const urgent = isUrgentJobType(jobType);
+
   return (
       <Html>
       <Head />
-      <Preview>TradieFlow setup request received</Preview>
+      <Preview>{urgent ? 'Dispatch workflow request received' : 'TradieFlow workflow request received'}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Thanks for requesting TradieFlow</Heading>
+          <Heading style={h1}>{urgent ? 'Dispatch workflow request received' : 'Workflow request received'}</Heading>
           
           <Text style={text}>Hi {name},</Text>
           
           <Text style={text}>
-            We received your setup request for {jobType?.replace('_', ' ') || 'your trade business'} in {suburb || 'your service area'}.
+            We received your TradieFlow request for {formattedJobType} in {suburb || 'your service area'}.
           </Text>
 
           <Text style={text}>
-            <strong>To set up your workspace, please reply with:</strong>
+            <strong>To configure your workspace, please reply with:</strong>
           </Text>
 
           <Section style={list}>
             <Text style={listItem}>* Team size (solo, 2-5, or 6+ techs)</Text>
-            <Text style={listItem}>* Main services or callouts you want to prioritize</Text>
-            <Text style={listItem}>* Best contact number for onboarding</Text>
-            <Text style={listItem}>* Preferred time for a quick setup call</Text>
+            <Text style={listItem}>* Main services, install types, or emergency callouts you want prioritised</Text>
+            <Text style={listItem}>* Best dispatch or mobile number for new work</Text>
+            <Text style={listItem}>* Preferred time for a 10-minute setup call</Text>
           </Section>
 
+          {urgent ? (
+            <Text style={text}>
+              <strong>Urgent jobs:</strong> Include your after-hours coverage and dispatch radius so the workflow matches how your team actually responds to call-outs.
+            </Text>
+          ) : null}
+
           <Text style={text}>
-            We&apos;ll configure your TradieFlow workspace around lead recovery, quote follow-up, and invoicing, then send next steps within one business day.
+            We&apos;ll configure your TradieFlow workspace around missed-call recovery, quote follow-up, and dispatch, then send next steps within one business day.
           </Text>
 
           <Hr style={hr} />

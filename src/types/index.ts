@@ -116,6 +116,22 @@ export interface ClientUpdate {
 // Job Types
 // Note: Database uses underscore in status values (in_progress)
 export type JobStatus = "draft" | "scheduled" | "in_progress" | "completed" | "cancelled";
+export type TradeVertical = "hvac" | "plumbing" | "electrical" | "mixed_trade";
+export type WarrantyStatus = "in_warranty" | "out_of_warranty" | "unknown";
+export type DispatchPriority = "emergency" | "same_day" | "scheduled" | "backlog";
+export type ServiceWindow = "anytime" | "morning" | "midday" | "afternoon" | "after_hours";
+export type DispatchCheckInStatus =
+  | "awaiting_dispatch"
+  | "en_route"
+  | "on_site"
+  | "left_site";
+export type TradeJobType =
+  | "Split System Install"
+  | "Ducted Repair"
+  | "Blocked Drain"
+  | "Emergency Callout"
+  | "Switchboard Fault"
+  | "Service & Maintenance";
 
 export interface Job {
   id: string;
@@ -123,12 +139,33 @@ export interface Job {
   client_id: string;
   title: string;
   description: string | null;
+  equipment_make: string | null;
+  site_access_notes: string | null;
+  dispatch_sequence: number | null;
+  dispatch_check_in_status: DispatchCheckInStatus | null;
+  dispatch_share_token: string;
+  dispatch_share_enabled: boolean;
+  dispatch_last_known_location: string | null;
+  dispatch_eta_note: string | null;
+  dispatch_last_checked_in_at: string | null;
+  dispatch_geo_latitude: number | null;
+  dispatch_geo_longitude: number | null;
+  dispatch_geo_accuracy_meters: number | null;
+  dispatch_geo_captured_at: string | null;
+  dispatch_priority: DispatchPriority | null;
+  service_window: ServiceWindow | null;
+  assigned_technician: string | null;
   status: JobStatus;
   start_date: string | null;
   end_date: string | null;
   price: number | null;
   quote_sent_at: string | null;
   quote_followup_sent_at: string | null;
+  quote_followup_processing: boolean;
+  quote_followup_processing_started_at: string | null;
+  quote_followup_last_error: string | null;
+  trade_vertical: TradeVertical | null;
+  warranty_status: WarrantyStatus | null;
   created_at: string;
   updated_at: string;
 }
@@ -137,7 +174,32 @@ export interface Job {
 export interface JobWithClient extends Job {
   clients: {
     name: string;
+    address?: string | null;
+    phone?: string | null;
+    email?: string | null;
   } | null;
+}
+
+export interface JobDispatchEvent {
+  id: string;
+  job_id: string;
+  user_id: string;
+  event_source: "operator" | "field_link" | "system";
+  event_type:
+    | "check_in"
+    | "link_paused"
+    | "link_resumed"
+    | "link_rotated"
+    | "dispatch_update";
+  dispatch_check_in_status: DispatchCheckInStatus | null;
+  dispatch_eta_note: string | null;
+  dispatch_last_known_location: string | null;
+  dispatch_geo_latitude: number | null;
+  dispatch_geo_longitude: number | null;
+  dispatch_geo_accuracy_meters: number | null;
+  dispatch_geo_captured_at: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
 }
 
 export interface JobInsert {
@@ -146,12 +208,33 @@ export interface JobInsert {
   client_id: string;
   title: string;
   description?: string | null;
+  equipment_make?: string | null;
+  site_access_notes?: string | null;
+  dispatch_sequence?: number | null;
+  dispatch_check_in_status?: DispatchCheckInStatus | null;
+  dispatch_share_token?: string;
+  dispatch_share_enabled?: boolean;
+  dispatch_last_known_location?: string | null;
+  dispatch_eta_note?: string | null;
+  dispatch_last_checked_in_at?: string | null;
+  dispatch_geo_latitude?: number | null;
+  dispatch_geo_longitude?: number | null;
+  dispatch_geo_accuracy_meters?: number | null;
+  dispatch_geo_captured_at?: string | null;
+  dispatch_priority?: DispatchPriority | null;
+  service_window?: ServiceWindow | null;
+  assigned_technician?: string | null;
   status?: JobStatus;
   start_date?: string | null;
   end_date?: string | null;
   price?: number | null;
   quote_sent_at?: string | null;
   quote_followup_sent_at?: string | null;
+  quote_followup_processing?: boolean;
+  quote_followup_processing_started_at?: string | null;
+  quote_followup_last_error?: string | null;
+  trade_vertical?: TradeVertical | null;
+  warranty_status?: WarrantyStatus | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -160,12 +243,33 @@ export interface JobUpdate {
   client_id?: string;
   title?: string;
   description?: string | null;
+  equipment_make?: string | null;
+  site_access_notes?: string | null;
+  dispatch_sequence?: number | null;
+  dispatch_check_in_status?: DispatchCheckInStatus | null;
+  dispatch_share_token?: string;
+  dispatch_share_enabled?: boolean;
+  dispatch_last_known_location?: string | null;
+  dispatch_eta_note?: string | null;
+  dispatch_last_checked_in_at?: string | null;
+  dispatch_geo_latitude?: number | null;
+  dispatch_geo_longitude?: number | null;
+  dispatch_geo_accuracy_meters?: number | null;
+  dispatch_geo_captured_at?: string | null;
+  dispatch_priority?: DispatchPriority | null;
+  service_window?: ServiceWindow | null;
+  assigned_technician?: string | null;
   status?: JobStatus;
   start_date?: string | null;
   end_date?: string | null;
   price?: number | null;
   quote_sent_at?: string | null;
   quote_followup_sent_at?: string | null;
+  quote_followup_processing?: boolean;
+  quote_followup_processing_started_at?: string | null;
+  quote_followup_last_error?: string | null;
+  trade_vertical?: TradeVertical | null;
+  warranty_status?: WarrantyStatus | null;
   updated_at?: string;
 }
 
@@ -182,6 +286,9 @@ export interface Invoice {
   notes: string | null;
   paid_at: string | null;
   review_request_sent_at: string | null;
+  review_request_processing: boolean;
+  review_request_processing_started_at: string | null;
+  review_request_last_error: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -196,6 +303,9 @@ export interface InvoiceInsert {
   notes?: string | null;
   paid_at?: string | null;
   review_request_sent_at?: string | null;
+  review_request_processing?: boolean;
+  review_request_processing_started_at?: string | null;
+  review_request_last_error?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -208,6 +318,9 @@ export interface InvoiceUpdate {
   notes?: string | null;
   paid_at?: string | null;
   review_request_sent_at?: string | null;
+  review_request_processing?: boolean;
+  review_request_processing_started_at?: string | null;
+  review_request_last_error?: string | null;
   updated_at?: string;
 }
 

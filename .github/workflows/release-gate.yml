@@ -1,0 +1,54 @@
+name: TradieFlow Release Gate
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: tradieflow-release-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-gate:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_APP_URL: https://ci.tradieflow.local
+      NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: ci-placeholder-service-role-key
+      UPSTASH_REDIS_REST_URL: https://ci-placeholder-upstash.example
+      UPSTASH_REDIS_REST_TOKEN: ci-placeholder-upstash-token
+      RESEND_API_KEY: re_ci_placeholder
+      RESEND_SENDER_EMAIL: dispatch@ci-placeholder.example
+      RESEND_FROM_EMAIL: dispatch@ci-placeholder.example
+      RESEND_REPLY_TO_EMAIL: reply@ci-placeholder.example
+      LEAD_FOLLOWUP_SECRET: ci-placeholder-followup-secret
+      CRON_SECRET: ci-placeholder-followup-secret
+      STRIPE_SECRET_KEY: sk_test_ci_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_ci_placeholder
+      NEXT_PUBLIC_STRIPE_BASELINE_PRICE_ID: price_ci_baseline_placeholder
+      NEXT_PUBLIC_STRIPE_APEX_PRICE_ID: price_ci_apex_placeholder
+      NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: price_ci_legacy_placeholder
+      TWILIO_ACCOUNT_SID: ACciPlaceholderAccountSid
+      TWILIO_AUTH_TOKEN: ci-placeholder-auth-token
+      TWILIO_SKIP_SIGNATURE_VALIDATION: "false"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run release gate
+        run: npm run release:gate

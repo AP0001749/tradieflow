@@ -12,28 +12,43 @@ import {
 interface FortyEightHourFollowupEmailProps {
   name: string;
   businessName: string;
+  jobType?: string;
+}
+
+const URGENT_JOB_TYPE_PATTERN =
+  /(emergency|callout|blocked drain|fault|breakdown|urgent|no power|no hot water)/i;
+
+function formatJobType(jobType?: string) {
+  return jobType?.replaceAll('_', ' ') || 'your trade work';
+}
+
+function isUrgentJobType(jobType?: string) {
+  return Boolean(jobType && URGENT_JOB_TYPE_PATTERN.test(formatJobType(jobType)));
 }
 
 export const FortyEightHourFollowupEmail = ({
   name,
   businessName,
+  jobType,
 }: FortyEightHourFollowupEmailProps) => {
+  const urgent = isUrgentJobType(jobType);
+
   return (
     <Html>
       <Head />
-      <Preview>Last check-in - should I close your setup request?</Preview>
+      <Preview>{urgent ? 'Last dispatch check-in' : 'Last check-in - should I close your workflow request?'}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Last check-in</Heading>
+          <Heading style={h1}>{urgent ? 'Last dispatch check-in' : 'Last check-in'}</Heading>
           
           <Text style={text}>Hi {name},</Text>
           
           <Text style={text}>
-            I haven&apos;t heard back about your TradieFlow setup request.
+            I haven&apos;t heard back about your TradieFlow workflow request.
           </Text>
 
           <Text style={text}>
-            <strong>Reply &ldquo;YES&rdquo; if you still want to plug missed-call leaks and get set up</strong> - otherwise I&apos;ll close this request.
+            <strong>Reply &ldquo;YES&rdquo; if you still want to plug missed-call leaks and tighten dispatch</strong> - otherwise I&apos;ll close this request.
           </Text>
 
           <Text style={text}>

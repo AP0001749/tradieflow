@@ -32,12 +32,12 @@ export function InvoiceEmail({
   return (
     <Html>
       <Head />
-      <Preview>Invoice {invoiceNumber} from {businessName}</Preview>
+      <Preview>Service invoice {invoiceNumber} from {businessName}</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Header */}
           <Section style={header}>
-            <Heading style={h1}>Invoice from {businessName}</Heading>
+            <Heading style={h1}>Service invoice from {businessName}</Heading>
           </Section>
 
           {/* Main Content */}
@@ -45,12 +45,16 @@ export function InvoiceEmail({
             <Text style={paragraph}>Hi {clientName},</Text>
             
             <Text style={paragraph}>
-              Here is your invoice for <strong>{amount}</strong>.
+              Your invoice for site work completed is ready. Review the amount due and payment timing below.
+            </Text>
+
+            <Text style={paragraph}>
+              This may cover a site assessment, call-out fee, repair, or install stage, depending on the work completed.
             </Text>
 
             <Section style={invoiceDetails}>
               <Text style={detailText}>
-                <strong>Invoice Number:</strong> {invoiceNumber}
+                <strong>Job / Invoice Number:</strong> {invoiceNumber}
               </Text>
               <Text style={detailText}>
                 <strong>Amount Due:</strong> {amount}
@@ -63,12 +67,12 @@ export function InvoiceEmail({
             {/* Call to Action */}
             <Section style={buttonContainer}>
               <Button style={button} href={invoiceUrl}>
-                View Invoice
+                Review Invoice
               </Button>
             </Section>
 
             <Text style={paragraph}>
-              Thank you for your business!
+              Thanks for choosing {businessName}.
             </Text>
           </Section>
 

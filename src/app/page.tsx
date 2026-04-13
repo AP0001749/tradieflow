@@ -48,6 +48,27 @@ export default function Home() {
     { icon: Zap, label: "Electrical & sparkies" },
   ];
 
+  const rolloutLayers = [
+    {
+      icon: Shield,
+      title: "Dispatch Audit",
+      description:
+        "Map missed-call leaks, after-hours coverage, and service-area handoff points before a single workflow goes live.",
+    },
+    {
+      icon: ClipboardCheck,
+      title: "Done-For-You Onboarding",
+      description:
+        "TradieFlow sets up the missed-call text-back, quote nurture, and review flow so the tradie does not burn hours in admin menus.",
+    },
+    {
+      icon: TrendingUp,
+      title: "Quote-to-Invoice Handoff",
+      description:
+        "Keep the revenue path connected from lead capture through jobs and invoicing instead of losing momentum after the site visit.",
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="fixed right-4 top-4 z-20">
@@ -61,15 +82,15 @@ export default function Home() {
           <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="space-y-7">
               <div className="space-y-4">
-                <p className="hero-pill">TradieFlow V2.0 • Zero-Leak Funnel</p>
+                <p className="hero-pill">TradieFlow V2.0 / Zero-Leak Funnel</p>
                 <h1 className="tf-display text-5xl font-bold tracking-tight text-foreground md:text-6xl lg:text-7xl">
-                  Stop emergency jobs from leaking after the second ring.
+                  Stop losing high-ticket jobs to missed calls. The automated dispatch
+                  and quote follow-up system for HVAC, plumbing, and electrical teams.
                 </h1>
                 <p className="max-w-2xl text-lg leading-8 text-foreground/80 md:text-xl">
-                  TradieFlow is now built for HVAC, plumbers, and sparkies who lose
-                  high-ticket work when they are under a house, on a roof, or deep in a
-                  switchboard. The platform turns missed calls into active conversations,
-                  quote follow-up, and review growth.
+                  Built for high-urgency trade operators, TradieFlow catches missed
+                  calls, keeps install and repair quotes moving, and gives dispatch a
+                  live trail before the customer rings the next contractor.
                 </p>
               </div>
 
@@ -90,7 +111,7 @@ export default function Home() {
                   href="/book"
                   className="inline-flex h-12 items-center justify-center rounded-lg bg-primary px-8 text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
                 >
-                  Request Zero-Leak Demo
+                  Request Dispatch Audit
                 </Link>
                 <Link
                   href="/signup"
@@ -123,7 +144,7 @@ export default function Home() {
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="text-xs uppercase tracking-[0.3em] text-sky-200/70">
-                        HVAC Lead Recovery
+                        Emergency Trade Recovery
                       </p>
                       <h2 className="mt-2 text-2xl font-semibold">
                         Disaster mitigation, not admin convenience
@@ -168,8 +189,8 @@ export default function Home() {
                   ))}
 
                   <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm text-emerald-50">
-                    During a Melbourne heatwave or winter breakdown, an unanswered phone
-                    call is a revenue leak. TradieFlow exists to plug it.
+                    During a heatwave breakdown, burst pipe, or outage callout, an
+                    unanswered phone call is a revenue leak. TradieFlow exists to plug it.
                   </div>
                 </div>
               </Card>
@@ -208,13 +229,56 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="border-y border-border bg-muted/20 py-20 md:py-24">
+        <div className="container mx-auto px-4">
+          <div className="mx-auto max-w-3xl space-y-3 text-center">
+            <p className="hero-pill">Go-Live Stack</p>
+            <h2 className="tf-display text-3xl font-bold md:text-4xl">
+              Sell the audit, then deploy the workflow for them
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              HVAC, plumbing, and electrical owners do not want another dashboard
+              lecture. They want someone to find the leak, tighten the routing, and stand
+              up the system fast.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-12 grid max-w-6xl gap-6 md:grid-cols-3">
+            {rolloutLayers.map((layer) => (
+              <Card key={layer.title} className="space-y-4 p-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+                  <layer.icon className="h-6 w-6 text-primary" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold">{layer.title}</h3>
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    {layer.description}
+                  </p>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          <div className="mx-auto mt-8 max-w-4xl rounded-[1.5rem] border border-border/70 bg-card px-6 py-5 text-sm text-muted-foreground shadow-sm">
+            Continuous GPS van tracking is not live in the current product. The platform
+            supports technician field check-in links with optional browser GPS capture,
+            while staying focused on missed-call recovery, quote follow-up, jobs,
+            invoicing, and operator visibility.
+          </div>
+        </div>
+      </section>
+
       <section className="border-y border-border bg-muted/30 py-20 md:py-24">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-3xl space-y-3 text-center">
-            <p className="hero-pill">Unit Economics</p>
+            <p className="hero-pill">MRR Escape Math</p>
             <h2 className="tf-display text-3xl font-bold md:text-4xl">
-              Watch the outreach math compound in real time
+              Model the Baseline/Apex path to serious ARR
             </h2>
+            <p className="text-lg text-muted-foreground">
+              Pressure-test daily outreach volume, conversion rate, and subscription
+              tier against the $5M software valuation target.
+            </p>
           </div>
 
           <div className="mx-auto mt-12 max-w-6xl">
@@ -280,9 +344,9 @@ export default function Home() {
           </div>
 
           <div className="mx-auto mt-10 max-w-4xl rounded-[1.5rem] border border-border/70 bg-card px-6 py-5 text-sm text-muted-foreground shadow-sm">
-            At $299 AUD per month, roughly 28 active HVAC clients equates to just over
-            $100k ARR. The pricing has been repositioned to match high-urgency jobs and
-            the revenue at risk when calls go unanswered.
+            At $299 AUD per month, roughly 28 active Baseline clients equates to just
+            over $100k ARR. The pricing has been repositioned to match high-urgency jobs
+            and the revenue at risk when calls go unanswered.
           </div>
         </div>
       </section>
@@ -292,18 +356,18 @@ export default function Home() {
           <div className="mx-auto max-w-4xl rounded-[2rem] border border-border/70 bg-card p-8 text-center shadow-xl shadow-black/5 md:p-12">
             <p className="hero-pill">Start the Pivot</p>
             <h2 className="tf-display mt-4 text-3xl font-bold md:text-5xl">
-              Launch the Zero-Leak Funnel before the next heatwave hits
+              Launch the Zero-Leak Funnel before the next callout leak hits
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-              Reposition the site, capture demo demand, and onboard emergency-trade
-              operators into the new workflow.
-            </p>
+              <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+                Reposition the site, capture dispatch-audit demand, and onboard
+                emergency-trade operators into the new workflow.
+              </p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <Link
                 href="/book"
                 className="inline-flex h-12 items-center justify-center rounded-lg bg-primary px-8 text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
               >
-                Request Zero-Leak Demo
+                Request Dispatch Audit
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
               <Link

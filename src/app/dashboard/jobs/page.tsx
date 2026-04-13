@@ -14,9 +14,15 @@ import { CreateJobDialog } from "./create-job-dialog";
 import { DeleteJobButton } from "./delete-job-button";
 import EditJobDialog from "./edit-job-dialog";
 import { SubscriptionBanner } from "@/components/subscription-banner";
+import { DispatchBoard } from "@/components/dashboard/dispatch-board";
 import Link from "next/link";
 import { checkSubscriptionLimits } from "@/lib/subscription";
 import { getLimitReachedMessage, getResourceLimit } from "@/lib/subscription-limits";
+import {
+  getDispatchPriorityLabel,
+  getDispatchPriorityVariant,
+  getServiceWindowLabel,
+} from "@/lib/job-dispatch";
 
 const statusConfig: Record<
   JobStatus,
@@ -51,13 +57,24 @@ export default async function JobsPage() {
     throw clientsError;
   }
 
+  const { data: businessProfile, error: businessProfileError } = await supabase
+    .from("business_profile")
+    .select("dispatch_roster")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (businessProfileError) {
+    throw businessProfileError;
+  }
+
   // CRITICAL: Relational join to fetch client name
   const { data: jobs, error } = await supabase
     .from("jobs")
     .select(`
       *,
       clients:client_id (
-        name
+        name,
+        address
       )
     `)
     .eq("user_id", user.id)
@@ -87,7 +104,7 @@ export default async function JobsPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Jobs</h1>
           <p className="text-sm md:text-base text-muted-foreground mt-1">
-            Manage your projects
+            Run the field pipeline, dispatch board, and commercial handoff
           </p>
         </div>
         <div className="shrink-0">
@@ -95,13 +112,16 @@ export default async function JobsPage() {
         </div>
       </div>
 
+      <DispatchBoard jobs={jobs || []} />
+
       <div className="rounded-xl border border-border bg-card overflow-x-auto">
         {jobs && jobs.length > 0 ? (
-          <Table className="min-w-[860px]">
+          <Table className="min-w-[1080px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="font-semibold">Title</TableHead>
                 <TableHead className="font-semibold">Client</TableHead>
+                <TableHead className="font-semibold">Dispatch</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
                 <TableHead className="font-semibold">Price</TableHead>
                 <TableHead className="font-semibold">Start Date</TableHead>
@@ -116,6 +136,27 @@ export default async function JobsPage() {
                     <TableCell className="font-medium">{job.title}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {job.clients?.name || "--"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <Badge variant={getDispatchPriorityVariant(job.dispatch_priority)}>
+                          {getDispatchPriorityLabel(job.dispatch_priority)}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground">
+                          {getServiceWindowLabel(job.service_window)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {job.assigned_technician || "Unassigned crew"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Run {job.dispatch_sequence ? `#${job.dispatch_sequence}` : "auto"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {job.dispatch_check_in_status
+                            ? job.dispatch_check_in_status.replaceAll("_", " ")
+                            : "awaiting dispatch"}
+                        </p>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={statusInfo.variant}>
@@ -141,7 +182,11 @@ export default async function JobsPage() {
                             View
                           </Button>
                         </Link>
-                        <EditJobDialog job={job} clients={clients || []} />
+                        <EditJobDialog
+                          job={job}
+                          clients={clients || []}
+                          dispatchRoster={businessProfile?.dispatch_roster || []}
+                        />
                         <DeleteJobButton jobId={job.id} jobTitle={job.title} />
                       </div>
                     </TableCell>
@@ -154,7 +199,7 @@ export default async function JobsPage() {
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-2">No jobs yet</p>
             <p className="text-sm text-muted-foreground/80">
-              Click &quot;New Job&quot; to create your first job
+              Create the first job to light up the dispatch board, quote flow, and invoice handoff
             </p>
           </div>
         )}

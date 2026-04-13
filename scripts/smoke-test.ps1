@@ -4,15 +4,18 @@ PowerShell Smoke Test for TradieFlow (local dev)
 What it does:
 1. Loads env vars from .env.local into the process environment
 2. Validates the minimum env vars required for lead capture
-3. Optionally starts `npm run dev` if nothing is listening on localhost:3000
+3. Optionally starts `npm run dev` if testing http://localhost:3000 and nothing is listening
 4. Waits for the dev server to become healthy
-5. Submits a test lead to /api/leads/create
-6. Optionally calls a locally served Supabase Edge Function if LEAD_FOLLOWUP_EDGE_URL is set
-7. Prints responses and exits
+5. Checks the public booking page for the supplied slug
+6. Submits an emergency trade test lead to /api/leads/create
+7. Optionally calls a locally served Supabase Edge Function if LEAD_FOLLOWUP_EDGE_URL is set
+8. Optionally probes /api/cron/zero-leak when -RunZeroLeak is supplied
+9. Prints responses and exits
 
 Usage:
 - Open PowerShell in the repo root
 - Run: .\scripts\smoke-test.ps1 -BookingUrlSlug your-booking-slug
+- Production-style probe: .\scripts\smoke-test.ps1 -AppBaseUrl https://your-app-host -BookingUrlSlug your-booking-slug -RunZeroLeak
 
 Notes:
 - This script assumes `.env.local` exists at the repo root
@@ -20,7 +23,9 @@ Notes:
 #>
 
 param(
-    [string]$BookingUrlSlug = "smoke-test-business"
+    [string]$BookingUrlSlug = "smoke-test-business",
+    [string]$AppBaseUrl = "http://localhost:3000",
+    [switch]$RunZeroLeak
 )
 
 $requiredEnvVars = @(
@@ -151,32 +156,60 @@ function Wait-For-Url {
 Load-EnvFile
 Test-RequiredEnvVars -Names $requiredEnvVars
 
+$appBaseUrl = $AppBaseUrl.TrimEnd('/')
+$isLocalDefaultApp = $appBaseUrl -match '^https?://(localhost|127\.0\.0\.1):3000$'
 $port = 3000
-if (-not (Test-PortListening -Port $port)) {
+
+if ($isLocalDefaultApp -and -not (Test-PortListening -Port $port)) {
     $proc = Start-DevServer
     Write-Host "Dev server started (pid $($proc.Id)). Waiting for server to become ready..."
-    $ready = Wait-For-Url -Url "http://localhost:$port" -TimeoutSeconds 120
+    $ready = Wait-For-Url -Url $appBaseUrl -TimeoutSeconds 120
     if (-not $ready) {
         Write-Warning "Dev server did not become ready. Check dev.log and dev.err in project root."
         Write-Host "You can also start the dev server manually: npm run dev"
         exit 1
     }
-} else {
+} elseif ($isLocalDefaultApp) {
     Write-Host "Port $port already in use - assuming dev server already running."
+} else {
+    Write-Host "Using configured app URL: $appBaseUrl"
+    $ready = Wait-For-Url -Url $appBaseUrl -TimeoutSeconds 30
+    if (-not $ready) {
+        Write-Warning "App URL did not respond as expected: $appBaseUrl"
+        exit 1
+    }
 }
 
-$createUrl = "http://localhost:$port/api/leads/create"
+$bookingPageUrl = "$appBaseUrl/book/$BookingUrlSlug"
+Write-Host "Checking public booking page: $bookingPageUrl"
+try {
+    $bookingPage = Invoke-WebRequest -Uri $bookingPageUrl -UseBasicParsing -Method GET -TimeoutSec 15 -ErrorAction Stop
+    Write-Host "Booking page response: HTTP $($bookingPage.StatusCode)"
+} catch {
+    Write-Error "Booking page check failed: $($_.Exception.Message)"
+    exit 1
+}
+
+$stamp = Get-Date -Format "yyyyMMddHHmmss"
+$createUrl = "$appBaseUrl/api/leads/create"
 $payload = @{
     booking_url_slug = $BookingUrlSlug
     website = ""
-    business_name = "Smoke Test Cleaning"
-    your_name = "Smoke Test Lead"
+    business_name = "Smoke Test Mechanical"
+    your_name = "Smoke Test Lead $stamp"
     mobile = "0400000000"
-    email = "smoketest+lead@example.com"
+    email = "smoketest+$stamp@example.com"
     service_area = "Melbourne"
-    service_type = "end_of_lease"
+    service_type = "Cooling Breakdown"
+    lead_urgency = "emergency"
+    triage_problem = "Smoke test cooling failure during peak demand"
+    triage_site_risk = "Customer reports vulnerable occupant and limited access window"
+    triage_safety_risk = $true
+    team_size = "2-5 techs"
+    after_hours_coverage = "Emergency after-hours callouts"
+    dispatch_radius = "25km"
     abn = ""
-    notes = "Smoke test submission"
+    notes = "Smoke test HVAC dispatch-audit lead $stamp"
 } | ConvertTo-Json
 
 Write-Host "Submitting test lead to $createUrl"
@@ -212,6 +245,29 @@ if ($edgeUrl -and $leadFollowupSecret) {
     }
 } else {
     Write-Host "Skipping Edge Function step. Set LEAD_FOLLOWUP_EDGE_URL and LEAD_FOLLOWUP_SECRET (or legacy CRON_SECRET) to test follow-up automation locally."
+}
+
+if ($RunZeroLeak) {
+    if (-not $leadFollowupSecret) {
+        Write-Error "Cannot run Zero-Leak probe without LEAD_FOLLOWUP_SECRET or CRON_SECRET."
+        exit 1
+    }
+
+    $zeroLeakUrl = "$appBaseUrl/api/cron/zero-leak"
+    Write-Host "Triggering Zero-Leak cron route: $zeroLeakUrl"
+    try {
+        $headers = @{
+            "Authorization" = "Bearer $leadFollowupSecret"
+            "x-cron-secret" = $leadFollowupSecret
+        }
+        $zeroLeakResp = Invoke-RestMethod -Uri $zeroLeakUrl -Method Post -Headers $headers -TimeoutSec 30
+        Write-Host "Zero-Leak response:`n$(ConvertTo-Json $zeroLeakResp -Depth 6)"
+    } catch {
+        Write-Error "Zero-Leak route invocation failed: $($_.Exception.Message)"
+        exit 1
+    }
+} else {
+    Write-Host "Skipping Zero-Leak cron probe. Re-run with -RunZeroLeak after the dispatch claim migrations are live."
 }
 
 Write-Host "Smoke test completed successfully. Check Supabase leads and lead_events tables for records."

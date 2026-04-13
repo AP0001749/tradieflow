@@ -15,31 +15,47 @@ interface TwentyFourHourFollowupEmailProps {
   jobType?: string;
 }
 
+const URGENT_JOB_TYPE_PATTERN =
+  /(emergency|callout|blocked drain|fault|breakdown|urgent|no power|no hot water)/i;
+
+function formatJobType(jobType?: string) {
+  return jobType?.replaceAll('_', ' ') || 'your trade work';
+}
+
+function isUrgentJobType(jobType?: string) {
+  return Boolean(jobType && URGENT_JOB_TYPE_PATTERN.test(formatJobType(jobType)));
+}
+
 export const TwentyFourHourFollowupEmail = ({
   name,
   businessName,
   jobType,
 }: TwentyFourHourFollowupEmailProps) => {
+  const formattedJobType = formatJobType(jobType);
+  const urgent = isUrgentJobType(jobType);
+
   return (
       <Html>
       <Head />
-      <Preview>Quick follow-up - ready to set up TradieFlow?</Preview>
+      <Preview>{urgent ? 'Quick dispatch follow-up' : 'Quick follow-up - ready to set up TradieFlow?'}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Quick follow-up</Heading>
+          <Heading style={h1}>{urgent ? 'Dispatch follow-up' : 'Quick follow-up'}</Heading>
           
           <Text style={text}>Hi {name},</Text>
           
           <Text style={text}>
-            Just checking in on your TradieFlow setup request for {jobType?.replace('_', ' ') || 'your trade business'}.
+            Just checking in on your TradieFlow workflow request for {formattedJobType}.
           </Text>
 
           <Text style={text}>
-            <strong>Ready to get started?</strong> Reply &ldquo;YES&rdquo; and share the best time to map your missed-call and follow-up workflow.
+            <strong>Ready to get started?</strong> Reply &ldquo;YES&rdquo; and share the best time to map your missed-call, dispatch, and quote follow-up workflow.
           </Text>
 
           <Text style={text}>
-            If timing changed or you no longer need help, just reply and I&apos;ll close the request.
+            {urgent
+              ? 'If emergency or after-hours work is part of the mix, reply with your coverage window so the workflow fits how your team handles urgent jobs.'
+              : 'If timing changed or you no longer need help, just reply and I&apos;ll close the request.'}
           </Text>
 
           <Hr style={hr} />

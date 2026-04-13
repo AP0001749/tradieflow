@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,10 +26,16 @@ type InvoiceableJob = {
 
 interface CreateInvoiceDialogProps {
   disabledReason?: string;
+  initialJobId?: string | null;
+  initialOpen?: boolean;
 }
 
-export function CreateInvoiceDialog({ disabledReason }: CreateInvoiceDialogProps) {
-  const [open, setOpen] = useState(false);
+export function CreateInvoiceDialog({
+  disabledReason,
+  initialJobId = null,
+  initialOpen = false,
+}: CreateInvoiceDialogProps) {
+  const [open, setOpen] = useState(initialOpen && !disabledReason);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,11 +51,7 @@ export function CreateInvoiceDialog({ disabledReason }: CreateInvoiceDialogProps
   const [amount, setAmount] = useState<string>("");
   const isDisabled = Boolean(disabledReason);
 
-  async function handleOpenChange(nextOpen: boolean) {
-    setOpen(nextOpen);
-
-    if (!nextOpen || isDisabled) return;
-
+  const loadJobs = useCallback(async () => {
     setLoadingJobs(true);
     setError(null);
 
@@ -60,14 +62,41 @@ export function CreateInvoiceDialog({ disabledReason }: CreateInvoiceDialogProps
       const nextJobs = result.jobs || [];
       setJobs(nextJobs);
 
-      if (!nextJobs.some((j) => j.id === selectedJobId)) {
+      const nextSelectedJobId =
+        initialJobId && nextJobs.some((job) => job.id === initialJobId)
+          ? initialJobId
+          : selectedJobId;
+
+      if (!nextSelectedJobId || !nextJobs.some((j) => j.id === nextSelectedJobId)) {
         setSelectedJobId("");
         setAmount("");
+      } else {
+        setSelectedJobId(nextSelectedJobId);
+        const matchedJob = nextJobs.find((job) => job.id === nextSelectedJobId) || null;
+        setAmount(matchedJob?.price != null ? String(matchedJob.price) : "");
       }
     } finally {
       setLoadingJobs(false);
     }
+  }, [initialJobId, selectedJobId]);
+
+  async function handleOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen);
+
+    if (!nextOpen || isDisabled) return;
+
+    await loadJobs();
   }
+
+  useEffect(() => {
+    if (!open || isDisabled) {
+      return;
+    }
+
+    if (jobs.length === 0 && !loadingJobs) {
+      void loadJobs();
+    }
+  }, [open, isDisabled, jobs.length, loadingJobs, loadJobs]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -106,7 +135,7 @@ export function CreateInvoiceDialog({ disabledReason }: CreateInvoiceDialogProps
         <DialogHeader>
           <DialogTitle>Create Invoice</DialogTitle>
           <DialogDescription>
-            Select a completed/in-progress job to invoice, then set a due date.
+            Select an in-progress or completed job, confirm the amount, and set the due date for the revenue handoff.
           </DialogDescription>
         </DialogHeader>
         {disabledReason && (
@@ -153,6 +182,12 @@ export function CreateInvoiceDialog({ disabledReason }: CreateInvoiceDialogProps
                 ))}
               </Select>
             )}
+            {selectedJob ? (
+              <p className="text-xs text-muted-foreground">
+                {selectedJob.status.replaceAll("_", " ")} job
+                {selectedJob.price != null ? ` with $${selectedJob.price.toLocaleString()} already on the record.` : "."}
+              </p>
+            ) : null}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

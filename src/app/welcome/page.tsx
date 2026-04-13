@@ -106,7 +106,7 @@ export default function WelcomePage() {
           </h1>
           
           <p className="text-muted-foreground text-base pt-2 animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '300ms' }}>
-            Your account has been created successfully
+            Your dispatch-ready workspace has been created
           </p>
         </CardHeader>
 
@@ -116,10 +116,10 @@ export default function WelcomePage() {
               <Briefcase className="h-5 w-5 text-emerald-500 mt-0.5 flex-shrink-0" />
               <div className="space-y-1">
                 <p className="text-sm font-medium text-foreground">
-                  Manage Customers, Jobs, and Lead Recovery
+                  Recover Missed Calls and Run Job Ops
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Track urgent jobs, send invoices, and keep high-value leads in play
+                  Track urgent jobs, follow up quotes, and keep high-value leads in play
                 </p>
               </div>
             </div>
@@ -130,7 +130,7 @@ export default function WelcomePage() {
               onClick={() => router.push("/dashboard")}
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
             >
-              Get Started
+              Open Dashboard
             </Button>
             <p className="text-xs text-center text-muted-foreground">
               Redirecting automatically...

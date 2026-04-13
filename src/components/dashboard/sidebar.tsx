@@ -1,13 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Users, Briefcase, FileText, CreditCard, LogOut, UserPlus, Settings } from "lucide-react";
+import {
+  Home,
+  Users,
+  Briefcase,
+  FileText,
+  CreditCard,
+  LogOut,
+  Megaphone,
+  UserPlus,
+  Settings,
+  Route as RouteIcon,
+} from "lucide-react";
 
 import { DashboardNavLink } from "@/components/dashboard/nav-link";
 
 const navItems = [
   { name: "Home", href: "/dashboard", icon: Home },
   { name: "Leads", href: "/dashboard/leads", icon: UserPlus },
+  { name: "Dispatch", href: "/dashboard/dispatch", icon: RouteIcon },
+  { name: "Outreach", href: "/dashboard/outreach", icon: Megaphone },
   { name: "Clients", href: "/dashboard/clients", icon: Users },
   { name: "Jobs", href: "/dashboard/jobs", icon: Briefcase },
   { name: "Invoices", href: "/dashboard/invoices", icon: FileText },

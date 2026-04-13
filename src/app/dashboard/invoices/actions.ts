@@ -154,7 +154,7 @@ export async function markAsPaid(invoiceId: string): Promise<void> {
 
   const { data: invoice, error: invoiceError } = await supabase
     .from("invoices")
-    .select("id, status, paid_at, review_request_sent_at")
+    .select("id, status, paid_at, review_request_sent_at, review_request_last_error")
     .eq("id", invoiceId)
     .eq("user_id", user.id)
     .single();
@@ -172,6 +172,9 @@ export async function markAsPaid(invoiceId: string): Promise<void> {
       status: nextStatus,
       paid_at: nextPaidAt,
       review_request_sent_at: nextStatus === "paid" ? invoice.review_request_sent_at : null,
+      review_request_processing: false,
+      review_request_processing_started_at: null,
+      review_request_last_error: nextStatus === "paid" ? invoice.review_request_last_error : null,
     })
     .eq("id", invoiceId)
     .eq("user_id", user.id);
@@ -219,6 +222,9 @@ export async function toggleReviewRequestSent(invoiceId: string) {
   const payload: InvoiceUpdate = {
     paid_at: invoice.paid_at || now,
     review_request_sent_at: invoice.review_request_sent_at ? null : now,
+    review_request_processing: false,
+    review_request_processing_started_at: null,
+    review_request_last_error: null,
   };
 
   const { error } = await supabase

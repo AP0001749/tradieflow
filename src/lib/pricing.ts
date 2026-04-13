@@ -77,6 +77,14 @@ export function getSubscriptionPlanLabel(planKey: SubscriptionPlanKey): string {
   return "Free";
 }
 
+export function hasApexAutomationAccess(planKey: SubscriptionPlanKey) {
+  return planKey === "apex";
+}
+
+export function hasBaselineAutomationAccess(planKey: SubscriptionPlanKey) {
+  return planKey === "baseline" || planKey === "apex";
+}
+
 export function getEffectiveSubscriptionPlanKey({
   subscriptionPlanKey,
   subscriptionTier,

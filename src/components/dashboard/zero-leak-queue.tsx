@@ -24,6 +24,7 @@ interface QueueColumnProps {
 }
 
 interface ZeroLeakQueueProps {
+  canUseApexAutomations: boolean;
   quoteFollowupEnabled: boolean;
   reviewRequestEnabled: boolean;
   quoteDueNow: number;
@@ -101,6 +102,7 @@ function QueueColumn({
 }
 
 export function ZeroLeakQueue({
+  canUseApexAutomations,
   quoteFollowupEnabled,
   reviewRequestEnabled,
   quoteDueNow,
@@ -118,9 +120,23 @@ export function ZeroLeakQueue({
           <h2>Automation Queue</h2>
         </div>
         <p>
-          Jobs and invoices that are armed for Zero-Leak follow-up based on the timestamps logged by your operators.
+          Jobs and invoices that are armed for Zero-Leak follow-up based on operator timestamps and SMS-or-email dispatch status.
         </p>
       </div>
+
+      {!canUseApexAutomations ? (
+        <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-4 text-sm text-amber-900 dark:text-amber-100">
+          Quote nurture and review extraction are Apex automations. Upgrade to Apex to arm these queues and dispatch automated follow-ups.
+          <div className="mt-2">
+            <Link
+              href="/dashboard/billing"
+              className="inline-flex items-center text-sm font-semibold text-foreground underline underline-offset-2"
+            >
+              View Billing
+            </Link>
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 xl:grid-cols-2">
         <QueueColumn

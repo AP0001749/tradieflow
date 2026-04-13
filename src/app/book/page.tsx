@@ -6,19 +6,19 @@ export default function BookIndexPage() {
   return (
     <div className="page-shell space-y-8">
       <div className="text-center space-y-3">
-        <p className="hero-pill">Booking Links</p>
-        <h1 className="tf-display text-4xl md:text-5xl">Use your unique booking URL</h1>
+        <p className="hero-pill">Public Lead Links</p>
+        <h1 className="tf-display text-4xl md:text-5xl">Use your unique dispatch audit URL</h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Demo and lead-capture forms are business-specific. Open the full URL from your
-          dashboard settings so every request lands in the correct workspace.
+          Dispatch-audit and lead-capture forms are business-specific. Open the full URL
+          from your dashboard settings so every request lands in the correct workspace.
         </p>
       </div>
 
       <Card className="glass-card max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle>Need your booking link?</CardTitle>
+          <CardTitle>Need your dispatch audit link?</CardTitle>
           <CardDescription>
-            Sign in to TradieFlow and copy the booking URL shown in Settings.
+            Sign in to TradieFlow and copy the public lead link shown in Settings.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center">

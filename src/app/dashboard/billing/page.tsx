@@ -83,7 +83,7 @@ export default async function BillingPage({
           Billing
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Manage the Zero-Leak Funnel subscription for your workspace.
+          Manage the Baseline or Apex subscription for your revenue-capture workspace.
         </p>
       </div>
 
@@ -95,7 +95,7 @@ export default async function BillingPage({
               Payment Successful
             </h3>
             <p className="mt-1 text-sm text-emerald-700 dark:text-emerald-300/90">
-              Your TradieFlow paid workspace is active.
+              Your TradieFlow revenue-capture workspace is active.
               {successPlanKey ? ` ${successPlanKey === "apex" ? "Apex" : "Baseline"} pricing was selected at checkout.` : ""}
             </p>
           </div>

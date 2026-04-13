@@ -1,13 +1,21 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { randomUUID } from "crypto";
 import { createClient } from "@/lib/supabase/server";
-import { JobStatus, JobUpdate } from "@/types";
+import {
+  DispatchPriority,
+  JobStatus,
+  JobUpdate,
+  ServiceWindow,
+} from "@/types";
 import {
   ALLOWED_JOB_PHOTO_MIME_TYPES,
   MAX_JOB_PHOTO_SIZE_BYTES,
   isAllowedJobPhotoMimeType,
 } from "@/lib/job-photos";
+import { inferDispatchPriorityFromJobType } from "@/lib/job-dispatch";
+import { inferTradeVerticalFromJobType } from "@/lib/trade-jobs";
 
 const isDev = process.env.NODE_ENV !== "production";
 const debugLog = (...args: unknown[]) => {
@@ -18,11 +26,38 @@ const debugLog = (...args: unknown[]) => {
 
 function revalidateJobSurfaces(jobId?: string) {
   revalidatePath("/dashboard/jobs");
+  revalidatePath("/dashboard/dispatch");
   revalidatePath("/dashboard");
 
   if (jobId) {
     revalidatePath(`/dashboard/jobs/${jobId}`);
   }
+}
+
+const VALID_DISPATCH_PRIORITIES = [
+  "emergency",
+  "same_day",
+  "scheduled",
+  "backlog",
+] as const;
+
+const VALID_SERVICE_WINDOWS = [
+  "anytime",
+  "morning",
+  "midday",
+  "afternoon",
+  "after_hours",
+] as const;
+
+const VALID_DISPATCH_CHECK_IN_STATUSES = [
+  "awaiting_dispatch",
+  "en_route",
+  "on_site",
+  "left_site",
+] as const;
+
+function getTokenTail(value?: string | null) {
+  return value ? value.slice(-8) : null;
 }
 
 export async function createJob(formData: FormData) {
@@ -42,6 +77,13 @@ export async function createJob(formData: FormData) {
   const price = formData.get("price") as string;
   const start_date = formData.get("start_date") as string;
   const description = formData.get("description") as string;
+  const trade_vertical = formData.get("trade_vertical") as string;
+  const warranty_status = formData.get("warranty_status") as string;
+  const equipment_make = formData.get("equipment_make") as string;
+  const site_access_notes = formData.get("site_access_notes") as string;
+  const dispatch_priority = formData.get("dispatch_priority") as string;
+  const service_window = formData.get("service_window") as string;
+  const assigned_technician = formData.get("assigned_technician") as string;
 
   // Database expects underscore in status values (e.g., "in_progress")
   // Normalize: trim, lowercase, convert spaces/hyphens to underscores
@@ -91,6 +133,14 @@ export async function createJob(formData: FormData) {
     p_price: parsedPrice,
     p_start_date: start_date || null,
     p_description: description || null,
+    p_trade_vertical: trade_vertical || inferTradeVerticalFromJobType(title),
+    p_warranty_status: warranty_status || null,
+    p_equipment_make: equipment_make || null,
+    p_site_access_notes: site_access_notes || null,
+    p_dispatch_priority:
+      dispatch_priority || inferDispatchPriorityFromJobType(title),
+    p_service_window: service_window || (start_date ? "anytime" : null),
+    p_assigned_technician: assigned_technician || null,
   });
 
   if (error) {
@@ -155,21 +205,41 @@ export async function getClients() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { clients: [], error: "Unauthorized" };
+    return { clients: [], dispatchRoster: [], error: "Unauthorized" };
   }
 
-  const { data: clients, error } = await supabase
-    .from("clients")
-    .select("id, name")
-    .eq("user_id", user.id)
-    .order("name", { ascending: true });
+  const [clientsResult, businessProfileResult] = await Promise.all([
+    supabase
+      .from("clients")
+      .select("id, name")
+      .eq("user_id", user.id)
+      .order("name", { ascending: true }),
+    supabase
+      .from("business_profile")
+      .select("dispatch_roster")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+  ]);
 
-  if (error) {
-    console.error("Error fetching clients:", error);
-    return { clients: [], error: error.message };
+  if (clientsResult.error) {
+    console.error("Error fetching clients:", clientsResult.error);
+    return { clients: [], dispatchRoster: [], error: clientsResult.error.message };
   }
 
-  return { clients: clients || [], error: null };
+  if (businessProfileResult.error) {
+    console.error("Error fetching dispatch roster:", businessProfileResult.error);
+    return {
+      clients: clientsResult.data || [],
+      dispatchRoster: [],
+      error: businessProfileResult.error.message,
+    };
+  }
+
+  return {
+    clients: clientsResult.data || [],
+    dispatchRoster: businessProfileResult.data?.dispatch_roster || [],
+    error: null,
+  };
 }
 
 export async function updateJob(
@@ -181,6 +251,13 @@ export async function updateJob(
     price: string;
     start_date: string | null;
     description: string | null;
+    trade_vertical: string | null;
+    warranty_status: string | null;
+    equipment_make: string | null;
+    site_access_notes: string | null;
+    dispatch_priority: string | null;
+    service_window: string | null;
+    assigned_technician: string | null;
   }
 ) {
   const supabase = await createClient();
@@ -235,6 +312,13 @@ export async function updateJob(
     price: data.price ? (Number.isFinite(parseFloat(data.price)) ? parseFloat(data.price) : null) : null,
     start_date: data.start_date || null,
     description: data.description || null,
+    trade_vertical: data.trade_vertical || null,
+    warranty_status: data.warranty_status || null,
+    equipment_make: data.equipment_make || null,
+    site_access_notes: data.site_access_notes || null,
+    dispatch_priority: data.dispatch_priority || null,
+    service_window: data.service_window || null,
+    assigned_technician: data.assigned_technician || null,
   };
 
   const { error } = await supabase
@@ -249,6 +333,309 @@ export async function updateJob(
   }
 
   revalidateJobSurfaces(jobId);
+  return { success: true };
+}
+
+export async function updateJobDispatchQuick(
+  jobId: string,
+  data: {
+    status?: string | null;
+    start_date?: string | null;
+    dispatch_sequence?: number | null;
+    dispatch_check_in_status?: string | null;
+    dispatch_last_known_location?: string | null;
+    dispatch_eta_note?: string | null;
+    dispatch_priority?: string | null;
+    service_window?: string | null;
+    assigned_technician?: string | null;
+  },
+) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
+
+  const { data: job, error: jobError } = await supabase
+    .from("jobs")
+    .select("id, status")
+    .eq("id", jobId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (jobError || !job) {
+    return { error: "Job not found" };
+  }
+
+  const payload: JobUpdate = {};
+
+  if (typeof data.status !== "undefined" && data.status !== null) {
+    const validStatuses: JobStatus[] = [
+      "draft",
+      "scheduled",
+      "in_progress",
+      "completed",
+      "cancelled",
+    ];
+
+    const normalizedStatus = data.status
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, "_") as JobStatus;
+
+    if (!validStatuses.includes(normalizedStatus)) {
+      return { error: "Invalid job status" };
+    }
+
+    payload.status = normalizedStatus;
+  }
+
+  if (typeof data.start_date !== "undefined") {
+    payload.start_date = data.start_date?.trim() ? data.start_date.trim() : null;
+  }
+
+  let checkInTouched = false;
+
+  if (typeof data.dispatch_sequence !== "undefined") {
+    if (data.dispatch_sequence === null) {
+      payload.dispatch_sequence = null;
+    } else if (
+      Number.isInteger(data.dispatch_sequence) &&
+      data.dispatch_sequence >= 1
+    ) {
+      payload.dispatch_sequence = data.dispatch_sequence;
+    } else {
+      return { error: "Run order must be a whole number greater than zero" };
+    }
+  }
+
+  if (typeof data.dispatch_check_in_status !== "undefined") {
+    const normalizedCheckIn = data.dispatch_check_in_status?.trim() || null;
+
+    if (
+      normalizedCheckIn &&
+      !VALID_DISPATCH_CHECK_IN_STATUSES.includes(
+        normalizedCheckIn as (typeof VALID_DISPATCH_CHECK_IN_STATUSES)[number],
+      )
+    ) {
+      return { error: "Invalid crew check-in status" };
+    }
+
+    payload.dispatch_check_in_status =
+      normalizedCheckIn as JobUpdate["dispatch_check_in_status"];
+    checkInTouched = true;
+  }
+
+  if (typeof data.dispatch_last_known_location !== "undefined") {
+    payload.dispatch_last_known_location =
+      data.dispatch_last_known_location?.trim() || null;
+    checkInTouched = true;
+  }
+
+  if (typeof data.dispatch_eta_note !== "undefined") {
+    payload.dispatch_eta_note = data.dispatch_eta_note?.trim() || null;
+    checkInTouched = true;
+  }
+
+  if (typeof data.dispatch_priority !== "undefined") {
+    const normalizedPriority = data.dispatch_priority?.trim() || null;
+
+    if (
+      normalizedPriority &&
+      !VALID_DISPATCH_PRIORITIES.includes(
+        normalizedPriority as (typeof VALID_DISPATCH_PRIORITIES)[number],
+      )
+    ) {
+      return { error: "Invalid dispatch priority" };
+    }
+
+    payload.dispatch_priority = normalizedPriority as DispatchPriority | null;
+  }
+
+  if (typeof data.service_window !== "undefined") {
+    const normalizedWindow = data.service_window?.trim() || null;
+
+    if (
+      normalizedWindow &&
+      !VALID_SERVICE_WINDOWS.includes(
+        normalizedWindow as (typeof VALID_SERVICE_WINDOWS)[number],
+      )
+    ) {
+      return { error: "Invalid service window" };
+    }
+
+    payload.service_window = normalizedWindow as ServiceWindow | null;
+  }
+
+  if (typeof data.assigned_technician !== "undefined") {
+    payload.assigned_technician = data.assigned_technician?.trim() || null;
+  }
+
+  if (checkInTouched) {
+    payload.dispatch_last_checked_in_at = new Date().toISOString();
+  }
+
+  const { error } = await supabase
+    .from("jobs")
+    .update(payload)
+    .eq("id", jobId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error updating dispatch job state:", error);
+    return { error: error.message };
+  }
+
+  const { error: eventError } = await supabase.from("job_dispatch_events").insert({
+    job_id: jobId,
+    user_id: user.id,
+    event_source: "operator",
+    event_type: checkInTouched ? "check_in" : "dispatch_update",
+    dispatch_check_in_status:
+      payload.dispatch_check_in_status ?? data.dispatch_check_in_status ?? null,
+    dispatch_eta_note: payload.dispatch_eta_note ?? data.dispatch_eta_note ?? null,
+    dispatch_last_known_location:
+      payload.dispatch_last_known_location ?? data.dispatch_last_known_location ?? null,
+    metadata: {
+      status: payload.status ?? null,
+      start_date: payload.start_date ?? null,
+      dispatch_sequence: payload.dispatch_sequence ?? null,
+      dispatch_priority: payload.dispatch_priority ?? null,
+      service_window: payload.service_window ?? null,
+      assigned_technician: payload.assigned_technician ?? null,
+    },
+  });
+
+  if (eventError) {
+    console.warn("Unable to write dispatch audit event:", eventError);
+  }
+
+  revalidateJobSurfaces(jobId);
+  return { success: true };
+}
+
+export async function setJobFieldCheckInLinkEnabled(
+  jobId: string,
+  enabled: boolean,
+) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
+
+  const { data: job, error: jobError } = await supabase
+    .from("jobs")
+    .select("id, dispatch_share_token")
+    .eq("id", jobId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (jobError || !job) {
+    return { error: "Job not found" };
+  }
+
+  const { error } = await supabase
+    .from("jobs")
+    .update({ dispatch_share_enabled: enabled } satisfies JobUpdate)
+    .eq("id", jobId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error updating field check-in link state:", error);
+    return { error: error.message };
+  }
+
+  const { error: eventError } = await supabase.from("job_dispatch_events").insert({
+    job_id: jobId,
+    user_id: user.id,
+    event_source: "operator",
+    event_type: enabled ? "link_resumed" : "link_paused",
+    metadata: {
+      dispatch_share_token_tail: getTokenTail(job.dispatch_share_token),
+    },
+  });
+
+  if (eventError) {
+    console.warn("Unable to write field link audit event:", eventError);
+  }
+
+  revalidateJobSurfaces(jobId);
+
+  if (job.dispatch_share_token) {
+    revalidatePath(`/field/${job.dispatch_share_token}`);
+  }
+
+  return { success: true };
+}
+
+export async function rotateJobFieldCheckInLink(jobId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
+
+  const { data: job, error: jobError } = await supabase
+    .from("jobs")
+    .select("id, dispatch_share_token")
+    .eq("id", jobId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (jobError || !job) {
+    return { error: "Job not found" };
+  }
+
+  const nextToken = randomUUID();
+  const { error } = await supabase
+    .from("jobs")
+    .update({
+      dispatch_share_token: nextToken,
+      dispatch_share_enabled: true,
+    } satisfies JobUpdate)
+    .eq("id", jobId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error rotating field check-in link:", error);
+    return { error: error.message };
+  }
+
+  const { error: eventError } = await supabase.from("job_dispatch_events").insert({
+    job_id: jobId,
+    user_id: user.id,
+    event_source: "operator",
+    event_type: "link_rotated",
+    metadata: {
+      previous_token_tail: getTokenTail(job.dispatch_share_token),
+      next_token_tail: getTokenTail(nextToken),
+    },
+  });
+
+  if (eventError) {
+    console.warn("Unable to write field link rotation audit event:", eventError);
+  }
+
+  revalidateJobSurfaces(jobId);
+  revalidatePath(`/field/${nextToken}`);
+
+  if (job.dispatch_share_token) {
+    revalidatePath(`/field/${job.dispatch_share_token}`);
+  }
+
   return { success: true };
 }
 
@@ -278,9 +665,15 @@ export async function toggleQuoteSent(jobId: string) {
     ? {
         quote_sent_at: null,
         quote_followup_sent_at: null,
+        quote_followup_processing: false,
+        quote_followup_processing_started_at: null,
+        quote_followup_last_error: null,
       }
     : {
         quote_sent_at: new Date().toISOString(),
+        quote_followup_processing: false,
+        quote_followup_processing_started_at: null,
+        quote_followup_last_error: null,
       };
 
   const { error } = await supabase
@@ -328,6 +721,9 @@ export async function toggleQuoteFollowupSent(jobId: string) {
     quote_followup_sent_at: job.quote_followup_sent_at
       ? null
       : new Date().toISOString(),
+    quote_followup_processing: false,
+    quote_followup_processing_started_at: null,
+    quote_followup_last_error: null,
   };
 
   const { error } = await supabase

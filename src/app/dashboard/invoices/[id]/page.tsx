@@ -59,6 +59,9 @@ export default async function InvoiceViewPage({
         due_date,
         notes,
         paid_at,
+        review_request_last_error,
+        review_request_processing,
+        review_request_processing_started_at,
         review_request_sent_at,
         created_at,
         updated_at,
@@ -190,6 +193,8 @@ export default async function InvoiceViewPage({
                   variant={
                     invoice.review_request_sent_at
                       ? "completed"
+                      : invoice.review_request_processing
+                        ? "scheduled"
                       : !paymentLogged
                         ? "outline"
                       : reviewIsDue
@@ -199,6 +204,8 @@ export default async function InvoiceViewPage({
                 >
                   {invoice.review_request_sent_at
                     ? "Logged"
+                    : invoice.review_request_processing
+                      ? "Sending"
                     : !paymentLogged
                       ? "Waiting"
                       : reviewIsDue
@@ -222,6 +229,11 @@ export default async function InvoiceViewPage({
                 ) : (
                   <p>Mark the invoice as paid first to arm the review queue.</p>
                 )}
+                {invoice.review_request_last_error ? (
+                  <p className="text-destructive">
+                    Last automation error: {invoice.review_request_last_error}
+                  </p>
+                ) : null}
               </div>
 
               <form action={toggleReviewRequestSentAction}>
@@ -229,7 +241,7 @@ export default async function InvoiceViewPage({
                   type="submit"
                   size="sm"
                   variant={invoice.review_request_sent_at ? "outline" : "default"}
-                  disabled={!paymentLogged}
+                  disabled={!paymentLogged || invoice.review_request_processing}
                 >
                   {invoice.review_request_sent_at
                     ? "Clear Review Timestamp"

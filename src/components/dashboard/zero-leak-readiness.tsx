@@ -1,8 +1,17 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import {
+  getSubscriptionPlanLabel,
+  hasApexAutomationAccess,
+  hasBaselineAutomationAccess,
+  type SubscriptionPlanKey,
+} from "@/lib/pricing";
 
 interface ZeroLeakReadinessProps {
+  subscriptionPlanKey?: SubscriptionPlanKey;
   missedCallTextEnabled: boolean;
+  missedCallForwardingNumber?: string | null;
+  twilioPhoneNumber?: string | null;
   quoteFollowupEnabled: boolean;
   quoteFollowupDelayHours: number;
   reviewRequestEnabled: boolean;
@@ -21,14 +30,26 @@ function StatusBadge({ enabled }: { enabled: boolean }) {
 }
 
 export function ZeroLeakReadiness({
+  subscriptionPlanKey = "free",
   missedCallTextEnabled,
+  missedCallForwardingNumber,
+  twilioPhoneNumber,
   quoteFollowupEnabled,
   quoteFollowupDelayHours,
   reviewRequestEnabled,
   reviewRequestDelayHours,
   googleReviewUrl,
 }: ZeroLeakReadinessProps) {
-  const reviewReady = reviewRequestEnabled && Boolean(googleReviewUrl?.trim());
+  const canUseBaselineAutomations = hasBaselineAutomationAccess(subscriptionPlanKey);
+  const canUseApexAutomations = hasApexAutomationAccess(subscriptionPlanKey);
+  const missedCallReady =
+    canUseBaselineAutomations &&
+    missedCallTextEnabled &&
+    Boolean(missedCallForwardingNumber?.trim()) &&
+    Boolean(twilioPhoneNumber?.trim());
+  const quoteReady = canUseApexAutomations && quoteFollowupEnabled;
+  const reviewReady =
+    canUseApexAutomations && reviewRequestEnabled && Boolean(googleReviewUrl?.trim());
 
   return (
     <section className="section-card space-y-5">
@@ -36,6 +57,7 @@ export function ZeroLeakReadiness({
         <h2>Automation Readiness</h2>
         <p>
           Snapshot of the three core Zero-Leak systems configured for this workspace.
+          Current plan: {getSubscriptionPlanLabel(subscriptionPlanKey)}.
         </p>
       </div>
 
@@ -43,11 +65,15 @@ export function ZeroLeakReadiness({
         <Card className="p-5 space-y-3 border-border/60">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-base font-semibold">Missed Call Text Back</h3>
-            <StatusBadge enabled={missedCallTextEnabled} />
+            <StatusBadge enabled={missedCallReady} />
           </div>
           <p className="text-sm text-muted-foreground">
-            {missedCallTextEnabled
-              ? "Instant reply workflow is configured for unanswered calls."
+            {missedCallReady
+              ? "Inbound calls route through Twilio and text back after the 15-second forward is missed."
+              : !canUseBaselineAutomations
+                ? "Baseline or Apex is required to arm missed-call text back."
+                : missedCallTextEnabled
+                ? "Add both a Twilio number and forwarding number in settings to fully arm missed-call text back."
               : "Template exists, but the workflow is still disabled in settings."}
           </p>
         </Card>
@@ -55,10 +81,12 @@ export function ZeroLeakReadiness({
         <Card className="p-5 space-y-3 border-border/60">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-base font-semibold">Quote Nurture</h3>
-            <StatusBadge enabled={quoteFollowupEnabled} />
+            <StatusBadge enabled={quoteReady} />
           </div>
           <p className="text-sm text-muted-foreground">
-            {quoteFollowupEnabled
+            {!canUseApexAutomations
+              ? "Apex is required to arm automated quote nurture."
+              : quoteReady
               ? `Quote follow-up is set to fire ${quoteFollowupDelayHours} hours after the quote goes out.`
               : `Quote follow-up is staged with a ${quoteFollowupDelayHours}-hour delay but currently disabled.`}
           </p>
@@ -72,7 +100,9 @@ export function ZeroLeakReadiness({
           <p className="text-sm text-muted-foreground">
             {reviewReady
               ? `Review requests are configured to send ${reviewRequestDelayHours} hours after payment.`
-              : reviewRequestEnabled
+              : !canUseApexAutomations
+                ? "Apex is required to arm automated review extraction."
+                : reviewRequestEnabled
                 ? "Enable a Google review URL in settings to fully arm the post-payment review flow."
                 : `Review extraction is prepared with a ${reviewRequestDelayHours}-hour delay but currently disabled.`}
           </p>

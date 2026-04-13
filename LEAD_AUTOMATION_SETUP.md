@@ -27,6 +27,10 @@ Relevant migrations include:
 - `20260324153000_hardening_patch.sql`
 - `20260324174500_move_lead_followup_to_supabase_cron.sql`
 - `20260330150000_centralize_tier_limits.sql`
+- `20260401064500_add_zero_leak_automation_settings.sql`
+- `20260404083000_add_lead_sms_tracking.sql`
+- `20260407103000_add_missed_call_text_back_routing.sql`
+- `20260408100000_add_missed_call_textback_claims.sql`
 
 ## 2. Configure Local / App Environment Variables
 
@@ -42,6 +46,8 @@ UPSTASH_REDIS_REST_TOKEN=your-upstash-token
 RESEND_API_KEY=your-resend-key
 RESEND_SENDER_EMAIL=your-verified-sender
 RESEND_REPLY_TO_EMAIL=your-reply-to-email
+TWILIO_ACCOUNT_SID=your-twilio-account-sid
+TWILIO_AUTH_TOKEN=your-twilio-auth-token
 LEAD_FOLLOWUP_SECRET=your-random-secure-followup-secret
 CRON_SECRET=your-random-secure-followup-secret
 ```
@@ -51,6 +57,9 @@ Notes:
 - `NEXT_PUBLIC_APP_URL` is required for auth redirects and email links.
 - Lead capture intentionally fails closed if Upstash is missing.
 - Email sending now fails fast if no verified sender is configured.
+- `TWILIO_AUTH_TOKEN` is required to verify inbound Twilio webhook signatures.
+- `TWILIO_ACCOUNT_SID` is required when TradieFlow sends missed-call text backs, quote follow-ups, or review requests through Twilio.
+- `TWILIO_SKIP_SIGNATURE_VALIDATION=true` is available only for explicit local testing and should stay off in production.
 - `CRON_SECRET` is a legacy alias. The compatibility route accepts either name, and it can honor a comma-separated allowlist during secret rotation.
 
 Generate a secure follow-up secret:
@@ -109,6 +118,31 @@ Important:
 - Prefer `POST /api/cron/leads-followup`. `GET` remains available only as a compatibility alias.
 - The route accepts either `Authorization: Bearer <secret>` or `x-cron-secret: <secret>`.
 - Once Supabase Cron is healthy, you can keep the workflow only as a manual check or disable its schedule.
+
+## 3B. Configure Twilio Inbound SMS
+
+TradieFlow now includes an inbound SMS webhook at `/api/twilio/webhook`.
+
+Use it for replies to existing leads only:
+
+- Configure the Twilio phone number webhook as `POST https://your-app-host/api/twilio/webhook`
+- Keep signature validation enabled in production with `TWILIO_AUTH_TOKEN`
+- The route first resolves the receiving Twilio number to a workspace, then matches inbound messages to existing leads by phone number inside that workspace
+- Twilio webhook retries are deduped by the latest inbound `MessageSid` stored on the matched lead
+- Matched replies log a `sms_received` or `sms_opt_out` event and clear automated follow-up scheduling so a reply does not keep triggering nurture emails
+- STOP-style replies mark the lead as `sms_do_not_contact = true` once the new migration is applied
+
+## 3C. Configure Twilio Missed-Call Text Back
+
+TradieFlow also includes first-party missed-call text back routes:
+
+- Configure the Twilio phone number voice webhook as `POST https://your-app-host/api/twilio/voice`
+- In `/dashboard/settings`, set the same owned Twilio number and the tradie/dispatcher forwarding number
+- Twilio dials the forwarding number for 15 seconds
+- If the dial leg returns `busy`, `no-answer`, `failed`, or `canceled`, Twilio calls `/api/twilio/missed-call`
+- TradieFlow sends the configured missed-call template as an SMS, creates or updates a lead, and logs `missed_call_text_back_sent`
+- Twilio retries are deduped by a database-backed `CallSid` claim before another text-back can be sent
+- Existing leads marked `sms_do_not_contact = true` are suppressed and logged as `missed_call_text_back_suppressed`
 
 ## 4. Set Up Your Business Profile
 
@@ -173,7 +207,17 @@ npx supabase functions serve lead-followup --no-verify-jwt
 Use the smoke test script:
 
 ```powershell
+npm run preflight:production
+Copy-Item .env.production.local.example .env.production.local
+npm run preflight:production:strict
+npm run release:gate:strict
 .\scripts\smoke-test.ps1 -BookingUrlSlug your-booking-slug
+```
+
+Production-style smoke test with the Zero-Leak dispatcher probe:
+
+```powershell
+.\scripts\smoke-test.ps1 -AppBaseUrl https://your-app-host -BookingUrlSlug your-booking-slug -RunZeroLeak
 ```
 
 ## 7. Monitoring
@@ -233,6 +277,6 @@ Check cron execution:
 Before calling rollout complete:
 
 - run the browser upload hardening check
-- run the full production smoke test
+- run the full production smoke test with `-RunZeroLeak`
 - verify Stripe billing flows end to end
 - verify RLS and tenant isolation in the live database

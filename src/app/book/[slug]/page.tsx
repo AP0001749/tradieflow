@@ -1,6 +1,11 @@
 import { notFound } from "next/navigation";
 import { BookingRequestForm } from "@/components/book/booking-request-form";
+import { getPublicJobTypeOptions } from "@/lib/job-type-options";
 import { createClient } from "@/lib/supabase/server";
+import {
+  getTradeFocusAudienceLabel,
+  getTradeFocusMarketingLabel,
+} from "@/lib/trade-focus";
 import type { Database } from "@/types/database.generated";
 
 type PublicBookingProfile =
@@ -26,17 +31,29 @@ export default async function BookSlugPage({
     notFound();
   }
 
+  const publicJobTypeOptions = getPublicJobTypeOptions(
+    profile.default_job_types,
+    profile.primary_trade_focus,
+  );
+  const tradeAudienceLabel = getTradeFocusAudienceLabel(profile.primary_trade_focus);
+  const tradeMarketingLabel = getTradeFocusMarketingLabel(profile.primary_trade_focus);
+
   return (
     <div className="page-shell space-y-8">
       <div className="text-center space-y-3">
-        <p className="hero-pill">Zero-Leak Demo</p>
+        <p className="hero-pill">Dispatch Audit</p>
         <h1 className="tf-display text-4xl md:text-5xl">
-          See how {profile.business_name} can plug missed-call leaks
+          See how {profile.business_name} can plug missed-call leaks for{" "}
+          {tradeMarketingLabel.toLowerCase()} work
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Share a few details about your trade business and {profile.business_name}
-          will map out the missed-call text back, quote follow-up, and review flow for
-          your team.
+          Share a few details about your {tradeAudienceLabel} business and{" "}
+          {profile.business_name} will map out the missed-call text back, dispatch
+          coverage, quote follow-up, and review flow for your team.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Common work types for this workflow:{" "}
+          {publicJobTypeOptions.slice(0, 4).join(" | ")}
         </p>
         <p className="text-sm text-muted-foreground">
           This link is unique to {profile.business_name}, so your request goes to the
@@ -47,6 +64,7 @@ export default async function BookSlugPage({
       <BookingRequestForm
         bookingUrlSlug={profile.booking_url_slug}
         businessName={profile.business_name}
+        serviceTypeOptions={publicJobTypeOptions}
       />
     </div>
   );

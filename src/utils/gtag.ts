@@ -19,7 +19,7 @@ export const GOOGLE_ADS_CONFIG = {
   CONVERSION_ID: 'AW-17896188158',
   SIGN_UP_LABEL: '0fciCMj5wOobEP7RyNVC',
   // Configure this in `.env.local` as NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL.
-  // This should be your "Setup Demo Request" conversion action label.
+  // This should be your "Setup Dispatch Audit Request" conversion action label.
   LEAD_LABEL: process.env.NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL || '',
   SUBSCRIBE_LABEL: process.env.NEXT_PUBLIC_GOOGLE_ADS_SUBSCRIBE_LABEL || '',
 };
@@ -112,7 +112,7 @@ export async function trackSignUpConversion(
 }
 
 /**
- * Fire Google Ads lead conversion for onboarding/demo requests.
+ * Fire Google Ads lead conversion for dispatch-audit and lead requests.
  *
  * IMPORTANT: Requires `NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL` to be set.
  *
@@ -133,7 +133,7 @@ export async function trackLeadConversion(params: {
   }
 
   if (!GOOGLE_ADS_CONFIG.LEAD_LABEL) {
-    console.warn('[Google Ads] Demo-request conversion label not configured (NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL)');
+    console.warn('[Google Ads] Dispatch-audit conversion label not configured (NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL)');
     if (callback) callback();
     return;
   }
