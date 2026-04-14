@@ -1,153 +1,127 @@
 # TradieFlow
 
-TradieFlow is a SaaS job management and lead recovery platform for Australian tradies. It combines a public booking flow, tenant-safe lead capture, client and job management, invoicing, Stripe billing, and automated follow-up for high-urgency trades such as HVAC, plumbing, and electrical.
+TradieFlow is a SaaS lead-recovery, dispatch, and job-ops platform for Australian trade businesses. The current product focus is high-urgency infrastructure trades: HVAC, plumbing, electrical, heating, cooling, and emergency callout teams.
 
-## Status
+The product is no longer positioned as generic booking convenience. It is a Zero-Leak workflow for stopping missed calls, cold quotes, and missed review opportunities from leaking revenue to the next tradie on Google.
 
-The codebase hardening work is done and pushed.
+## Quick Summary
 
-Completed in the repo:
+- Public dispatch-audit funnel at `/book/[booking_url_slug]`.
+- Missed-call text-back through Twilio voice and SMS webhooks.
+- Emergency lead triage with response SLA tracking.
+- Quote nurture and Google review extraction through the Zero-Leak cron route.
+- Dispatch desk, crew loadboard, route packs, run order, and printable day sheets.
+- Technician field check-in links at `/field/[token]` with optional browser GPS capture.
+- Baseline and Apex subscription tiers with plan-gated automations.
+- Supabase-backed auth, database, storage, migrations, Edge Function, and optional Cron.
+- Stripe checkout, billing portal, and webhook processing.
+- Resend email automation and Twilio SMS automation.
+- Release gates for humans and AI agents: `npm run release:gate`.
 
-- tenant-safe lead routing using `business_profile.booking_url_slug`
-- anti-spam protection with Zod validation, honeypot, and Upstash rate limiting
-- Stripe webhook dedupe with retry-safe processing
-- atomic free-tier quota enforcement through database RPCs
-- Baseline/Apex billing state persisted via `profiles.subscription_plan_key`
-- workspace-level Zero-Leak automation settings stored on `business_profile`
-- Baseline/Apex feature enforcement for Zero-Leak automation tiers, including Baseline missed-call recovery and Apex-only quote nurture/review extraction
-- workspace primary trade focus stored on `business_profile`
-- dispatch profile fields stored on `business_profile` for team size, after-hours coverage, and dispatch radius
-- workspace dispatch roster stored on `business_profile` for reusable crew assignment shortcuts
-- job-level dispatch fields for priority, service window, and assigned tech or crew
-- job-level dispatch run order for day-sheet and route-pack sequencing
-- manual crew check-in status, ETA note, and last-known-location logging on jobs
-- quote and review automation milestones tracked on jobs and invoices
-- Zero-Leak quote/review email dispatcher at `/api/cron/zero-leak`
-- emergency-trade default templates for quote nurture and post-payment review extraction
-- quote/review SMS templates include STOP opt-out copy and the dispatcher falls back to email when a converted lead has SMS suppressed
-- Twilio missed-call text-back voice workflow at `/api/twilio/voice`
-- missed-call text-back retry dedupe by database-backed Twilio `CallSid` claims
-- missed-call recovery that escalates matched leads into emergency triage and logs the escalation event
-- repeat missed calls from closed contacts create a fresh active emergency lead instead of hiding inside won/lost/stale history
-- emergency triage fields on leads for urgency, response SLA, failure mode, and safety/access risk
-- triage-priority lead sorting with quick call, SMS, and email response shortcuts that stamp operator contact
-- inbound wrong-number SMS replies automatically suppress future automated SMS and log the suppression event
-- operator triage reclassification from lead detail with timeline logging and SLA recalculation
-- dashboard emergency lead queue showing active response-risk leads before dispatch work
-- response SLA outcome badges showing pending, overdue, hit, or missed contact targets
-- immutable first-response timestamp for stable SLA scoring even after later follow-ups
-- lead response SLA performance summary with hit rate, overdue count, and average first response
-- workspace-configurable response SLA minutes for emergency, same-day, scheduled, and quote leads
-- dashboard go-live checklist that turns workspace settings, lead flow, and job activity into an operator rollout sequence
-- compliant dispatch-audit outreach kit with copy blocks, audit-link handoff, readiness checks, and MRR projection
-- dedicated dispatch desk with quick crew assignment, priority, window, and status controls
-- dispatch route packs with Google Maps links and stop-copy handoff for crew/day filters
-- dispatch run-order controls carried through the queue, route pack, and printable day sheet
-- manual field check-in controls across Dispatch, the board, crew loadboard, and job detail view
-- tokenized technician field check-in links with optional browser GPS capture, pause/resume, and rotation controls
-- dispatch event timeline for operator updates, field check-ins, and crew-link lifecycle changes
-- crew loadboard showing active work by assigned technician or crew
-- dispatch brief copy and call/email shortcuts on the dispatch desk and job detail view
-- print-ready dispatch day sheet filtered by crew and date
-- upload validation and signed URL hardening
-- middleware fail-closed behavior for protected routes
-- Supabase Cron migration path with a Supabase Edge Function for follow-up automation
-- compatibility follow-up processor at `/api/cron/leads-followup`
-- GitHub Actions fallback scheduler for the compatibility processor
-- removal of Vercel cron scheduling
+## Product Model
 
-Still required before calling the rollout fully complete:
+### Plans
 
-- apply the Supabase Cron migration in the live project
-- deploy the `lead-followup` Edge Function
-- set Edge Function secrets in Supabase
-- create the required Vault secrets
-- verify either the hosted compatibility route or Supabase Cron runs successfully in production
-- schedule or manually invoke `/api/cron/zero-leak` after applying the Zero-Leak dispatch migration
-- configure the Twilio voice webhook and business routing numbers before enabling missed-call text back
-- run the browser-based upload hardening check
-- run the final production smoke test with `.\scripts\smoke-test.ps1 -AppBaseUrl https://your-app-host -BookingUrlSlug your-booking-slug -RunZeroLeak`
+| Plan | Price | Automation access |
+| --- | ---: | --- |
+| Free | $0 AUD | Core workspace only |
+| Baseline | $299 AUD / month | Missed-call text-back and standard SMS routing |
+| Apex | $499 AUD / month | Baseline plus quote nurture, review extraction, and deeper automation |
 
-## Core Features
+Plan logic lives in `src/lib/pricing.ts`.
 
-- Dashboard for clients, jobs, invoices, and leads
-- Dedicated Dispatch page for crew assignment and run-sheet controls
-- Crew loadboard on Dispatch and Dashboard for crew-level workload visibility
-- Dispatch brief handoff pack with copy, call, and email actions
-- Dispatch day sheet with crew/date filters and print-friendly run sheet output
-- Technician field check-in page at `/field/[token]` for mobile status, ETA, location note, and optional GPS updates, with operator-controlled link pause/resume/rotation
-- Job-level dispatch timeline preserving field/operator check-in history instead of only the latest snapshot
-- Go-live checklist for public lead link, service footprint, missed-call recovery, and first pipeline milestones
-- Dispatch profile snapshot for team size, after-hours coverage, radius, and service footprint
-- Dispatch board and dashboard snapshot for urgent callouts, today's run sheet, upcoming work, and unassigned jobs
-- Dispatch roster presets pushed from Settings into the dispatch desk and job forms
-- Lead detail dispatch-audit snapshot sourced from structured intake metadata with notes fallback
-- Lead emergency triage board with response SLA visibility and overdue markers
-- Lead table/detail quick response actions for phone, SMS triage, and email follow-up with automatic contact logging
-- Lead detail triage control for changing response lane, failure mode, and safety/access risk after customer replies
-- Main dashboard emergency lead queue with overdue counts and direct response shortcuts
-- Lead SLA outcome visibility across dashboard queue, leads table, and lead detail
-- First-response SLA scoring that does not drift when later calls, texts, or emails update the lead
-- Leads page response performance summary for SLA hit rate, open response risk, and average first response
-- Settings controls for emergency, same-day, scheduled, and quote response SLA targets
-- Outreach page for compliant dispatch-audit scripts, booking-link handoff, readiness checks, and Baseline/Apex MRR projection
-- Trade-specific job ops fields for vertical, warranty, equipment, and site access across create/edit/detail flows
-- Job-level revenue handoff view with invoice status and job-prefilled invoice creation path
-- Public booking pages at `/book/[booking_url_slug]`
-- Multi-tenant lead capture and follow-up sequencing
-- Trade-ready public funnel with primary trade focus, service-type presets, and Baseline/Apex positioning
-- Job photo uploads
-- Stripe subscriptions and billing portal
-- Google Ads conversion tracking
-- Supabase-backed auth, database, storage, and scheduled automation
+### Zero-Leak Systems
+
+| System | What it does | Main files |
+| --- | --- | --- |
+| Missed Call Text Back | Twilio rings the tradie for 15 seconds, then texts the caller if the call is missed | `src/app/api/twilio/voice/route.ts`, `src/app/api/twilio/missed-call/route.ts` |
+| Quote Nurture | Follows up quoted jobs after the configured delay | `src/app/api/cron/zero-leak/route.ts`, `src/lib/zero-leak.ts` |
+| Review Extraction | Sends post-payment Google review requests after the configured delay | `src/app/api/cron/zero-leak/route.ts`, `src/lib/zero-leak.ts` |
+| Emergency Triage | Captures urgency, failure mode, risk, and first response SLA | `src/lib/lead-triage.ts`, `src/app/dashboard/leads/[id]/page.tsx` |
+| Dispatch Ops | Runs crew assignment, run order, route packs, day sheets, and field check-ins | `src/app/dashboard/dispatch/page.tsx`, `src/app/field/[token]/page.tsx` |
+
+## Safety And Compliance Rules
+
+TradieFlow includes compliant manual outreach assets, but it must not be used to automate spam.
+
+- Do not scrape phone lists.
+- Do not bulk-send SMS to scraped numbers.
+- Do not bulk-submit website contact forms.
+- Do not bypass opt-outs or wrong-number suppression.
+- Keep `TWILIO_SKIP_SIGNATURE_VALIDATION=false` in production.
+- Keep STOP opt-out copy in automated SMS templates.
+- Use `/dashboard/outreach` for reviewed, identifiable dispatch-audit outreach only.
+
+The regression script `npm run audit:pivot` checks that the repo does not drift back toward legacy low-urgency service copy, low-tier convenience positioning, or unsafe outbound language.
 
 ## Tech Stack
 
-- Next.js App Router
-- TypeScript
+- Next.js App Router 16
 - React 19
-- Supabase Auth, Postgres, Storage, Edge Functions, and Cron
-- Stripe
-- Resend
-- Upstash Redis
+- TypeScript
+- Supabase Auth, Postgres, Storage, Edge Functions, Vault, and optional Cron
+- Stripe checkout, billing portal, and webhooks
+- Resend email
+- Twilio voice and SMS
+- Upstash Redis rate limiting
 - Tailwind CSS
+- GitHub Actions for release checks and optional follow-up fallback
+
+## Requirements
+
+- Node.js `>=20.9.0`
+- Node 22 LTS recommended for CI and production parity
+- npm
+- Supabase project
+- Stripe account
+- Resend account and verified sender
+- Twilio account and owned number
+- Upstash Redis database
 
 ## Local Setup
 
-### Prerequisites
-
-- Node.js 20.9+; Node 22 LTS is recommended for CI and production parity
-- npm
-- a Supabase project
-- Stripe credentials if testing billing
-- Resend credentials if testing emails
-- Upstash Redis credentials if testing public lead capture rate limiting
-
-### Install
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-### Environment
+Create a local environment file:
 
-Copy `.env.local.example` to `.env.local` and fill in the values you need.
-For deployment checks, copy `.env.production.local.example` to `.env.production.local`
-and replace every placeholder with the hosted production value before running the
-strict preflight.
+```powershell
+Copy-Item .env.local.example .env.local
+```
 
-App runtime:
+Fill only what you need for local testing. Some flows can be developed without live Twilio, Stripe, or Resend, but production preflight will fail until those values are real.
+
+Run the app:
 
 ```bash
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:3000
+```
+
+## Environment Variables
+
+Local examples live in `.env.local.example`.
+
+Production examples live in `.env.production.local.example`.
+
+### Core App
+
+```bash
+NEXT_PUBLIC_APP_URL=
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-`NEXT_PUBLIC_APP_URL` is required for OAuth redirects, Stripe return URLs, and invoice links.
-
-Lead capture and automation:
+### Lead Capture And Automation
 
 ```bash
 UPSTASH_REDIS_REST_URL=
@@ -158,16 +132,11 @@ RESEND_SENDER_EMAIL=
 RESEND_REPLY_TO_EMAIL=
 LEAD_FOLLOWUP_SECRET=
 CRON_SECRET=
-TWILIO_ACCOUNT_SID=
-TWILIO_AUTH_TOKEN=
-TWILIO_SKIP_SIGNATURE_VALIDATION=false
 ```
 
-`RESEND_SENDER_EMAIL` or `RESEND_FROM_EMAIL` must be a verified sender. The app and Edge Function now fail fast if no sender identity is configured.
-The compatibility route accepts both `LEAD_FOLLOWUP_SECRET` and the legacy `CRON_SECRET`. You can also supply a comma-separated allowlist during secret rotation.
-`TWILIO_SKIP_SIGNATURE_VALIDATION` is for local webhook testing only; keep it disabled in production.
+`LEAD_FOLLOWUP_SECRET` is preferred. `CRON_SECRET` is a legacy alias during cutover.
 
-Billing:
+### Stripe
 
 ```bash
 STRIPE_SECRET_KEY=
@@ -178,86 +147,237 @@ NEXT_PUBLIC_STRIPE_APEX_PRICE_ID=
 NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=
 ```
 
-### Run Locally
+`NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` is only a legacy fallback for Baseline during cutover.
+
+### Twilio
 
 ```bash
-npm run dev
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_SKIP_SIGNATURE_VALIDATION=false
 ```
 
-Open `http://localhost:3000`.
+### Optional Google Ads
 
-## Database
+```bash
+NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL=
+NEXT_PUBLIC_GOOGLE_ADS_SUBSCRIBE_LABEL=
+```
 
-Supabase migrations live in `supabase/migrations`.
+## Common Commands
 
-`supabase/config.toml` is for local Supabase CLI development. Do not treat its auth settings as proof of your hosted production auth policy.
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start local Next.js dev server |
+| `npm run lint` | Run ESLint |
+| `npm run typecheck` | Run TypeScript with `--noEmit` |
+| `npm run build` | Build the production app |
+| `npm run audit:pivot` | Check HVAC/Apex positioning and safety guardrails |
+| `npm run verify:local` | Run lint, typecheck, pivot audit, and build |
+| `npm run preflight:production` | Check local env and repo shape |
+| `npm run preflight:production:strict` | Check `.env.production.local` with strict production rules |
+| `npm run release:gate` | Parse scripts, run local verifier, run whitespace diff check |
+| `npm run release:gate:strict` | Release gate plus required strict production preflight |
+| `npm run generate-types` | Regenerate Supabase database types |
 
-Apply migrations:
+## Verification
+
+Before committing or pushing:
+
+```powershell
+npm run release:gate
+npm audit
+npm audit --omit=dev
+```
+
+Expected local result before production credentials exist:
+
+```text
+Release gate completed without blocking issues.
+.env.production.local not found. Skipping strict production preflight until real hosted values are available.
+```
+
+Expected production result after filling `.env.production.local`:
+
+```powershell
+npm run release:gate:strict
+```
+
+That command should pass without warnings for a production-ready deploy.
+
+## CI
+
+GitHub Actions runs the release gate on Windows with Node 22.
+
+Workflow:
+
+```text
+.github/workflows/release-gate.yml
+```
+
+Triggers:
+
+- Push to `main`
+- Pull request
+- Manual dispatch
+
+There is also a scheduled follow-up compatibility workflow:
+
+```text
+.github/workflows/heartbeat.yaml
+```
+
+The heartbeat workflow can call `/api/cron/leads-followup` while Supabase Cron or Edge Function scheduling is being rolled out.
+
+## Route Map
+
+### Public Routes
+
+| Route | Purpose |
+| --- | --- |
+| `/` | Marketing page with Zero-Leak positioning and MRR simulator |
+| `/book` | Explains that booking/audit URLs are business-specific |
+| `/book/[slug]` | Public dispatch-audit lead capture for a workspace |
+| `/field/[token]` | Technician field check-in page |
+| `/login` | Login |
+| `/signup` | Signup |
+| `/welcome` | First-run onboarding |
+| `/legal/privacy` | Privacy policy |
+| `/legal/terms` | Terms |
+
+### Dashboard Routes
+
+| Route | Purpose |
+| --- | --- |
+| `/dashboard` | Main operator dashboard, emergency queue, go-live checklist, Zero-Leak queue |
+| `/dashboard/billing` | Baseline/Apex checkout and billing portal |
+| `/dashboard/clients` | Client management |
+| `/dashboard/dispatch` | Dispatch desk, route packs, crew loadboard, day sheet |
+| `/dashboard/invoices` | Invoice list |
+| `/dashboard/invoices/[id]` | Invoice detail and print/email actions |
+| `/dashboard/jobs` | Jobs board and dispatch snapshot |
+| `/dashboard/jobs/[id]` | Job detail, dispatch timeline, field link controls |
+| `/dashboard/leads` | Leads table, channel summary, SLA summary, readiness |
+| `/dashboard/leads/[id]` | Lead detail, activity feed, response actions, triage control |
+| `/dashboard/outreach` | Compliant manual dispatch-audit outreach kit |
+| `/dashboard/settings` | Business profile, service area, automations, Twilio, SLAs |
+
+### API Routes
+
+| Route | Purpose |
+| --- | --- |
+| `POST /api/leads/create` | Public lead intake with validation and rate limiting |
+| `POST /api/cron/leads-followup` | Hosted compatibility lead follow-up processor |
+| `POST /api/cron/zero-leak` | Quote nurture and review extraction dispatcher |
+| `POST /api/twilio/voice` | Twilio voice entrypoint for missed-call forwarding |
+| `POST /api/twilio/missed-call` | Missed-call text-back handler |
+| `POST /api/twilio/webhook` | Inbound SMS, STOP, wrong-number suppression |
+| `POST /api/field/check-in` | Public technician check-in submit endpoint |
+| `POST /api/stripe/checkout` | Stripe checkout session |
+| `POST /api/stripe/portal` | Stripe billing portal session |
+| `POST /api/stripe/webhook` | Stripe webhook processing |
+
+## Main Flows
+
+### Public Dispatch-Audit Lead
+
+1. Customer or business owner opens `/book/[booking_url_slug]`.
+2. `BookingRequestForm` submits to `POST /api/leads/create`.
+3. Zod validation, honeypot, tenant lookup, and Upstash rate limiting protect intake.
+4. Lead triage fields are stored on `leads`.
+5. Immediate follow-up email is sent through Resend when configured.
+6. Lead appears in `/dashboard/leads` and emergency queues when urgent.
+
+### Missed-Call Text Back
+
+1. Twilio calls `POST /api/twilio/voice`.
+2. Tradie/dispatcher number rings for 15 seconds.
+3. If unanswered, Twilio calls `POST /api/twilio/missed-call`.
+4. TradieFlow claims the `CallSid` to avoid duplicate sends.
+5. Baseline or Apex workspace receives the configured missed-call SMS behavior.
+6. Caller is created or updated as an emergency lead.
+7. Matched closed contacts create a fresh active emergency lead.
+
+### Inbound SMS
+
+1. Twilio calls `POST /api/twilio/webhook`.
+2. Messages are matched by receiving Twilio number and sender.
+3. STOP replies suppress future automated SMS.
+4. Wrong-number replies also suppress future automated SMS.
+5. Lead activity logs show the suppression or inbound reply.
+
+### Quote Nurture And Review Extraction
+
+1. Operator sends a quote or marks an invoice paid.
+2. Due jobs and invoices are claimed by `POST /api/cron/zero-leak`.
+3. Apex plan is required.
+4. Twilio SMS is preferred when available and not suppressed.
+5. Resend email is used as fallback.
+6. Errors are released back to the queue with visible `*_last_error` fields.
+
+### Dispatch And Field Check-In
+
+1. Operator creates or edits a job with trade and dispatch metadata.
+2. Dispatch page shows crew assignment, priority, route, and day sheet.
+3. Job detail exposes a tokenized field check-in link.
+4. Technician submits status, ETA, location note, and optional GPS from `/field/[token]`.
+5. Job snapshot and `job_dispatch_events` timeline update.
+6. Operators can pause, resume, or rotate the field link.
+
+## Data Model And Migrations
+
+Supabase migrations live in:
+
+```text
+supabase/migrations
+```
+
+Important schema areas:
+
+- `business_profile`: booking slug, trade focus, dispatch profile, roster, Twilio routing, automation settings, SLA settings.
+- `profiles`: subscription plan key and Stripe subscription state.
+- `leads`: triage, response SLA, SMS suppression, first response tracking.
+- `lead_events`: activity feed for capture, follow-up, response, suppression, and triage events.
+- `clients`: customer records created manually or from won leads.
+- `jobs`: trade metadata, dispatch metadata, field check-in state, quote follow-up state.
+- `job_dispatch_events`: immutable dispatch and field check-in timeline.
+- `invoices`: invoice state and review extraction state.
+- `twilio_missed_call_textbacks`: missed-call `CallSid` claim/dedupe records.
+- `tier_limits`: plan capabilities and quotas.
+
+Apply migrations to a linked Supabase project:
 
 ```bash
 npx supabase db push -p <db-password>
 ```
 
-Generate fresh database types after schema changes:
+Regenerate types after schema changes:
 
 ```bash
 npm run generate-types
 ```
 
-## Lead Automation Architecture
+## Supabase Edge Function And Cron
 
-Target production flow:
+Target production path:
 
-`Supabase Cron -> public.invoke_lead_followup() -> Supabase Edge Function -> Resend + DB updates`
+```text
+Supabase Cron -> public.invoke_lead_followup() -> lead-followup Edge Function -> Resend + DB updates
+```
 
-Current compatibility fallback:
+Compatibility fallback:
 
-`GitHub Actions -> /api/cron/leads-followup -> Resend + DB updates`
+```text
+GitHub Actions -> /api/cron/leads-followup -> Resend + DB updates
+```
 
-Relevant files:
-
-- `supabase/functions/lead-followup/index.ts`
-- `supabase/migrations/20260324153000_hardening_patch.sql`
-- `supabase/migrations/20260324174500_move_lead_followup_to_supabase_cron.sql`
-- `supabase/migrations/20260330150000_centralize_tier_limits.sql`
-- `supabase/migrations/20260401064500_add_zero_leak_automation_settings.sql`
-- `supabase/migrations/20260401061000_add_subscription_plan_key.sql`
-- `supabase/migrations/20260401073000_add_automation_tracking_fields.sql`
-- `supabase/migrations/20260407090000_add_zero_leak_dispatch_claims.sql`
-- `supabase/migrations/20260407103000_add_missed_call_text_back_routing.sql`
-- `supabase/migrations/20260408100000_add_missed_call_textback_claims.sql`
-- `supabase/migrations/20260408113000_add_dispatch_profile_fields.sql`
-- `supabase/migrations/20260409103000_add_job_dispatch_fields.sql`
-- `supabase/migrations/20260409114500_add_dispatch_roster_to_business_profile.sql`
-- `supabase/migrations/20260410083000_expand_public_booking_profile_job_types.sql`
-- `supabase/migrations/20260410101500_add_primary_trade_focus_to_business_profile.sql`
-- `supabase/migrations/20260410114500_add_job_dispatch_sequence.sql`
-- `supabase/migrations/20260410131500_add_job_dispatch_check_in_fields.sql`
-- `supabase/migrations/20260411100000_add_field_check_in_links_to_jobs.sql`
-- `supabase/migrations/20260411113000_add_job_dispatch_events.sql`
-- `supabase/migrations/20260411124500_add_lead_emergency_triage.sql`
-- `supabase/migrations/20260411133000_add_lead_first_response_at.sql`
-- `supabase/migrations/20260411143000_add_business_lead_response_slas.sql`
-- `supabase/migrations/20260411153000_update_zero_leak_emergency_trade_templates.sql`
-- `supabase/migrations/20260411160000_add_sms_opt_out_to_zero_leak_templates.sql`
-- `supabase/migrations/20260411163000_gate_zero_leak_apex_automations.sql`
-- `supabase/migrations/20260411164500_gate_missed_call_baseline_automation.sql`
-- `supabase/migrations/20260408124500_expand_create_job_with_trade_fields.sql`
-- `supabase/migrations/20260409091500_expand_zero_leak_sms_channels.sql`
-
-The compatibility route exists so follow-up automation can still run while hosted Supabase Cron or the Edge Function rollout catches up. Prefer `POST /api/cron/leads-followup`. The route also accepts `GET` for compatibility, and it honors either `Authorization: Bearer <secret>` or `x-cron-secret: <secret>` across both configured secret names during cutover.
-
-Zero-Leak quote nurture and review extraction can be dispatched by `POST /api/cron/zero-leak`. It uses the same `LEAD_FOLLOWUP_SECRET`/`CRON_SECRET` auth headers, claims due jobs and invoices via database RPCs, prefers Twilio SMS when the workspace has a configured number and the client has a mobile, falls back to Resend email when SMS is unavailable, and releases failed claims with `*_last_error` fields for operator visibility. Missed-call text back is handled by Twilio Voice at `POST /api/twilio/voice`, escalates matched leads into the emergency response lane, and inbound SMS replies are scoped by the receiving Twilio number before matching an existing lead, with Twilio retry dedupe based on the latest inbound `MessageSid`.
-
-## Supabase Cron Rollout
-
-### 1. Deploy the Edge Function
+Deploy Edge Function:
 
 ```bash
 npx supabase functions deploy lead-followup --no-verify-jwt
 ```
 
-### 2. Set Edge Function Secrets
+Set Edge Function secrets:
 
 ```bash
 npx supabase secrets set \
@@ -268,7 +388,7 @@ npx supabase secrets set \
   RESEND_REPLY_TO_EMAIL=your-reply-to-email
 ```
 
-### 3. Create Vault Secrets
+Create Vault secrets:
 
 ```sql
 select vault.create_secret('https://YOUR_PROJECT_REF.supabase.co', 'project_url');
@@ -276,132 +396,76 @@ select vault.create_secret('YOUR_SUPABASE_ANON_KEY', 'supabase_anon_key');
 select vault.create_secret('YOUR_LEAD_FOLLOWUP_SECRET', 'lead_followup_secret');
 ```
 
-### 4. Apply the Scheduler Migration
-
-Apply:
-
-- `supabase/migrations/20260324174500_move_lead_followup_to_supabase_cron.sql`
-- `supabase/migrations/20260330150000_centralize_tier_limits.sql`
-- `supabase/migrations/20260401064500_add_zero_leak_automation_settings.sql`
-- `supabase/migrations/20260401061000_add_subscription_plan_key.sql`
-- `supabase/migrations/20260401073000_add_automation_tracking_fields.sql`
-- `supabase/migrations/20260407090000_add_zero_leak_dispatch_claims.sql`
-- `supabase/migrations/20260407103000_add_missed_call_text_back_routing.sql`
-- `supabase/migrations/20260408100000_add_missed_call_textback_claims.sql`
-- `supabase/migrations/20260408113000_add_dispatch_profile_fields.sql`
-- `supabase/migrations/20260409103000_add_job_dispatch_fields.sql`
-- `supabase/migrations/20260409114500_add_dispatch_roster_to_business_profile.sql`
-- `supabase/migrations/20260410083000_expand_public_booking_profile_job_types.sql`
-- `supabase/migrations/20260410101500_add_primary_trade_focus_to_business_profile.sql`
-- `supabase/migrations/20260410114500_add_job_dispatch_sequence.sql`
-- `supabase/migrations/20260410131500_add_job_dispatch_check_in_fields.sql`
-- `supabase/migrations/20260411100000_add_field_check_in_links_to_jobs.sql`
-- `supabase/migrations/20260411113000_add_job_dispatch_events.sql`
-- `supabase/migrations/20260411124500_add_lead_emergency_triage.sql`
-- `supabase/migrations/20260411133000_add_lead_first_response_at.sql`
-- `supabase/migrations/20260411143000_add_business_lead_response_slas.sql`
-- `supabase/migrations/20260411153000_update_zero_leak_emergency_trade_templates.sql`
-- `supabase/migrations/20260411160000_add_sms_opt_out_to_zero_leak_templates.sql`
-- `supabase/migrations/20260411163000_gate_zero_leak_apex_automations.sql`
-- `supabase/migrations/20260411164500_gate_missed_call_baseline_automation.sql`
-- `supabase/migrations/20260408124500_expand_create_job_with_trade_fields.sql`
-- `supabase/migrations/20260409091500_expand_zero_leak_sms_channels.sql`
-
-If the Vault secrets did not exist when the migration ran:
+If Vault secrets were created after the scheduler migration:
 
 ```sql
 select public.configure_lead_followup_cron();
 ```
 
-### 5. Verify the Scheduler
+## Production Deployment Runbook
 
-Check:
-
-- `cron.job`
-- `cron.job_run_details`
-- Supabase Edge Function logs
-- Resend send results
-- GitHub Actions `TradieFlow Supabase Follow-up Check` if you are still relying on the compatibility route
-  The workflow will try both `LEAD_FOLLOWUP_SECRET` and legacy `CRON_SECRET` if both repo secrets are configured.
-
-## Verification
-
-Already verified locally:
-
-- booking slug routing
-- payload validation
-- honeypot behavior
-- rate limiting
-- middleware fail-closed behavior
-- cron claim/idempotency behavior
-- Stripe webhook dedupe and retry safety
-- free-tier quota enforcement
-
-Still recommended before production rollout:
-
-- browser-based upload hardening check
-- production smoke test after deploy with `-RunZeroLeak`
-
-## Useful Commands
-
-Lint:
-
-```bash
-npm run lint
-```
-
-Typecheck:
-
-```bash
-npm run typecheck
-```
-
-Local release verification:
+1. Run local release gate.
 
 ```powershell
-npm run verify:local
 npm run release:gate
 ```
 
-CI release verification:
-
-GitHub Actions runs `npm run release:gate` on Windows with Node 22 for pushes,
-pull requests, and manual dispatch via `.github/workflows/release-gate.yml`.
-
-HVAC/Apex pivot regression audit:
+2. Create production env file.
 
 ```powershell
-npm run audit:pivot
-```
-
-Production build:
-
-```bash
-npm run build
-```
-
-Production preflight:
-
-```powershell
-npm run preflight:production
-.\scripts\production-preflight.ps1
 Copy-Item .env.production.local.example .env.production.local
+```
+
+3. Replace every placeholder in `.env.production.local` with real hosted values.
+
+4. Run strict preflight.
+
+```powershell
 npm run preflight:production:strict
 npm run release:gate:strict
 ```
 
-Live follow-up route probe:
+5. Deploy latest `main` to the app host.
 
-```powershell
-.\scripts\check-followup-route.ps1
-.\scripts\check-followup-route.ps1 -WithAuth
+6. Apply Supabase migrations.
+
+7. Deploy the `lead-followup` Edge Function and set secrets.
+
+8. Configure Stripe webhook:
+
+```text
+POST https://your-app-host/api/stripe/webhook
 ```
 
-Full app smoke test:
+9. Configure Twilio webhooks:
+
+```text
+POST https://your-app-host/api/twilio/voice
+POST https://your-app-host/api/twilio/webhook
+```
+
+10. Run production smoke test.
+
+```powershell
+.\scripts\smoke-test.ps1 -AppBaseUrl https://your-app-host -BookingUrlSlug your-booking-slug -RunZeroLeak
+```
+
+See `DEPLOYMENT_CHECKLIST.md` for the full deployment checklist.
+
+## Smoke And Probe Scripts
+
+Local or hosted app smoke test:
 
 ```powershell
 .\scripts\smoke-test.ps1 -BookingUrlSlug your-booking-slug
 .\scripts\smoke-test.ps1 -AppBaseUrl https://your-app-host -BookingUrlSlug your-booking-slug -RunZeroLeak
+```
+
+Follow-up route probe:
+
+```powershell
+.\scripts\check-followup-route.ps1
+.\scripts\check-followup-route.ps1 -WithAuth
 ```
 
 Zero-Leak dispatcher probe:
@@ -411,17 +475,72 @@ $headers = @{ Authorization = "Bearer $env:LEAD_FOLLOWUP_SECRET"; "x-cron-secret
 Invoke-RestMethod -Method Post -Uri "$env:NEXT_PUBLIC_APP_URL/api/cron/zero-leak" -Headers $headers
 ```
 
-## Deployment Notes
+## Project Map
 
-- Vercel remains the app host
-- Vercel cron is removed
-- Stripe webhook stays on `/api/stripe/webhook`
-- Supabase Cron is the target scheduled follow-up path
-- GitHub Actions can temporarily drive `/api/cron/leads-followup` as a hosted compatibility fallback
-- `/api/cron/zero-leak` needs a scheduler invocation once the dispatch claim migration is live
+| Path | Purpose |
+| --- | --- |
+| `src/app` | Next.js App Router pages and route handlers |
+| `src/app/api` | Server API routes for leads, Stripe, Twilio, cron, and field check-ins |
+| `src/app/dashboard` | Authenticated operator workspace |
+| `src/app/book` | Public dispatch-audit funnel |
+| `src/app/field` | Public technician field check-in flow |
+| `src/components/dashboard` | Dashboard-specific UI components |
+| `src/components/marketing` | Homepage marketing components |
+| `src/components/ui` | Shared primitive UI components |
+| `src/emails` | React Email templates |
+| `src/lib` | Business logic helpers and shared domain rules |
+| `src/lib/supabase` | Supabase client factories |
+| `src/types` | App and generated database types |
+| `src/utils` | Analytics utilities |
+| `supabase/migrations` | Database migrations |
+| `supabase/functions/lead-followup` | Supabase Edge Function |
+| `scripts` | Release, preflight, smoke, and probe scripts |
+| `.github/workflows` | GitHub Actions release and follow-up workflows |
+
+## Important Files For AI Agents
+
+Read these first when changing major behavior:
+
+- `README.md`
+- `DEPLOYMENT_CHECKLIST.md`
+- `LEAD_AUTOMATION_SETUP.md`
+- `src/lib/pricing.ts`
+- `src/lib/zero-leak.ts`
+- `src/lib/lead-triage.ts`
+- `src/lib/outreach-kit.ts`
+- `src/app/api/twilio/missed-call/route.ts`
+- `src/app/api/cron/zero-leak/route.ts`
+- `src/app/dashboard/settings/actions.ts`
+- `supabase/migrations`
+
+## AI Agent Working Rules
+
+- Run `npm run release:gate` before declaring repo-side work complete.
+- Run `npm audit` and `npm audit --omit=dev` after dependency changes.
+- Do not commit `.env.local` or `.env.production.local`.
+- Do not remove migrations unless explicitly asked.
+- Do not reintroduce low-urgency service-market positioning.
+- Do not implement scraping, bulk SMS, or website form injection.
+- Preserve STOP and wrong-number SMS suppression.
+- Preserve plan gates: Baseline for missed-call recovery, Apex for quote nurture and review extraction.
+- Preserve tenant isolation and booking slug routing.
+- Treat `.env.production.local.example` as a placeholder template only.
+
+## Current Production Blockers
+
+Repo-side implementation and local release gates are complete. Production rollout still requires real hosted values and external setup:
+
+- Real Resend API key and verified sender.
+- Real Stripe Baseline and Apex price IDs.
+- Real Twilio account SID, auth token, phone number, and webhooks.
+- Hosted Supabase migrations applied.
+- Supabase Vault secrets created.
+- `lead-followup` Edge Function deployed.
+- Scheduler configured for lead follow-up and Zero-Leak dispatch.
+- Production smoke test run against the deployed app.
 
 ## Additional Docs
 
-- `LEAD_AUTOMATION_SETUP.md`
 - `DEPLOYMENT_CHECKLIST.md`
+- `LEAD_AUTOMATION_SETUP.md`
 - `ENHANCED_CONVERSIONS_SETUP.md`
