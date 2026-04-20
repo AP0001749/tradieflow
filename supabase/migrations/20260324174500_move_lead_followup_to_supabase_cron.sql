@@ -1,6 +1,7 @@
 create extension if not exists pg_net;
 create extension if not exists pg_cron;
-create extension if not exists vault;
+create schema if not exists vault;
+create extension if not exists "supabase_vault" with schema vault cascade;
 
 create or replace function public.invoke_lead_followup()
 returns bigint
