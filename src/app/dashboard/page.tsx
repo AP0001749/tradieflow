@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DispatchProfileCard } from "@/components/dashboard/dispatch-profile-card";
@@ -99,6 +100,12 @@ type DashboardEmergencyLead = {
   first_responded_at: string | null;
   last_contacted_at: string | null;
   created_at: string | null;
+};
+
+export const metadata: Metadata = {
+  title: "Dashboard — TradieFlow",
+  description: "Your TradieFlow business dashboard.",
+  robots: { index: false, follow: false },
 };
 
 export default async function DashboardPage() {
@@ -280,11 +287,18 @@ export default async function DashboardPage() {
     });
   }
 
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
   const stats = [
     {
       title: "Total Revenue",
       value: `$${totalRevenue.toLocaleString()}`,
       icon: DollarSign,
+      accent: "stat-accent-emerald",
+      iconBg: "bg-emerald-500/10",
+      iconColor: "text-emerald-500",
       change: "",
       changeType: "neutral" as const,
     },
@@ -292,6 +306,9 @@ export default async function DashboardPage() {
       title: "Sales",
       value: salesCount,
       icon: TrendingUp,
+      accent: "stat-accent-sky",
+      iconBg: "bg-sky-500/10",
+      iconColor: "text-sky-500",
       change: "",
       changeType: "neutral" as const,
     },
@@ -299,6 +316,9 @@ export default async function DashboardPage() {
       title: "Active Jobs",
       value: activeJobsResult.count || 0,
       icon: Briefcase,
+      accent: "stat-accent-amber",
+      iconBg: "bg-amber-500/10",
+      iconColor: "text-amber-500",
       change: "",
       changeType: "neutral" as const,
     },
@@ -306,6 +326,9 @@ export default async function DashboardPage() {
       title: "Active Clients",
       value: clientsResult.count || 0,
       icon: Users,
+      accent: "stat-accent-violet",
+      iconBg: "bg-violet-500/10",
+      iconColor: "text-violet-500",
       change: "",
       changeType: "neutral" as const,
     },
@@ -517,7 +540,9 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6 md:space-y-8">
       <div className="animate-in fade-in slide-in-from-top-4 duration-700">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+          {greeting}. Here&rsquo;s your Zero-Leak stack.
+        </h1>
         <p className="text-sm md:text-base text-muted-foreground mt-1">
           Recovery stack, pipeline, and revenue at a glance
         </p>
@@ -528,27 +553,22 @@ export default async function DashboardPage() {
         {stats.map((stat, index) => (
           <Card
             key={stat.title}
-            className="group border-border bg-card transition-shadow hover:shadow-md"
-            style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'backwards' }}>
+            className={`group border-border bg-card transition-all hover:shadow-[var(--shadow-elevated)] hover:-translate-y-0.5 overflow-hidden ${stat.accent}`}
+            style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'backwards' }}
+          >
             <CardHeader className="flex flex-row items-center justify-between p-4 md:p-6 pb-2">
               <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground">
                 {stat.title}
               </CardTitle>
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <stat.icon className="w-4 h-4 text-primary" />
+              <div className={`p-2 ${stat.iconBg} rounded-lg`}>
+                <stat.icon className={`w-4 h-4 ${stat.iconColor}`} />
               </div>
             </CardHeader>
             <CardContent className="p-4 md:p-6 pt-0">
               <div className="text-xl md:text-2xl font-bold tracking-tight text-foreground">{stat.value}</div>
               {stat.change && stat.changeType !== "neutral" && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  <span
-                    className={
-                      stat.changeType === "positive"
-                        ? "text-emerald-400"
-                        : "text-rose-400"
-                    }
-                  >
+                  <span className={stat.changeType === "positive" ? "text-emerald-400" : "text-rose-400"}>
                     {stat.change}
                   </span>{" "}
                   from last month

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,7 +34,6 @@ interface CreateJobDialogProps {
 export function CreateJobDialog({ disabledReason }: CreateJobDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [clients, setClients] = useState<Pick<Client, "id" | "name">[]>([]);
   const [dispatchRoster, setDispatchRoster] = useState<string[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>("");
@@ -46,14 +46,12 @@ export function CreateJobDialog({ disabledReason }: CreateJobDialogProps) {
 
     if (!nextOpen || isDisabled) return;
 
-    // Always clear error on open and re-fetch clients to pick up newly added ones
-    setError(null);
     setLoadingClients(true);
 
     try {
       const result = await getClients();
       if (result.error) {
-        setError(result.error);
+        toast.error(result.error);
         return;
       }
       setClients(result.clients);
@@ -66,7 +64,6 @@ export function CreateJobDialog({ disabledReason }: CreateJobDialogProps) {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    setError(null);
 
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -74,14 +71,14 @@ export function CreateJobDialog({ disabledReason }: CreateJobDialogProps) {
     const result = await createJob(formData);
 
     if (result.error) {
-      setError(result.error);
+      toast.error(result.error);
       setLoading(false);
     } else {
+      toast.success("Job created");
       setOpen(false);
       setLoading(false);
       setSelectedClientId("");
       setAssignedTechnician("");
-      // Reset form
       form.reset();
     }
   }
@@ -316,12 +313,6 @@ export function CreateJobDialog({ disabledReason }: CreateJobDialogProps) {
             Dispatch priority, service window, and assigned crew feed the run sheet on
             the jobs board and job detail page.
           </p>
-
-          {error && (
-            <div className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
-            </div>
-          )}
 
           <div className="flex gap-3 justify-end pt-4">
             <Button

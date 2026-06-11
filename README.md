@@ -11,11 +11,16 @@ The product is no longer positioned as generic booking convenience. It is a Zero
 - Emergency lead triage with response SLA tracking.
 - Quote nurture and Google review extraction through the Zero-Leak cron route.
 - Dispatch desk, crew loadboard, route packs, run order, and printable day sheets.
+- AI geo-route optimisation (Google Maps Distance Matrix + Nearest Neighbor TSP) on the Dispatch page.
 - Technician field check-in links at `/field/[token]` with optional browser GPS capture.
 - Baseline and Apex subscription tiers with plan-gated automations.
 - Supabase-backed auth, database, storage, migrations, Edge Function, and optional Cron.
 - Stripe checkout, billing portal, and webhook processing.
 - Resend email automation and Twilio SMS automation.
+- Mobile navigation with bottom tab bar and More drawer (iOS safe-area aware).
+- Password reset flow (forgot-password + email link).
+- Global toast notifications (Sonner), error boundaries, and loading skeletons on all routes.
+- SEO metadata on landing, login, and dashboard pages.
 - Release gates for humans and AI agents: `npm run release:gate`.
 
 ## Product Model
@@ -154,6 +159,7 @@ NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=
 ```bash
 TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
 TWILIO_SKIP_SIGNATURE_VALIDATION=false
 ```
 

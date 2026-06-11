@@ -111,6 +111,7 @@
   `20260411160000_add_sms_opt_out_to_zero_leak_templates.sql`
   `20260411163000_gate_zero_leak_apex_automations.sql`
   `20260411164500_gate_missed_call_baseline_automation.sql`
+  `20260429103000_enable_rls_for_twilio_missed_call_textbacks.sql`
 - [ ] Verify hosted Supabase auth settings directly in the live project dashboard
 - [ ] Verify RLS / tenant isolation in the live database
 - [ ] Confirm `tier_limits` contains the expected free, Baseline, and Apex plan rows

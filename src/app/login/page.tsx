@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { getAppOrigin } from "@/lib/app-origin";
 import { createClient } from "@/lib/supabase/server";
 import LoginForm from "./login-form";
@@ -27,6 +28,12 @@ async function signInWithGoogle() {
 
   throw new Error("Unable to start Google OAuth flow");
 }
+
+export const metadata: Metadata = {
+  title: "Sign In — TradieFlow",
+  description: "Sign in to your TradieFlow account.",
+  robots: { index: false, follow: false },
+};
 
 export default function LoginPage() {
   return <LoginForm signInWithGoogle={signInWithGoogle} />;

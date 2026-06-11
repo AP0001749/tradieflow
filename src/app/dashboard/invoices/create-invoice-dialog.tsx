@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,7 +38,6 @@ export function CreateInvoiceDialog({
 }: CreateInvoiceDialogProps) {
   const [open, setOpen] = useState(initialOpen && !disabledReason);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const [jobs, setJobs] = useState<InvoiceableJob[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
@@ -53,11 +53,10 @@ export function CreateInvoiceDialog({
 
   const loadJobs = useCallback(async () => {
     setLoadingJobs(true);
-    setError(null);
 
     try {
       const result = await getInvoiceableJobs();
-      if (result.error) setError(result.error);
+      if (result.error) toast.error(result.error);
 
       const nextJobs = result.jobs || [];
       setJobs(nextJobs);
@@ -101,7 +100,6 @@ export function CreateInvoiceDialog({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    setError(null);
 
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -111,11 +109,12 @@ export function CreateInvoiceDialog({
     const result = await createInvoice(formData);
 
     if (result.error) {
-      setError(result.error);
+      toast.error(result.error);
       setLoading(false);
       return;
     }
 
+    toast.success("Invoice created");
     setOpen(false);
     setLoading(false);
     setSelectedJobId("");
@@ -215,12 +214,6 @@ export function CreateInvoiceDialog({
               <Input name="due_date" type="date" disabled={loading} required />
             </div>
           </div>
-
-          {error && (
-            <div className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
-            </div>
-          )}
 
           <div className="flex gap-3 justify-end pt-4">
             <Button

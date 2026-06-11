@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -88,8 +89,6 @@ export default function SettingsForm({
 }: SettingsFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
   const [bookingSlug, setBookingSlug] = useState(profile?.booking_url_slug || '');
   const [primaryTradeFocus, setPrimaryTradeFocus] = useState(
@@ -107,8 +106,6 @@ export default function SettingsForm({
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setError(null);
-    setSuccess(false);
     setCopyMessage(null);
 
     const formData = new FormData(e.currentTarget);
@@ -187,10 +184,10 @@ export default function SettingsForm({
       });
 
       setBookingSlug(normalizedSlug);
-      setSuccess(true);
+      toast.success("Settings saved");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update profile');
+      toast.error(err instanceof Error ? err.message : 'Failed to update profile');
     } finally {
       setIsSubmitting(false);
     }
@@ -778,20 +775,6 @@ export default function SettingsForm({
           </p>
         </CardContent>
       </Card>
-
-      {error ? (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3">
-          <p className="text-sm text-destructive">{error}</p>
-        </div>
-      ) : null}
-
-      {success ? (
-        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3">
-          <p className="text-sm text-emerald-700 dark:text-emerald-200">
-            Settings saved successfully!
-          </p>
-        </div>
-      ) : null}
 
       <div className="flex justify-end">
         <Button type="submit" disabled={isSubmitting}>

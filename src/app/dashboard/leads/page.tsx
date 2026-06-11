@@ -15,6 +15,21 @@ import {
 import { getEffectiveSubscriptionPlanKey } from '@/lib/pricing';
 import { getLeads, getRecentLeadEvents } from './actions';
 import LeadsTable from './leads-table';
+import { AlertTriangle } from 'lucide-react';
+
+const urgencyAccent: Record<string, string> = {
+  emergency: 'border-l-4 border-rose-500',
+  same_day:  'border-l-4 border-amber-500',
+  scheduled: 'border-l-4 border-sky-500',
+  quote:     'border-l-4 border-violet-500',
+};
+
+const urgencyIconBg: Record<string, string> = {
+  emergency: 'bg-rose-500',
+  same_day:  'bg-amber-500',
+  scheduled: 'bg-sky-500',
+  quote:     'bg-violet-500',
+};
 
 export default async function LeadsPage() {
   const supabase = await createClient();
@@ -75,14 +90,16 @@ export default async function LeadsPage() {
       </section>
 
       {!profile && (
-        <section className="section-card">
-          <p className="text-sm text-yellow-800">
-            You need to set up your business profile first.{' '}
-            <Link href="/dashboard/settings" className="underline font-medium">
+        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/8 p-4">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+          <p className="text-sm text-amber-800 dark:text-amber-200">
+            Business profile not set up yet.{' '}
+            <Link href="/dashboard/settings" className="font-semibold underline underline-offset-2 hover:opacity-80">
               Go to Settings
-            </Link>
+            </Link>{' '}
+            to configure your dispatch profile, service area, and automations.
           </p>
-        </section>
+        </div>
       )}
 
       {profile && (
@@ -110,19 +127,25 @@ export default async function LeadsPage() {
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {urgencyCards.map((card) => (
-              <Card key={card.urgency} className="space-y-3 border-border/60 p-5">
+              <Card
+                key={card.urgency}
+                className={`space-y-3 overflow-hidden border-border/60 p-5 ${urgencyAccent[card.urgency] ?? ''}`}
+              >
                 <div className="flex items-center justify-between gap-3">
-                  <Badge className={getLeadUrgencyBadgeClassName(card.urgency)}>
-                    {getLeadUrgencyLabel(card.urgency)}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex h-2 w-2 rounded-full ${urgencyIconBg[card.urgency] ?? 'bg-muted'}`} />
+                    <Badge className={getLeadUrgencyBadgeClassName(card.urgency)}>
+                      {getLeadUrgencyLabel(card.urgency)}
+                    </Badge>
+                  </div>
                   {card.overdue > 0 ? (
                     <Badge className="border-transparent bg-rose-500/15 text-rose-700 dark:text-rose-200">
                       {card.overdue} overdue
                     </Badge>
                   ) : null}
                 </div>
-                <p className="text-3xl font-semibold tracking-tight">{card.count}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-3xl font-bold tracking-tight">{card.count}</p>
+                <p className="text-xs text-muted-foreground">
                   {card.urgency === 'emergency'
                     ? '15-minute response target'
                     : card.urgency === 'same_day'

@@ -1,23 +1,82 @@
-import { NextResponse } from "next/server";
-import { timingSafeEqual } from "node:crypto";
-import twilio from "twilio";
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { Resend } from "npm:resend@6.7.0";
+import twilio from "npm:twilio";
 
-import { createAdminClient } from "@/lib/supabase/admin";
-import { getResend, getResendSenderEmail } from "@/lib/resend";
-import {
-  DEFAULT_QUOTE_FOLLOWUP_TEMPLATE,
-  DEFAULT_REVIEW_REQUEST_TEMPLATE,
-  coerceAutomationTemplate,
-  renderAutomationTemplate,
-} from "@/lib/zero-leak";
-import {
-  getEffectiveSubscriptionPlanKey,
-  hasApexAutomationAccess,
-  type SubscriptionPlanKey,
-} from "@/lib/pricing";
+// --- Inlined from src/lib/zero-leak.ts ---
+const DEFAULT_QUOTE_FOLLOWUP_TEMPLATE =
+  "Hey {{contact_name}}, just checking if you had any questions about the install or repair quote for {{job_title}}. Reply here and {{business_name}} will help you lock in the next step. Reply STOP to opt out.";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+const DEFAULT_REVIEW_REQUEST_TEMPLATE =
+  "Hi {{contact_name}}, thanks again for choosing {{business_name}}. If the job went well, could you leave us a quick 5-star Google review? It really helps local customers trust us in an emergency. {{google_review_url}} Reply STOP to opt out.";
+
+function coerceAutomationTemplate(value: string | null | undefined, fallback: string) {
+  const normalizedValue = value?.trim();
+  return normalizedValue ? normalizedValue : fallback;
+}
+
+function renderAutomationTemplate(
+  template: string,
+  values: Record<string, string | number | null | undefined>
+) {
+  return template.replace(/{{\s*([\w_]+)\s*}}/g, (_match, key: string) => {
+    const value = values[key];
+    return value === null || value === undefined ? "" : String(value);
+  });
+}
+
+// --- Inlined from src/lib/pricing.ts ---
+type SubscriptionPlanKey = "free" | "baseline" | "apex";
+
+const ACTIVE_PAID_SUBSCRIPTION_STATUSES = new Set([
+  "active",
+  "trialing",
+  "past_due",
+]);
+
+function parsePlanKey(value: unknown): "baseline" | "apex" | null {
+  if (value === "baseline" || value === "apex") return value;
+  return null;
+}
+
+function hasApexAutomationAccess(planKey: SubscriptionPlanKey) {
+  return planKey === "apex";
+}
+
+function getEffectiveSubscriptionPlanKey({
+  subscriptionPlanKey,
+  subscriptionTier,
+  subscriptionStatus,
+}: {
+  subscriptionPlanKey?: unknown;
+  subscriptionTier?: unknown;
+  subscriptionStatus?: unknown;
+}): SubscriptionPlanKey {
+  const normalizedPlanKey = parsePlanKey(subscriptionPlanKey);
+  const normalizedTier =
+    typeof subscriptionTier === "string" ? subscriptionTier.trim().toLowerCase() : "";
+  const normalizedStatus =
+    typeof subscriptionStatus === "string"
+      ? subscriptionStatus.trim().toLowerCase() || "active"
+      : "active";
+  const hasPaidMarker = Boolean(normalizedPlanKey) || normalizedTier === "pro";
+  if (!hasPaidMarker || !ACTIVE_PAID_SUBSCRIPTION_STATUSES.has(normalizedStatus)) {
+    return "free";
+  }
+  return normalizedPlanKey ?? "baseline";
+}
+// --- End inlined ---
+
+const createAdminClient = () => {
+  const supabaseUrl = Deno.env.get("NEXT_PUBLIC_SUPABASE_URL") || Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceRoleKey) throw new Error("Missing Supabase Env");
+  return createClient(supabaseUrl, serviceRoleKey);
+};
+
+const getResendSenderEmail = () =>
+  Deno.env.get("RESEND_SENDER_EMAIL") || Deno.env.get("RESEND_FROM_EMAIL") || "dummy@example.com";
+const getResend = () => new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const ROUTE_VERSION = "zero-leak-v1";
 
@@ -71,8 +130,8 @@ type SmsSuppressionState = {
 
 function getCronSecrets() {
   const configuredSecrets = [
-    process.env.LEAD_FOLLOWUP_SECRET,
-    process.env.CRON_SECRET,
+    Deno.env.get("LEAD_FOLLOWUP_SECRET"),
+    Deno.env.get("CRON_SECRET"),
   ]
     .flatMap((value) => (value || "").split(","))
     .map((value) => value.trim().replace(/^(['"])(.*)\1$/, "$2").trim())
@@ -83,15 +142,8 @@ function getCronSecrets() {
 
 function getCronSecretSources() {
   const sources: string[] = [];
-
-  if (process.env.LEAD_FOLLOWUP_SECRET?.trim()) {
-    sources.push("LEAD_FOLLOWUP_SECRET");
-  }
-
-  if (process.env.CRON_SECRET?.trim()) {
-    sources.push("CRON_SECRET");
-  }
-
+  if (Deno.env.get("LEAD_FOLLOWUP_SECRET")?.trim()) sources.push("LEAD_FOLLOWUP_SECRET");
+  if (Deno.env.get("CRON_SECRET")?.trim()) sources.push("CRON_SECRET");
   return sources;
 }
 
@@ -100,19 +152,11 @@ function normalizeIncomingSecret(value: string | null) {
 }
 
 function secretsMatch(candidate: string | null, configuredSecrets: string[]) {
-  if (!candidate) {
-    return false;
-  }
-
+  if (!candidate) return false;
   const candidateBuffer = Buffer.from(candidate);
-
   return configuredSecrets.some((secret) => {
     const secretBuffer = Buffer.from(secret);
-
-    return (
-      candidateBuffer.length === secretBuffer.length &&
-      timingSafeEqual(candidateBuffer, secretBuffer)
-    );
+    return candidateBuffer.length === secretBuffer.length && candidate === secret;
   });
 }
 
@@ -121,7 +165,7 @@ function jsonResponse(
   status = 200,
   extraHeaders?: HeadersInit
 ) {
-  return NextResponse.json(body, {
+  return Response.json(body, {
     status,
     headers: {
       "Cache-Control": "no-store",
@@ -162,11 +206,7 @@ function buildHtmlEmail(message: string, businessName: string) {
 
 function formatMoney(amount: number | string | null | undefined) {
   const numericAmount = Number(amount);
-
-  if (!Number.isFinite(numericAmount)) {
-    return "";
-  }
-
+  if (!Number.isFinite(numericAmount)) return "";
   return new Intl.NumberFormat("en-AU", {
     style: "currency",
     currency: "AUD",
@@ -180,19 +220,9 @@ function getPhoneDigits(value: string | null | undefined) {
 
 function normalizeAustralianPhone(value: string | null | undefined) {
   const digits = getPhoneDigits(value);
-
-  if (!digits) {
-    return null;
-  }
-
-  if (digits.startsWith("61") && digits.length >= 11) {
-    return `+${digits}`;
-  }
-
-  if (digits.startsWith("0") && digits.length >= 10) {
-    return `+61${digits.slice(1)}`;
-  }
-
+  if (!digits) return null;
+  if (digits.startsWith("61") && digits.length >= 11) return `+${digits}`;
+  if (digits.startsWith("0") && digits.length >= 10) return `+61${digits.slice(1)}`;
   return value?.trim() || null;
 }
 
@@ -203,7 +233,7 @@ function truncateError(error: unknown) {
 
 function hasTwilioSmsConfig() {
   return Boolean(
-    process.env.TWILIO_ACCOUNT_SID?.trim() && process.env.TWILIO_AUTH_TOKEN?.trim()
+    Deno.env.get("TWILIO_ACCOUNT_SID")?.trim() && Deno.env.get("TWILIO_AUTH_TOKEN")?.trim()
   );
 }
 
@@ -217,9 +247,7 @@ async function getUserPlanKey({
   cache: Map<string, SubscriptionPlanKey>;
 }) {
   const cached = cache.get(userId);
-  if (cached) {
-    return cached;
-  }
+  if (cached) return cached;
 
   const { data, error } = await supabase
     .from("profiles")
@@ -227,9 +255,7 @@ async function getUserPlanKey({
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (error) {
-    throw error;
-  }
+  if (error) throw error;
 
   const profile = data as SubscriptionProfile | null;
   const planKey = getEffectiveSubscriptionPlanKey({
@@ -242,10 +268,7 @@ async function getUserPlanKey({
 }
 
 function isMissingLeadSmsTrackingColumnError(error: unknown) {
-  if (!error || typeof error !== "object" || !("message" in error)) {
-    return false;
-  }
-
+  if (!error || typeof error !== "object" || !("message" in error)) return false;
   return /sms_(do_not_contact|opted_out)/i.test(String(error.message));
 }
 
@@ -256,9 +279,7 @@ async function getConvertedLeadSmsSuppression({
   jobId: string | null | undefined;
   supabase: ReturnType<typeof createAdminClient>;
 }): Promise<SmsSuppressionState> {
-  if (!jobId) {
-    return { reason: null, suppressed: false };
-  }
+  if (!jobId) return { reason: null, suppressed: false };
 
   const { data, error } = await supabase
     .from("leads")
@@ -270,10 +291,7 @@ async function getConvertedLeadSmsSuppression({
     .maybeSingle();
 
   if (error) {
-    if (isMissingLeadSmsTrackingColumnError(error)) {
-      return { reason: null, suppressed: false };
-    }
-
+    if (isMissingLeadSmsTrackingColumnError(error)) return { reason: null, suppressed: false };
     throw error;
   }
 
@@ -299,10 +317,7 @@ async function getInvoiceJobId({
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
   return data?.job_id || null;
 }
 
@@ -315,19 +330,23 @@ async function sendTwilioSms({
   fromNumber: string;
   toNumber: string;
 }) {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
-  const authToken = process.env.TWILIO_AUTH_TOKEN?.trim();
+  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID")?.trim();
+  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN")?.trim();
 
-  if (!accountSid || !authToken) {
-    throw new Error("Twilio SMS delivery is not configured");
-  }
+  if (!accountSid || !authToken) throw new Error("Twilio SMS delivery is not configured");
 
   const client = twilio(accountSid, authToken);
-  return client.messages.create({
-    body,
-    from: fromNumber,
-    to: toNumber,
-  });
+  try {
+    return await client.messages.create({ body, from: fromNumber, to: toNumber });
+  } catch (err) {
+    const supabase = createAdminClient();
+    await supabase.from("webhook_failures").insert({
+      provider: "twilio",
+      payload: { body, from: fromNumber, to: toNumber },
+      error_message: String(err).slice(0, 500),
+    });
+    throw err;
+  }
 }
 
 async function sendAutomationEmail({
@@ -349,16 +368,24 @@ async function sendAutomationEmail({
   const senderEmail = getResendSenderEmail();
   const resolvedReplyTo = replyToEmail || fallbackReplyTo;
 
-  const { error: emailError } = await resend.emails.send({
+  const payload = {
     from: senderEmail,
     ...(resolvedReplyTo ? { replyTo: resolvedReplyTo } : {}),
     to: [toEmail],
     subject,
     text: message,
     html: buildHtmlEmail(message, businessName),
-  });
+  };
+
+  const { error: emailError } = await resend.emails.send(payload);
 
   if (emailError) {
+    const supabase = createAdminClient();
+    await supabase.from("webhook_failures").insert({
+      provider: "resend",
+      payload,
+      error_message: String(emailError.message).slice(0, 500),
+    });
     throw new Error(emailError.message || "Failed to send automation email");
   }
 }
@@ -371,39 +398,23 @@ async function processQuoteFollowups({
   fallbackReplyTo?: string;
 }) {
   const planCache = new Map<string, SubscriptionPlanKey>();
-  const { data, error } = await supabase.rpc("claim_due_quote_followups", {
-    limit_count: 50,
-  });
+  const { data, error } = await supabase.rpc("claim_due_quote_followups", { limit_count: 50 });
 
-  if (error) {
-    throw new Error(error.message || "Failed to claim quote follow-ups");
-  }
+  if (error) throw new Error(error.message || "Failed to claim quote follow-ups");
 
-  const results: DispatchResults = {
-    processed: 0,
-    sent: 0,
-    errors: 0,
-  };
+  const results: DispatchResults = { processed: 0, sent: 0, errors: 0 };
 
   for (const followup of (data || []) as ClaimedQuoteFollowup[]) {
     results.processed += 1;
-
     try {
-      const planKey = await getUserPlanKey({
-        supabase,
-        userId: followup.user_id,
-        cache: planCache,
-      });
+      const planKey = await getUserPlanKey({ supabase, userId: followup.user_id, cache: planCache });
       if (!hasApexAutomationAccess(planKey)) {
         throw new Error("Apex plan required for quote nurture automation");
       }
 
       const businessName = followup.business_name || "TradieFlow";
       const message = renderAutomationTemplate(
-        coerceAutomationTemplate(
-          followup.quote_followup_template,
-          DEFAULT_QUOTE_FOLLOWUP_TEMPLATE
-        ),
+        coerceAutomationTemplate(followup.quote_followup_template, DEFAULT_QUOTE_FOLLOWUP_TEMPLATE),
         {
           business_name: businessName,
           contact_name: followup.client_name,
@@ -414,23 +425,11 @@ async function processQuoteFollowups({
       const replyToEmail = followup.reply_to_email || fallbackReplyTo;
       const smsFromNumber = normalizeAustralianPhone(followup.twilio_phone_number);
       const smsToNumber = normalizeAustralianPhone(followup.client_phone);
-      const smsSuppression = await getConvertedLeadSmsSuppression({
-        jobId: followup.job_id,
-        supabase,
-      });
-      const canSendSms = Boolean(
-        hasTwilioSmsConfig() &&
-          smsFromNumber &&
-          smsToNumber &&
-          !smsSuppression.suppressed
-      );
+      const smsSuppression = await getConvertedLeadSmsSuppression({ jobId: followup.job_id, supabase });
+      const canSendSms = Boolean(hasTwilioSmsConfig() && smsFromNumber && smsToNumber && !smsSuppression.suppressed);
 
       if (canSendSms && smsFromNumber && smsToNumber) {
-        await sendTwilioSms({
-          body: message,
-          fromNumber: smsFromNumber,
-          toNumber: smsToNumber,
-        });
+        await sendTwilioSms({ body: message, fromNumber: smsFromNumber, toNumber: smsToNumber });
       } else if (followup.client_email) {
         await sendAutomationEmail({
           businessName,
@@ -449,7 +448,6 @@ async function processQuoteFollowups({
       }
 
       results.sent += 1;
-
       await supabase
         .from("jobs")
         .update({
@@ -463,7 +461,6 @@ async function processQuoteFollowups({
     } catch (error) {
       results.errors += 1;
       console.error(`Error processing quote follow-up ${followup.job_id}:`, error);
-
       await supabase
         .from("jobs")
         .update({
@@ -487,39 +484,23 @@ async function processReviewRequests({
   fallbackReplyTo?: string;
 }) {
   const planCache = new Map<string, SubscriptionPlanKey>();
-  const { data, error } = await supabase.rpc("claim_due_review_requests", {
-    limit_count: 50,
-  });
+  const { data, error } = await supabase.rpc("claim_due_review_requests", { limit_count: 50 });
 
-  if (error) {
-    throw new Error(error.message || "Failed to claim review requests");
-  }
+  if (error) throw new Error(error.message || "Failed to claim review requests");
 
-  const results: DispatchResults = {
-    processed: 0,
-    sent: 0,
-    errors: 0,
-  };
+  const results: DispatchResults = { processed: 0, sent: 0, errors: 0 };
 
   for (const reviewRequest of (data || []) as ClaimedReviewRequest[]) {
     results.processed += 1;
-
     try {
-      const planKey = await getUserPlanKey({
-        supabase,
-        userId: reviewRequest.user_id,
-        cache: planCache,
-      });
+      const planKey = await getUserPlanKey({ supabase, userId: reviewRequest.user_id, cache: planCache });
       if (!hasApexAutomationAccess(planKey)) {
         throw new Error("Apex plan required for review extraction automation");
       }
 
       const businessName = reviewRequest.business_name || "TradieFlow";
       const message = renderAutomationTemplate(
-        coerceAutomationTemplate(
-          reviewRequest.review_request_template,
-          DEFAULT_REVIEW_REQUEST_TEMPLATE
-        ),
+        coerceAutomationTemplate(reviewRequest.review_request_template, DEFAULT_REVIEW_REQUEST_TEMPLATE),
         {
           business_name: businessName,
           contact_name: reviewRequest.client_name,
@@ -531,28 +512,12 @@ async function processReviewRequests({
       const replyToEmail = reviewRequest.reply_to_email || fallbackReplyTo;
       const smsFromNumber = normalizeAustralianPhone(reviewRequest.twilio_phone_number);
       const smsToNumber = normalizeAustralianPhone(reviewRequest.client_phone);
-      const invoiceJobId = await getInvoiceJobId({
-        invoiceId: reviewRequest.invoice_id,
-        supabase,
-        userId: reviewRequest.user_id,
-      });
-      const smsSuppression = await getConvertedLeadSmsSuppression({
-        jobId: invoiceJobId,
-        supabase,
-      });
-      const canSendSms = Boolean(
-        hasTwilioSmsConfig() &&
-          smsFromNumber &&
-          smsToNumber &&
-          !smsSuppression.suppressed
-      );
+      const invoiceJobId = await getInvoiceJobId({ invoiceId: reviewRequest.invoice_id, supabase, userId: reviewRequest.user_id });
+      const smsSuppression = await getConvertedLeadSmsSuppression({ jobId: invoiceJobId, supabase });
+      const canSendSms = Boolean(hasTwilioSmsConfig() && smsFromNumber && smsToNumber && !smsSuppression.suppressed);
 
       if (canSendSms && smsFromNumber && smsToNumber) {
-        await sendTwilioSms({
-          body: message,
-          fromNumber: smsFromNumber,
-          toNumber: smsToNumber,
-        });
+        await sendTwilioSms({ body: message, fromNumber: smsFromNumber, toNumber: smsToNumber });
       } else if (reviewRequest.client_email) {
         await sendAutomationEmail({
           businessName,
@@ -571,7 +536,6 @@ async function processReviewRequests({
       }
 
       results.sent += 1;
-
       await supabase
         .from("invoices")
         .update({
@@ -585,7 +549,6 @@ async function processReviewRequests({
     } catch (error) {
       results.errors += 1;
       console.error(`Error processing review request ${reviewRequest.invoice_id}:`, error);
-
       await supabase
         .from("invoices")
         .update({
@@ -605,21 +568,14 @@ async function handleZeroLeakRequest(request: Request) {
   const cronSecrets = getCronSecrets();
   const cronSecretSources = getCronSecretSources();
   const authHeader = request.headers.get("authorization");
-  const bearerSecret = normalizeIncomingSecret(
-    authHeader?.replace(/^Bearer\s+/i, "") || null
-  );
-  const headerSecret = normalizeIncomingSecret(
-    request.headers.get("x-cron-secret")
-  );
+  const bearerSecret = normalizeIncomingSecret(authHeader?.replace(/^Bearer\s+/i, "") || null);
+  const headerSecret = normalizeIncomingSecret(request.headers.get("x-cron-secret"));
 
   if (cronSecrets.length === 0) {
     return jsonResponse(
       { error: "Zero-Leak cron route not configured" },
       500,
-      {
-        "X-TradieFlow-Zero-Leak-Secret-Count": "0",
-        "X-TradieFlow-Zero-Leak-Secret-Sources": "none",
-      }
+      { "X-TradieFlow-Zero-Leak-Secret-Count": "0", "X-TradieFlow-Zero-Leak-Secret-Sources": "none" }
     );
   }
 
@@ -633,35 +589,34 @@ async function handleZeroLeakRequest(request: Request) {
       401,
       {
         "X-TradieFlow-Zero-Leak-Secret-Count": String(cronSecrets.length),
-        "X-TradieFlow-Zero-Leak-Secret-Sources":
-          cronSecretSources.join(",") || "none",
+        "X-TradieFlow-Zero-Leak-Secret-Sources": cronSecretSources.join(",") || "none",
       }
     );
   }
 
   try {
     const supabase = createAdminClient();
-    const fallbackReplyTo = process.env.RESEND_REPLY_TO_EMAIL || undefined;
+    const fallbackReplyTo = Deno.env.get("RESEND_REPLY_TO_EMAIL") || undefined;
 
     const [quoteFollowups, reviewRequests] = await Promise.all([
       processQuoteFollowups({ supabase, fallbackReplyTo }),
       processReviewRequests({ supabase, fallbackReplyTo }),
     ]);
 
-    return jsonResponse({
-      success: true,
-      results: {
-        quoteFollowups,
-        reviewRequests,
+    return jsonResponse(
+      {
+        success: true,
+        results: { quoteFollowups, reviewRequests },
+        timestamp: new Date().toISOString(),
+        source: "zero-leak-cron-route",
+        method: request.method,
       },
-      timestamp: new Date().toISOString(),
-      source: "zero-leak-cron-route",
-      method: request.method,
-    }, 200, {
-      "X-TradieFlow-Zero-Leak-Secret-Count": String(cronSecrets.length),
-      "X-TradieFlow-Zero-Leak-Secret-Sources":
-        cronSecretSources.join(",") || "none",
-    });
+      200,
+      {
+        "X-TradieFlow-Zero-Leak-Secret-Count": String(cronSecrets.length),
+        "X-TradieFlow-Zero-Leak-Secret-Sources": cronSecretSources.join(",") || "none",
+      }
+    );
   } catch (error) {
     console.error("Zero-Leak cron route error:", error);
     return jsonResponse(
@@ -672,17 +627,16 @@ async function handleZeroLeakRequest(request: Request) {
       500,
       {
         "X-TradieFlow-Zero-Leak-Secret-Count": String(cronSecrets.length),
-        "X-TradieFlow-Zero-Leak-Secret-Sources":
-          cronSecretSources.join(",") || "none",
+        "X-TradieFlow-Zero-Leak-Secret-Sources": cronSecretSources.join(",") || "none",
       }
     );
   }
 }
 
-export async function GET(request: Request) {
-  return handleZeroLeakRequest(request);
-}
-
-export async function POST(request: Request) {
-  return handleZeroLeakRequest(request);
-}
+serve(async (req) => {
+  try {
+    return await handleZeroLeakRequest(req);
+  } catch (err) {
+    return new Response(String(err), { status: 500 });
+  }
+});

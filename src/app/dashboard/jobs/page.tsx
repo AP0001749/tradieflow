@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { JobWithClient, JobStatus } from "@/types";
+import { Briefcase } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -102,7 +103,14 @@ export default async function JobsPage() {
       
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-in fade-in slide-in-from-top-4 duration-700">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Jobs</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Jobs</h1>
+            {jobs && jobs.length > 0 && (
+              <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-sm font-semibold text-muted-foreground">
+                {jobs.length}
+              </span>
+            )}
+          </div>
           <p className="text-sm md:text-base text-muted-foreground mt-1">
             Run the field pipeline, dispatch board, and commercial handoff
           </p>
@@ -132,7 +140,7 @@ export default async function JobsPage() {
               {jobs.map((job: JobWithClient) => {
                 const statusInfo = statusConfig[job.status];
                 return (
-                  <TableRow key={job.id}>
+                  <TableRow key={job.id} className="hover:bg-muted/40 transition-colors">
                     <TableCell className="font-medium">{job.title}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {job.clients?.name || "--"}
@@ -196,11 +204,16 @@ export default async function JobsPage() {
             </TableBody>
           </Table>
         ) : (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground mb-2">No jobs yet</p>
-            <p className="text-sm text-muted-foreground/80">
-              Create the first job to light up the dispatch board, quote flow, and invoice handoff
-            </p>
+          <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+              <Briefcase className="h-7 w-7 text-muted-foreground/60" />
+            </div>
+            <div>
+              <p className="font-medium text-foreground">No jobs yet</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Create the first job to light up the dispatch board, quote flow, and invoice handoff
+              </p>
+            </div>
           </div>
         )}
       </div>

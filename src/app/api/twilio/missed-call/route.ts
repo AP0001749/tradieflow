@@ -465,12 +465,47 @@ async function sendMissedCallText({
     throw new Error("TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN must be configured to send missed-call text backs");
   }
 
+  const supabase = createAdminClient();
+  const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  
+  // Debounce check
+  const { data: recentSms, error: debounceError } = await supabase
+    .from("lead_sms_tracking")
+    .select("id")
+    .eq("phone_number", toNumber)
+    .gte("sent_at", fifteenMinsAgo)
+    .limit(1);
+
+  if (debounceError) throw debounceError;
+  if (recentSms && recentSms.length > 0) {
+    console.log(`Debounced: An SMS was already sent to ${toNumber} within the last 15 minutes`);
+    return null;
+  }
+
   const client = twilio(accountSid, authToken);
-  return client.messages.create({
-    body,
-    from: fromNumber,
-    to: toNumber,
+  let result;
+  
+  try {
+    result = await client.messages.create({
+      body,
+      from: fromNumber,
+      to: toNumber,
+    });
+  } catch (error) {
+    console.error("Twilio send failed, dumping to DLQ", error);
+    await supabase.from("webhook_failures").insert({
+      provider: "twilio",
+      payload: { body, from: fromNumber, to: toNumber },
+      error_message: String(error).slice(0, 500)
+    });
+    throw error;
+  }
+
+  await supabase.from("lead_sms_tracking").insert({
+    phone_number: toNumber,
   });
+
+  return result;
 }
 
 export async function POST(request: Request) {
@@ -571,7 +606,7 @@ export async function POST(request: Request) {
         contact_name: lead.name,
       }
     );
-    let sentMessage;
+    let sentMessage: Awaited<ReturnType<typeof sendMissedCallText>> | null = null;
 
     try {
       sentMessage = await sendMissedCallText({
@@ -591,7 +626,7 @@ export async function POST(request: Request) {
 
     await markMissedCallTextBackStatus({
       callSid,
-      messageSid: sentMessage.sid,
+      messageSid: sentMessage!.sid,
       status: "sent",
     });
     await updateLeadAfterTextBack(lead);
@@ -599,7 +634,7 @@ export async function POST(request: Request) {
       call_sid: callSid,
       dial_status: dialStatus,
       from: fromNumber,
-      message_sid: sentMessage.sid,
+      message_sid: sentMessage!.sid,
       source: "twilio-missed-call",
       to: toNumber,
     });

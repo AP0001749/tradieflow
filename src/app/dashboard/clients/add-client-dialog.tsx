@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,31 +23,29 @@ interface AddClientDialogProps {
 export function AddClientDialog({ disabledReason }: AddClientDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const isDisabled = Boolean(disabledReason);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    setError(null);
 
     const form = event.currentTarget;
     const formData = new FormData(form);
     const result = await addClient(formData);
 
     if (result.error) {
-      setError(result.error);
+      toast.error(result.error);
       setLoading(false);
     } else {
+      toast.success("Client added");
       setOpen(false);
       setLoading(false);
-      // Reset form
       form.reset();
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={(next) => { setOpen(next); if (next) setError(null); }}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="gap-2" disabled={isDisabled} title={disabledReason}>
           <Plus className="w-4 h-4" />
@@ -120,12 +119,6 @@ export function AddClientDialog({ disabledReason }: AddClientDialogProps) {
               disabled={loading}
             />
           </div>
-
-          {error && (
-            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-              {error}
-            </div>
-          )}
 
           <div className="flex gap-3 justify-end pt-4">
             <Button

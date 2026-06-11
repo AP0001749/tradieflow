@@ -2,12 +2,17 @@ name: TradieFlow Supabase Follow-up Check
 
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "*/30 * * * *"
   workflow_dispatch:
+
+concurrency:
+  group: follow-up-processor
+  cancel-in-progress: false
 
 jobs:
   invoke-follow-up-processor:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Probe deployed follow-up route
         id: probe_route

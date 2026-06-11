@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Pencil } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,28 +25,27 @@ interface EditClientDialogProps {
 export function EditClientDialog({ client }: EditClientDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    setError(null);
 
     const form = event.currentTarget;
     const formData = new FormData(form);
     const result = await updateClient(client.id, formData);
 
     if (result.error) {
-      setError(result.error);
+      toast.error(result.error);
       setLoading(false);
     } else {
+      toast.success("Client updated");
       setOpen(false);
       setLoading(false);
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={(next) => { setOpen(next); if (next) setError(null); }}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button 
           variant="ghost" 
@@ -124,12 +124,6 @@ export function EditClientDialog({ client }: EditClientDialogProps) {
               rows={3}
             />
           </div>
-
-          {error && (
-            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20">
-              {error}
-            </div>
-          )}
 
           <div className="flex gap-3 justify-end">
             <Button

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -38,11 +39,9 @@ export default function EditJobDialog({
 }: EditJobDialogProps) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError(null);
     const form = e.currentTarget;
     const formData = new FormData(form);
 
@@ -65,15 +64,16 @@ export default function EditJobDialog({
     startTransition(async () => {
       const result = await updateJob(job.id, data);
       if (!result.error) {
+        toast.success("Job updated");
         setOpen(false);
       } else {
-        setError(result.error);
+        toast.error(result.error);
       }
     });
   }
 
   return (
-    <Dialog open={open} onOpenChange={(next) => { setOpen(next); if (next) setError(null); }}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm" className="gap-2">
           <Pencil className="h-4 w-4" />
@@ -275,10 +275,6 @@ export default function EditJobDialog({
             These dispatch fields shape the run sheet, today board, and job-level ops
             summary.
           </p>
-
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
 
           <div className="flex gap-3 pt-2">
             <Button

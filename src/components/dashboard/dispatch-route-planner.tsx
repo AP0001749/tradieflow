@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { AlertCircle, Check, Copy, ExternalLink, Route } from "lucide-react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { AlertCircle, Check, Copy, ExternalLink, Route, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
 import type { DispatchRoutePack } from "@/lib/dispatch-route";
+import { optimizeRouteDispatchAction } from "@/app/dashboard/dispatch/route-actions";
 import { cn } from "@/lib/utils";
 
 interface DispatchRoutePlannerProps {
@@ -37,9 +39,32 @@ export function DispatchRoutePlanner({
   selectedCrew,
   selectedDate,
 }: DispatchRoutePlannerProps) {
+  const router = useRouter();
   const [copiedPackId, setCopiedPackId] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [optimizationResult, setOptimizationResult] = useState<{
+    success: boolean;
+    savedDollars?: number;
+    error?: string;
+  } | null>(null);
+
   const crewLabel = selectedCrew?.trim() ? selectedCrew : "All crews";
   const dateLabel = formatRouteDate(selectedDate);
+
+  async function handleOptimize() {
+    startTransition(async () => {
+      const jobIds = routePacks.flatMap(pack => pack.stops.map(stop => stop.id));
+      if (jobIds.length < 2) return;
+
+      const res = await optimizeRouteDispatchAction(jobIds);
+      setOptimizationResult(res);
+      if (res.success) {
+        // Refresh server-side data so route packs re-render in new order
+        router.refresh();
+        setTimeout(() => setOptimizationResult(null), 5000);
+      }
+    });
+  }
 
   async function handleCopy(pack: DispatchRoutePack) {
     try {
@@ -63,15 +88,46 @@ export function DispatchRoutePlanner({
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground items-center">
             <span className="rounded-full border border-border/70 bg-muted/40 px-3 py-1">
               {routeReadyCount} route-ready stop{routeReadyCount === 1 ? "" : "s"}
             </span>
             <span className="rounded-full border border-border/70 bg-muted/40 px-3 py-1">
               {missingAddressCount} missing address{missingAddressCount === 1 ? "" : "es"}
             </span>
+
+            {routeReadyCount >= 2 && (
+              <Button
+                variant="default"
+                size="sm"
+                className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={handleOptimize}
+                disabled={isPending}
+              >
+                <Sparkles className="h-3 w-3 mr-1.5" />
+                {isPending ? "Routing..." : "AI Geo-Optimize"}
+              </Button>
+            )}
           </div>
         </div>
+        
+        {optimizationResult && (
+          <div className={cn(
+            "p-3 rounded-md text-sm border mt-3 flex items-center justify-between",
+            optimizationResult.success 
+              ? "bg-emerald-50/50 border-emerald-200/50 text-emerald-800 dark:bg-emerald-950/20 dark:border-emerald-900/50 dark:text-emerald-300"
+              : "bg-destructive/10 border-destructive/20 text-destructive"
+          )}>
+            {optimizationResult.success ? (
+              <span>
+                <strong>Route Optimized!</strong> Automatically shaved off travel time sequence. 
+                {optimizationResult.savedDollars ? ` Estimated fuel & labor savings: $${Math.round(optimizationResult.savedDollars)}` : ""}
+              </span>
+            ) : (
+              <span>Optimization failed: {optimizationResult.error}</span>
+            )}
+          </div>
+        )}
       </CardHeader>
 
       <CardContent className="space-y-4">

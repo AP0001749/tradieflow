@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import { createClient } from "@/lib/supabase/server";
+import { pushOfflineConversion } from "@/utils/google-ads-offline";
 import {
   DispatchPriority,
   JobStatus,
@@ -285,7 +286,7 @@ export async function updateJob(
   // Verify client belongs to user
   const { data: client, error: clientError } = await supabase
     .from("clients")
-    .select("id")
+    .select("id, name, email, phone")
     .eq("id", data.client_id)
     .eq("user_id", user.id)
     .single();
@@ -330,6 +331,21 @@ export async function updateJob(
   if (error) {
     console.error("Error updating job:", error);
     return { error: error.message };
+  }
+
+  // If status is completed and there's a price, trigger google ads push
+  if (status === "completed" && payload.price && (client.email || client.phone)) {
+    // Fire and forget offline conversion push
+    pushOfflineConversion({
+      conversionName: "job_completed",
+      conversionValue: payload.price,
+      conversionTime: new Date().toISOString().replace('T', ' ').substring(0, 19) + '+00:00', // Basic UTC offset formatting
+      orderId: jobId,
+      customerData: {
+        email: client.email || undefined,
+        phone: client.phone || undefined,
+      }
+    }).catch(console.error);
   }
 
   revalidateJobSurfaces(jobId);

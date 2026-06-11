@@ -243,15 +243,21 @@ serve(async (request) => {
         }
 
         const replyToEmail = lead.reply_to_email || fallbackReplyTo;
-        const { error: emailError } = await resend.emails.send({
+        const payloadArgs = {
           from: senderEmail,
           ...(replyToEmail ? { replyTo: replyToEmail } : {}),
           to: lead.email,
           subject: payload.subject,
           html: payload.html,
-        });
+        };
+        const { error: emailError } = await resend.emails.send(payloadArgs);
 
         if (emailError) {
+          await supabase.from("webhook_failures").insert({
+            provider: "resend",
+            payload: payloadArgs,
+            error_message: String(emailError.message).slice(0, 500)
+          });
           throw new Error(emailError.message || "Failed to send email");
         }
 
