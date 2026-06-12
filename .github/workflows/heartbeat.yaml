@@ -12,141 +12,56 @@ concurrency:
 jobs:
   invoke-follow-up-processor:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 5
     steps:
-      - name: Probe deployed follow-up route
-        id: probe_route
+      - name: Invoke lead-followup Edge Function
         env:
-          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
-        run: |
-          APP_URL="$(printf '%s' "${APP_BASE_URL:-https://gettradieflow.com}" | tr -d '\r\n' | xargs)"
-          STATUS="$(curl -sS -D probe.headers -o probe.json -w '%{http_code}' -X POST "${APP_URL}/api/cron/leads-followup" || true)"
-          ROUTE_HEADER="$(grep -i '^x-tradieflow-followup-route:' probe.headers | tail -n1 | cut -d':' -f2- | xargs)"
-          AUTH_HEADER="$(grep -i '^x-tradieflow-followup-auth:' probe.headers | tail -n1 | cut -d':' -f2- | xargs)"
-          SECRET_COUNT_HEADER="$(grep -i '^x-tradieflow-followup-secret-count:' probe.headers | tail -n1 | cut -d':' -f2- | xargs)"
-          SECRET_SOURCES_HEADER="$(grep -i '^x-tradieflow-followup-secret-sources:' probe.headers | tail -n1 | cut -d':' -f2- | xargs)"
-          BODY="$(tr '\n' ' ' < probe.json | sed 's/[[:space:]]\+/ /g' | cut -c1-400)"
-          {
-            echo "## TradieFlow Follow-up Route Probe"
-            echo
-            echo "- URL: ${APP_URL}/api/cron/leads-followup"
-            echo "- Probe Status: ${STATUS}"
-            echo "- Probe Route Header: ${ROUTE_HEADER:-missing}"
-            echo "- Probe Auth Header: ${AUTH_HEADER:-missing}"
-            echo "- Probe Secret Count: ${SECRET_COUNT_HEADER:-missing}"
-            echo "- Probe Secret Sources: ${SECRET_SOURCES_HEADER:-missing}"
-            echo "- Probe Response: ${BODY}"
-          } >> "$GITHUB_STEP_SUMMARY"
-          echo "secret_sources=${SECRET_SOURCES_HEADER}" >> "$GITHUB_OUTPUT"
-
-      - name: Validate required secrets
-        env:
-          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           LEAD_FOLLOWUP_SECRET: ${{ secrets.LEAD_FOLLOWUP_SECRET }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-          PROBE_SECRET_SOURCES: ${{ steps.probe_route.outputs.secret_sources }}
         run: |
-          test -n "${APP_BASE_URL:-https://gettradieflow.com}" || (echo "Missing app URL" && exit 1)
-          test -n "$LEAD_FOLLOWUP_SECRET$CRON_SECRET" || (echo "Missing LEAD_FOLLOWUP_SECRET/CRON_SECRET secret" && exit 1)
-          if [ "$PROBE_SECRET_SOURCES" = "CRON_SECRET" ] && [ -z "$CRON_SECRET" ]; then
-            echo "App host reports CRON_SECRET only, but the GitHub CRON_SECRET repo secret is empty."
+          SUPABASE_URL="$(printf '%s' "$SUPABASE_URL" | tr -d '\r\n' | xargs)"
+          SUPABASE_ANON_KEY="$(printf '%s' "$SUPABASE_ANON_KEY" | tr -d '\r\n' | xargs)"
+          LEAD_FOLLOWUP_SECRET="$(printf '%s' "$LEAD_FOLLOWUP_SECRET" | tr -d '\r\n' | xargs)"
+
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "::error::Missing SUPABASE_URL secret"
             exit 1
           fi
-          if [ "$PROBE_SECRET_SOURCES" = "LEAD_FOLLOWUP_SECRET" ] && [ -z "$LEAD_FOLLOWUP_SECRET" ]; then
-            echo "App host reports LEAD_FOLLOWUP_SECRET only, but the GitHub LEAD_FOLLOWUP_SECRET repo secret is empty."
+          if [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Missing SUPABASE_ANON_KEY secret"
+            exit 1
+          fi
+          if [ -z "$LEAD_FOLLOWUP_SECRET" ]; then
+            echo "::error::Missing LEAD_FOLLOWUP_SECRET secret"
             exit 1
           fi
 
-      - name: Invoke TradieFlow Lead Follow-up Route
-        env:
-          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
-          LEAD_FOLLOWUP_SECRET: ${{ secrets.LEAD_FOLLOWUP_SECRET }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-          PROBE_SECRET_SOURCES: ${{ steps.probe_route.outputs.secret_sources }}
-        run: |
-          normalize_secret() {
-            printf '%s' "$1" | tr -d '\r\n' | sed -E 's/^["'\''](.*)["'\'']$/\1/' | xargs
-          }
+          EDGE_URL="${SUPABASE_URL}/functions/v1/lead-followup"
+          echo "Invoking: $EDGE_URL"
 
-          APP_URL="$(printf '%s' "${APP_BASE_URL:-https://gettradieflow.com}" | tr -d '\r\n' | xargs)"
-          LEAD_FOLLOWUP_SECRET="$(normalize_secret "$LEAD_FOLLOWUP_SECRET")"
-          CRON_SECRET="$(normalize_secret "$CRON_SECRET")"
-          LAST_STATUS=""
-          LAST_BODY=""
-          LAST_LABEL=""
-          try_secret() {
-            local SECRET_VALUE="$1"
-            local SECRET_LABEL="$2"
-            if [ -z "$SECRET_VALUE" ]; then
-              return 1
-            fi
+          STATUS="$(curl -sS -o response.json -w '%{http_code}' -X POST "$EDGE_URL" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "x-cron-secret: ${LEAD_FOLLOWUP_SECRET}" \
+            -H "Content-Type: application/json" \
+            -d '{"source":"github-heartbeat"}' \
+            --retry 2 \
+            --retry-delay 5 || true)"
 
-            echo "Trying /api/cron/leads-followup with ${SECRET_LABEL}..."
-            STATUS="$(curl -sS -D response.headers -o response.json -w '%{http_code}' -X POST "${APP_URL}/api/cron/leads-followup" \
-              -H "Authorization: Bearer ${SECRET_VALUE}" \
-              -H "x-cron-secret: ${SECRET_VALUE}" \
-              --retry 2 \
-              --retry-delay 5 || true)"
-            BODY="$(tr '\n' ' ' < response.json | sed 's/[[:space:]]\+/ /g' | cut -c1-400)"
-            ROUTE_HEADER="$(grep -i '^x-tradieflow-followup-route:' response.headers | tail -n1 | cut -d':' -f2- | xargs)"
-            AUTH_HEADER="$(grep -i '^x-tradieflow-followup-auth:' response.headers | tail -n1 | cut -d':' -f2- | xargs)"
-            SECRET_COUNT_HEADER="$(grep -i '^x-tradieflow-followup-secret-count:' response.headers | tail -n1 | cut -d':' -f2- | xargs)"
-            SECRET_SOURCES_HEADER="$(grep -i '^x-tradieflow-followup-secret-sources:' response.headers | tail -n1 | cut -d':' -f2- | xargs)"
-            echo "HTTP ${STATUS}"
-            cat response.headers
-            echo
-            cat response.json
-            echo
-            if [ "${STATUS}" -ge 200 ] && [ "${STATUS}" -lt 300 ]; then
-              {
-                echo "## TradieFlow Follow-up Check"
-                echo
-                echo "- URL: ${APP_URL}/api/cron/leads-followup"
-                echo "- Secret Candidate: ${SECRET_LABEL}"
-                echo "- Status: ${STATUS}"
-                echo "- Route Header: ${ROUTE_HEADER:-missing}"
-                echo "- Auth Header: ${AUTH_HEADER:-missing}"
-                echo "- Secret Count Header: ${SECRET_COUNT_HEADER:-missing}"
-                echo "- Secret Sources Header: ${SECRET_SOURCES_HEADER:-missing}"
-                echo "- Response: ${BODY}"
-              } >> "$GITHUB_STEP_SUMMARY"
-              exit 0
-            fi
-            LAST_LABEL="${SECRET_LABEL}"
-            LAST_STATUS="${STATUS}"
-            LAST_BODY="${BODY}"
-            return 1
-          }
+          BODY="$(tr '\n' ' ' < response.json | sed 's/[[:space:]]\+/ /g' | cut -c1-500)"
 
-          if [ "$PROBE_SECRET_SOURCES" = "CRON_SECRET" ]; then
-            try_secret "$CRON_SECRET" "CRON_SECRET" || true
-            if [ -n "$LEAD_FOLLOWUP_SECRET" ] && [ "$LEAD_FOLLOWUP_SECRET" != "$CRON_SECRET" ]; then
-              try_secret "$LEAD_FOLLOWUP_SECRET" "LEAD_FOLLOWUP_SECRET" || true
-            fi
-          elif [ "$PROBE_SECRET_SOURCES" = "LEAD_FOLLOWUP_SECRET" ]; then
-            try_secret "$LEAD_FOLLOWUP_SECRET" "LEAD_FOLLOWUP_SECRET" || true
-            if [ -n "$CRON_SECRET" ] && [ "$CRON_SECRET" != "$LEAD_FOLLOWUP_SECRET" ]; then
-              try_secret "$CRON_SECRET" "CRON_SECRET" || true
-            fi
-          else
-            try_secret "$LEAD_FOLLOWUP_SECRET" "LEAD_FOLLOWUP_SECRET" || true
-            if [ -n "$CRON_SECRET" ] && [ "$CRON_SECRET" != "$LEAD_FOLLOWUP_SECRET" ]; then
-              try_secret "$CRON_SECRET" "CRON_SECRET" || true
-            fi
-          fi
-
-          echo "::error title=TradieFlow follow-up route rejected workflow secret::Candidate=${LAST_LABEL:-none}. HTTP ${LAST_STATUS}. Route=${ROUTE_HEADER:-missing}. Auth=${AUTH_HEADER:-missing}. SecretCount=${SECRET_COUNT_HEADER:-missing}. SecretSources=${SECRET_SOURCES_HEADER:-missing}. Response: ${LAST_BODY}"
           {
             echo "## TradieFlow Follow-up Check"
-            echo
-            echo "- URL: ${APP_URL}/api/cron/leads-followup"
-            echo "- Final Secret Candidate: ${LAST_LABEL:-none}"
-            echo "- Final Status: ${LAST_STATUS}"
-            echo "- Final Route Header: ${ROUTE_HEADER:-missing}"
-            echo "- Final Auth Header: ${AUTH_HEADER:-missing}"
-            echo "- Final Secret Count Header: ${SECRET_COUNT_HEADER:-missing}"
-            echo "- Final Secret Sources Header: ${SECRET_SOURCES_HEADER:-missing}"
-            echo "- Final Response: ${LAST_BODY}"
+            echo ""
+            echo "- URL: \`$EDGE_URL\`"
+            echo "- Status: $STATUS"
+            echo "- Response: $BODY"
+            echo "- Timestamp: $(date -u)"
           } >> "$GITHUB_STEP_SUMMARY"
-          echo "All configured follow-up secrets were rejected by the app host."
-          exit 1
+
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 300 ]; then
+            echo "Lead follow-up invoked successfully (HTTP $STATUS)"
+          else
+            echo "::error title=Lead follow-up Edge Function failed::HTTP $STATUS — $BODY"
+            exit 1
+          fi
