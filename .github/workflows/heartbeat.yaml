@@ -16,25 +16,48 @@ jobs:
     steps:
       - name: Invoke lead-followup Edge Function
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_URL_SECRET: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL_SECRET: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           LEAD_FOLLOWUP_SECRET: ${{ secrets.LEAD_FOLLOWUP_SECRET }}
         run: |
-          SUPABASE_URL="$(printf '%s' "$SUPABASE_URL" | tr -d '\r\n' | xargs)"
+          SUPABASE_URL="$(
+            printf '%s' "${SUPABASE_URL_SECRET:-${NEXT_PUBLIC_SUPABASE_URL_SECRET:-}}" \
+              | tr -d '\r\n' \
+              | xargs
+          )"
           SUPABASE_ANON_KEY="$(printf '%s' "$SUPABASE_ANON_KEY" | tr -d '\r\n' | xargs)"
           LEAD_FOLLOWUP_SECRET="$(printf '%s' "$LEAD_FOLLOWUP_SECRET" | tr -d '\r\n' | xargs)"
 
+          MISSING_SECRETS=()
           if [ -z "$SUPABASE_URL" ]; then
-            echo "::error::Missing SUPABASE_URL secret"
-            exit 1
+            MISSING_SECRETS+=("SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL")
           fi
           if [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "::error::Missing SUPABASE_ANON_KEY secret"
-            exit 1
+            MISSING_SECRETS+=("SUPABASE_ANON_KEY")
           fi
           if [ -z "$LEAD_FOLLOWUP_SECRET" ]; then
-            echo "::error::Missing LEAD_FOLLOWUP_SECRET secret"
-            exit 1
+            MISSING_SECRETS+=("LEAD_FOLLOWUP_SECRET")
+          fi
+
+          if [ "${#MISSING_SECRETS[@]}" -gt 0 ]; then
+            MESSAGE="Missing optional heartbeat secret(s): ${MISSING_SECRETS[*]}"
+
+            {
+              echo "## TradieFlow Follow-up Check"
+              echo ""
+              echo "- Status: skipped"
+              echo "- Reason: $MESSAGE"
+              echo "- Timestamp: $(date -u)"
+            } >> "$GITHUB_STEP_SUMMARY"
+
+            if [ "${GITHUB_EVENT_NAME:-}" = "workflow_dispatch" ]; then
+              echo "::error::$MESSAGE"
+              exit 1
+            fi
+
+            echo "::notice::$MESSAGE"
+            exit 0
           fi
 
           EDGE_URL="${SUPABASE_URL}/functions/v1/lead-followup"
