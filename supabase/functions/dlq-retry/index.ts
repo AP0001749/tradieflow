@@ -10,7 +10,14 @@ const createAdminClient = () => {
   return createClient(supabaseUrl, serviceRoleKey);
 };
 
-serve(async (req) => {
+type WebhookFailure = {
+  id: string;
+  provider: "twilio" | "resend" | string;
+  payload: Record<string, unknown>;
+  retry_count: number;
+};
+
+serve(async () => {
   try {
     const supabase = createAdminClient();
     
@@ -29,13 +36,17 @@ serve(async (req) => {
     const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
     const twilioClient = accountSid && authToken ? twilio(accountSid, authToken) : null;
 
-    for (const item of failures || []) {
+    for (const item of ((failures || []) as WebhookFailure[])) {
       try {
         if (item.provider === "twilio") {
           if (!twilioClient) throw new Error("Twilio not configured");
-          await twilioClient.messages.create(item.payload as any);
+          const payload = item.payload as Parameters<
+            NonNullable<typeof twilioClient>["messages"]["create"]
+          >[0];
+          await twilioClient.messages.create(payload);
         } else if (item.provider === "resend") {
-          await resend.emails.send(item.payload as any);
+          const payload = item.payload as Parameters<typeof resend.emails.send>[0];
+          await resend.emails.send(payload);
         }
 
         // Mark success

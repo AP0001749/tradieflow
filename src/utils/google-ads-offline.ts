@@ -1,3 +1,17 @@
+type UserIdentifier =
+  | { hashedEmail: string }
+  | { hashedPhoneNumber: string };
+
+type ConversionDetails = {
+  conversionAction: string;
+  conversionDateTime: string;
+  conversionValue: number;
+  currencyCode: "AUD";
+  orderId?: string;
+  gclid?: string;
+  userIdentifiers?: UserIdentifier[];
+};
+
 export async function pushOfflineConversion({
   gclid,
   conversionName,
@@ -33,7 +47,7 @@ export async function pushOfflineConversion({
 
   const endpoint = `https://googleads.googleapis.com/v15/customers/${customerId}:uploadClickConversions`;
 
-  const conversionDetails: any = {
+  const conversionDetails: ConversionDetails = {
     conversionAction: `customers/${customerId}/conversionActions/${conversionName}`,
     conversionDateTime: conversionTime,
     conversionValue: conversionValue,

@@ -12,6 +12,30 @@ export type OptimizeRouteResult = {
   error?: string;
 };
 
+type DispatchJobWithClient = {
+  id: string;
+  clients: { address: string | null } | { address: string | null }[] | null;
+};
+
+type DistanceMatrixElement = {
+  status: string;
+  duration?: {
+    value: number;
+  };
+};
+
+type DistanceMatrixResponse = {
+  status: string;
+  rows: {
+    elements: DistanceMatrixElement[];
+  }[];
+};
+
+function getClientAddress(job: DispatchJobWithClient) {
+  const client = Array.isArray(job.clients) ? job.clients[0] : job.clients;
+  return client?.address?.trim() || null;
+}
+
 export async function optimizeRouteDispatchAction(
   jobIds: string[],
 ): Promise<OptimizeRouteResult> {
@@ -30,10 +54,10 @@ export async function optimizeRouteDispatchAction(
   }
 
   // Preserve order of incoming jobIds for comparison baseline
-  const validJobs = jobs
+  const validJobs = (jobs as DispatchJobWithClient[])
     .filter((j) => {
-      const address = (j.clients as any)?.address;
-      return address && address.trim().length > 0;
+      const address = getClientAddress(j);
+      return Boolean(address);
     })
     .sort((a, b) => {
       const idxA = jobIds.indexOf(a.id);
@@ -45,7 +69,7 @@ export async function optimizeRouteDispatchAction(
     return { success: false, error: "Not enough jobs with valid addresses." };
   }
 
-  const addresses = validJobs.map((j) => (j.clients as any).address.trim());
+  const addresses = validJobs.map((j) => getClientAddress(j) as string);
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
   let durationMatrix: number[][] = [];
@@ -66,18 +90,18 @@ export async function optimizeRouteDispatchAction(
         )}&key=${apiKey}&mode=driving`,
       );
 
-      const data = await res.json();
+      const data = (await res.json()) as DistanceMatrixResponse;
       if (data.status !== "OK") {
         return { success: false, error: "Google Maps API error: " + data.status };
       }
 
       // Build duration matrix [from][to] in seconds
-      durationMatrix = data.rows.map((row: any) =>
-        row.elements.map((el: any) =>
-          el.status === "OK" ? el.duration.value : 999999,
+      durationMatrix = data.rows.map((row) =>
+        row.elements.map((el) =>
+          el.status === "OK" && el.duration ? el.duration.value : 999999,
         ),
       );
-    } catch (error) {
+    } catch {
       return { success: false, error: "Failed to communicate with Google API." };
     }
   }
@@ -103,7 +127,7 @@ export async function optimizeRouteDispatchAction(
     let nearestDist = Infinity;
     let nearestIdx = -1;
 
-    for (let next of unvisited) {
+    for (const next of unvisited) {
       const dist = durationMatrix[current][next];
       if (dist < nearestDist) {
         nearestDist = dist;
