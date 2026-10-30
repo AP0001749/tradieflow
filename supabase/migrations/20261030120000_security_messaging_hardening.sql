@@ -269,7 +269,7 @@ alter table public.webhook_failures
 
 alter table public.webhook_failures
   add constraint webhook_failures_status_check
-  check (status in ('pending', 'processing', 'success', 'failed'));
+  check (status in ('pending', 'processing', 'success', 'failed', 'quarantined'));
 
 -- -------------------------------------------------------------
 -- 5. Restrict SECURITY DEFINER cron helpers

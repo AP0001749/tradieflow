@@ -37,10 +37,9 @@ function requireCronSecret(request: Request) {
   return true;
 }
 
-async function isSmsSuppressed(
-  supabase: ReturnType<typeof createAdminClient>,
-  payload: Record<string, unknown>,
-) {
+type SuppressionDecision = "suppressed" | "clear" | "quarantine" | "retry";
+
+function getSmsContext(payload: Record<string, unknown>) {
   const businessId =
     typeof payload.business_id === "string"
       ? payload.business_id
@@ -54,8 +53,18 @@ async function isSmsSuppressed(
         ? payload.To
         : null;
 
+  return { businessId, toNumber };
+}
+
+async function decideSmsSuppression(
+  supabase: ReturnType<typeof createAdminClient>,
+  payload: Record<string, unknown>,
+): Promise<SuppressionDecision> {
+  const { businessId, toNumber } = getSmsContext(payload);
+
+  // Missing workspace context cannot prove the recipient is allowed to receive SMS.
   if (!businessId || !toNumber) {
-    return false;
+    return "quarantine";
   }
 
   const { data, error } = await supabase.rpc("is_sms_suppressed", {
@@ -65,10 +74,10 @@ async function isSmsSuppressed(
 
   if (error) {
     console.warn("is_sms_suppressed unavailable during DLQ retry", error.message);
-    return false;
+    return "retry";
   }
 
-  return Boolean(data);
+  return data ? "suppressed" : "clear";
 }
 
 serve(async (request) => {
@@ -96,12 +105,15 @@ serve(async (request) => {
 
     let processed = 0;
     let suppressed = 0;
+    let held = 0;
 
     for (const item of ((failures || []) as WebhookFailure[])) {
       processed += 1;
       try {
         if (item.provider === "twilio") {
-          if (await isSmsSuppressed(supabase, item.payload || {})) {
+          const decision = await decideSmsSuppression(supabase, item.payload || {});
+
+          if (decision === "suppressed") {
             suppressed += 1;
             await supabase
               .from("webhook_failures")
@@ -114,6 +126,26 @@ serve(async (request) => {
               .eq("id", item.id)
               .eq("claim_token", item.claim_token);
             continue;
+          }
+
+          if (decision === "quarantine") {
+            held += 1;
+            await supabase
+              .from("webhook_failures")
+              .update({
+                status: "quarantined",
+                claimed_at: null,
+                claim_token: null,
+                error_message: "held: missing business_id or destination for suppression check",
+              })
+              .eq("id", item.id)
+              .eq("claim_token", item.claim_token);
+            continue;
+          }
+
+          if (decision === "retry") {
+            held += 1;
+            throw new Error("held: suppression lookup failed");
           }
 
           if (!twilioClient) throw new Error("Twilio not configured");
@@ -163,7 +195,7 @@ serve(async (request) => {
       }
     }
 
-    return new Response(JSON.stringify({ success: true, processed, suppressed }), {
+    return new Response(JSON.stringify({ success: true, processed, suppressed, held }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err) {
