@@ -118,7 +118,16 @@ export default async function DashboardPage() {
     return null;
   }
 
-  // Fetch all data in parallel
+  // Business profile first so lead counts can scope by business_id (not user_id).
+  const businessProfileResult = await supabase
+    .from("business_profile")
+    .select("id, booking_url_slug, primary_trade_focus, service_area_postcodes, default_job_types, team_size, after_hours_coverage, dispatch_radius, dispatch_roster, missed_call_text_enabled, missed_call_forwarding_number, twilio_phone_number, quote_followup_enabled, quote_followup_delay_hours, review_request_enabled, review_request_delay_hours, google_review_url")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const businessId = businessProfileResult.data?.id ?? null;
+
+  // Fetch remaining dashboard data in parallel
   const [
     clientsResult,
     activeJobsResult,
@@ -126,7 +135,6 @@ export default async function DashboardPage() {
     allJobsResult,
     invoicesResult,
     recentSalesResult,
-    businessProfileResult,
     subscriptionProfileResult,
     quoteQueueResult,
     reviewQueueResult,
@@ -142,7 +150,12 @@ export default async function DashboardPage() {
       .eq("user_id", user.id)
       .eq("status", "in_progress"),
 
-    supabase.from("leads").select("*", { count: "exact", head: true }).eq("user_id", user.id),
+    businessId
+      ? supabase
+          .from("leads")
+          .select("*", { count: "exact", head: true })
+          .eq("business_id", businessId)
+      : Promise.resolve({ count: 0, data: null, error: null }),
 
     supabase.from("jobs").select("*", { count: "exact", head: true }).eq("user_id", user.id),
     
@@ -173,12 +186,6 @@ export default async function DashboardPage() {
       .eq("status", "paid")
       .order("created_at", { ascending: false })
       .limit(5),
-
-    supabase
-      .from("business_profile")
-      .select("id, booking_url_slug, primary_trade_focus, service_area_postcodes, default_job_types, team_size, after_hours_coverage, dispatch_radius, dispatch_roster, missed_call_text_enabled, missed_call_forwarding_number, twilio_phone_number, quote_followup_enabled, quote_followup_delay_hours, review_request_enabled, review_request_delay_hours, google_review_url")
-      .eq("user_id", user.id)
-      .maybeSingle(),
 
     supabase
       .from("profiles")

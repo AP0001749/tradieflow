@@ -153,10 +153,16 @@ function normalizeIncomingSecret(value: string | null) {
 
 function secretsMatch(candidate: string | null, configuredSecrets: string[]) {
   if (!candidate) return false;
-  const candidateBuffer = Buffer.from(candidate);
+  const encoder = new TextEncoder();
+  const candidateBytes = encoder.encode(candidate);
   return configuredSecrets.some((secret) => {
-    const secretBuffer = Buffer.from(secret);
-    return candidateBuffer.length === secretBuffer.length && candidate === secret;
+    const secretBytes = encoder.encode(secret);
+    if (candidateBytes.length !== secretBytes.length) return false;
+    let diff = 0;
+    for (let i = 0; i < candidateBytes.length; i += 1) {
+      diff |= candidateBytes[i] ^ secretBytes[i];
+    }
+    return diff === 0;
   });
 }
 

@@ -418,6 +418,41 @@ export type Database = {
           },
         ]
       }
+      lead_sms_tracking: {
+        Row: {
+          business_id: string | null
+          id: string
+          message_sid: string | null
+          phone_number: string
+          purpose: string
+          sent_at: string
+        }
+        Insert: {
+          business_id?: string | null
+          id?: string
+          message_sid?: string | null
+          phone_number: string
+          purpose?: string
+          sent_at?: string
+        }
+        Update: {
+          business_id?: string | null
+          id?: string
+          message_sid?: string | null
+          phone_number?: string
+          purpose?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_sms_tracking_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           business_id: string

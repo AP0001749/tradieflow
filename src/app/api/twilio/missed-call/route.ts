@@ -465,10 +465,12 @@ async function updateLeadAfterTextBack(lead: LeadMatch) {
 
 async function sendMissedCallText({
   body,
+  businessId,
   fromNumber,
   toNumber,
 }: {
   body: string;
+  businessId: string;
   fromNumber: string;
   toNumber: string;
 }) {
@@ -481,24 +483,27 @@ async function sendMissedCallText({
 
   const supabase = createAdminClient();
   const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-  
-  // Debounce check
+
+  // Debounce check — scoped to this business so one tenant cannot suppress another.
   const { data: recentSms, error: debounceError } = await supabase
     .from("lead_sms_tracking")
     .select("id")
+    .eq("business_id", businessId)
     .eq("phone_number", toNumber)
     .gte("sent_at", fifteenMinsAgo)
     .limit(1);
 
   if (debounceError) throw debounceError;
   if (recentSms && recentSms.length > 0) {
-    console.log(`Debounced: An SMS was already sent to ${toNumber} within the last 15 minutes`);
+    console.log(
+      `Debounced: An SMS was already sent to ${toNumber} for business ${businessId} within the last 15 minutes`,
+    );
     return null;
   }
 
   const client = twilio(accountSid, authToken);
   let result;
-  
+
   try {
     result = await client.messages.create({
       body,
@@ -513,7 +518,10 @@ async function sendMissedCallText({
   }
 
   await supabase.from("lead_sms_tracking").insert({
+    business_id: businessId,
     phone_number: toNumber,
+    message_sid: result.sid,
+    purpose: "missed_call_text_back",
   });
 
   return result;
@@ -629,6 +637,7 @@ export async function POST(request: Request) {
     try {
       sentMessage = await sendMissedCallText({
         body: message,
+        businessId: businessProfile.id,
         fromNumber: normalizeAustralianPhone(businessProfile.twilio_phone_number) || toNumber,
         toNumber: fromNumber,
       });
@@ -642,9 +651,18 @@ export async function POST(request: Request) {
       throw error;
     }
 
+    // Debounced sends return null — treat as success without reading .sid.
+    if (!sentMessage?.sid) {
+      await markMissedCallTextBackStatus({
+        callSid,
+        status: "sent",
+      });
+      return twimlResponse();
+    }
+
     await markMissedCallTextBackStatus({
       callSid,
-      messageSid: sentMessage!.sid,
+      messageSid: sentMessage.sid,
       status: "sent",
     });
     await updateLeadAfterTextBack(lead);
@@ -652,7 +670,7 @@ export async function POST(request: Request) {
       call_sid: callSid,
       dial_status: dialStatus,
       from: fromNumber,
-      message_sid: sentMessage!.sid,
+      message_sid: sentMessage.sid,
       source: "twilio-missed-call",
       to: toNumber,
     });

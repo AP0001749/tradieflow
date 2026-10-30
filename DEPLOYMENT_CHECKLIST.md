@@ -112,13 +112,15 @@
   `20260429120000_migrate_zero_leak_pgcron.sql`
   `20260429130000_create_webhook_dlq.sql`
   `20261030120000_security_messaging_hardening.sql`
+  `20261030130000_followup_hardening_fixes.sql`
 - [ ] Verify hosted Supabase auth settings directly in the live project dashboard
 - [ ] Verify RLS / tenant isolation in the live database
 - [ ] Confirm `tier_limits` contains the expected free, Baseline, and Apex plan rows
 - [ ] Confirm `business_profile` has the new dispatch, Twilio, automation, and SLA columns
 - [ ] Confirm `jobs` has dispatch fields, check-in fields, share-token fields, and quote follow-up claim fields
 - [ ] Confirm `leads` has triage, first-response, and SMS suppression fields
-- [ ] Confirm `job_dispatch_events`, `twilio_missed_call_textbacks`, and `sms_suppressions` exist
+- [ ] Confirm `job_dispatch_events`, `twilio_missed_call_textbacks`, `sms_suppressions`, and `lead_sms_tracking` exist
+- [ ] Confirm quote follow-up claims exclude cancelled and completed jobs
 - [ ] Confirm Twilio numbers are unique by normalised digits
 - [ ] Confirm profiles billing columns are protected from client updates
 - [ ] Create or verify Vault secrets:

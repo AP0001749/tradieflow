@@ -228,7 +228,8 @@ $criticalMigrations = @(
     "supabase/migrations/20260411163000_gate_zero_leak_apex_automations.sql",
     "supabase/migrations/20260411164500_gate_missed_call_baseline_automation.sql",
     "supabase/migrations/20260429103000_enable_rls_for_twilio_missed_call_textbacks.sql",
-    "supabase/migrations/20261030120000_security_messaging_hardening.sql"
+    "supabase/migrations/20261030120000_security_messaging_hardening.sql",
+    "supabase/migrations/20261030130000_followup_hardening_fixes.sql"
 )
 
 foreach ($migration in $criticalMigrations) {
