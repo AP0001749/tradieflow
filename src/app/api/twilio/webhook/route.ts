@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import twilio from "twilio";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { upsertPhoneSmsSuppression } from "@/lib/sms-suppression";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -346,12 +347,28 @@ export async function POST(request: Request) {
       return xmlResponse();
     }
 
+    // Record STOP / wrong-number suppression by business+phone even when no lead exists
+    // (e.g. manually created clients or closed contacts without an open lead).
+    if (intent === "opt_out" || intent === "wrong_number") {
+      await upsertPhoneSmsSuppression({
+        businessId: businessProfile.id,
+        phone: fromNumber,
+        reason:
+          intent === "wrong_number"
+            ? "wrong_number_reply"
+            : optOutType || body || "STOP",
+        source: "twilio-webhook",
+        leadId: null,
+      });
+    }
+
     const lead = await findLeadByPhone(businessProfile.id, fromNumber);
 
     if (!lead) {
       console.warn("Twilio inbound SMS did not match an existing lead", {
         businessId: businessProfile.id,
         fromNumber,
+        intent,
         messageSid,
         toNumber,
       });
@@ -386,6 +403,17 @@ export async function POST(request: Request) {
       if (intent === "opt_out") {
         updatePayload.sms_opted_out_at = now;
       }
+
+      await upsertPhoneSmsSuppression({
+        businessId: businessProfile.id,
+        phone: fromNumber,
+        reason:
+          intent === "wrong_number"
+            ? "wrong_number_reply"
+            : optOutType || body || "STOP",
+        source: "twilio-webhook",
+        leadId: lead.id,
+      });
     } else if (lead.status === "new" || lead.status === "stale") {
       updatePayload.status = "contacted";
     }

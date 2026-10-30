@@ -113,6 +113,7 @@ export type Database = {
       clients: {
         Row: {
           address: string | null
+          archived_at: string | null
           created_at: string
           email: string | null
           id: string
@@ -123,6 +124,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          archived_at?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -133,6 +135,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          archived_at?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -152,6 +155,7 @@ export type Database = {
           job_id: string
           notes: string | null
           paid_at: string | null
+          public_share_token: string | null
           review_request_last_error: string | null
           review_request_processing: boolean
           review_request_processing_started_at: string | null
@@ -168,6 +172,7 @@ export type Database = {
           job_id: string
           notes?: string | null
           paid_at?: string | null
+          public_share_token?: string | null
           review_request_last_error?: string | null
           review_request_processing?: boolean
           review_request_processing_started_at?: string | null
@@ -184,6 +189,7 @@ export type Database = {
           job_id?: string
           notes?: string | null
           paid_at?: string | null
+          public_share_token?: string | null
           review_request_last_error?: string | null
           review_request_processing?: boolean
           review_request_processing_started_at?: string | null
@@ -408,6 +414,41 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_sms_tracking: {
+        Row: {
+          business_id: string | null
+          id: string
+          message_sid: string | null
+          phone_number: string
+          purpose: string
+          sent_at: string
+        }
+        Insert: {
+          business_id?: string | null
+          id?: string
+          message_sid?: string | null
+          phone_number: string
+          purpose?: string
+          sent_at?: string
+        }
+        Update: {
+          business_id?: string | null
+          id?: string
+          message_sid?: string | null
+          phone_number?: string
+          purpose?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_sms_tracking_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profile"
             referencedColumns: ["id"]
           },
         ]

@@ -393,7 +393,7 @@ export async function updateLeadTriage(leadId: string, formData: FormData) {
 
   const { data: lead, error: leadError } = await supabase
     .from('leads')
-    .select('id, lead_urgency, response_due_at, triage_problem, triage_site_risk, triage_safety_risk')
+    .select('id, created_at, lead_urgency, response_due_at, triage_problem, triage_site_risk, triage_safety_risk')
     .eq('id', leadId)
     .eq('business_id', profile.id)
     .maybeSingle();
@@ -401,11 +401,16 @@ export async function updateLeadTriage(leadId: string, formData: FormData) {
   if (leadError && leadError.code !== 'PGRST116') throw leadError;
   if (!lead) throw new Error('Lead not found');
 
-  const responseDueAt = buildLeadResponseDueAt(
-    new Date(),
-    urgency,
-    getProfileSlaMinutes(profile),
-  );
+  // Keep SLA anchored to lead arrival (created_at), not edit time.
+  const urgencyChanged = lead.lead_urgency !== urgency;
+  const arrivalAt = lead.created_at ? new Date(lead.created_at) : new Date();
+  const responseDueAt = urgencyChanged
+    ? buildLeadResponseDueAt(
+        arrivalAt,
+        urgency,
+        getProfileSlaMinutes(profile),
+      )
+    : lead.response_due_at;
 
   const { data: updated, error: updateError } = await supabase
     .from('leads')
@@ -666,6 +671,14 @@ export async function convertLeadToJob(leadId: string) {
 
   if (leadError || !lead) throw new Error('Lead not found');
 
+  // Idempotent: repeated conversion returns the existing job.
+  if (lead.converted_job_id) {
+    revalidatePath('/dashboard/leads');
+    revalidatePath(`/dashboard/leads/${leadId}`);
+    revalidatePath('/dashboard/jobs');
+    return lead.converted_job_id;
+  }
+
   // Check if client exists (by email or phone)
   // Use separate .eq() queries instead of .or() to avoid PostgREST filter injection
   let clientId: string;
@@ -738,7 +751,7 @@ export async function convertLeadToJob(leadId: string) {
 
   if (jobError || !job) throw new Error(jobError?.message || 'Failed to create job');
 
-  // Update lead
+  // Claim conversion only if still unconverted (guards concurrent double-submit).
   const { data: updatedLeadRows, error: leadUpdateError } = await supabase
     .from('leads')
     .update({
@@ -747,13 +760,32 @@ export async function convertLeadToJob(leadId: string) {
     })
     .eq('id', leadId)
     .eq('business_id', profile.id)
+    .is('converted_job_id', null)
     .select('id');
 
   if (leadUpdateError) {
-    console.warn('Failed to update lead status after conversion:', leadUpdateError);
+    throw new Error(leadUpdateError.message || 'Failed to finalize lead conversion');
   }
+
   if (!updatedLeadRows || updatedLeadRows.length === 0) {
-    console.warn('Lead conversion completed but lead update matched no rows:', leadId);
+    const { data: existingLead } = await supabase
+      .from('leads')
+      .select('converted_job_id')
+      .eq('id', leadId)
+      .eq('business_id', profile.id)
+      .maybeSingle();
+
+    // Best-effort cleanup of the duplicate job created by the losing request.
+    await supabase.from('jobs').delete().eq('id', job.id).eq('user_id', user.id);
+
+    if (existingLead?.converted_job_id) {
+      revalidatePath('/dashboard/leads');
+      revalidatePath(`/dashboard/leads/${leadId}`);
+      revalidatePath('/dashboard/jobs');
+      return existingLead.converted_job_id;
+    }
+
+    throw new Error('Lead conversion raced and no converted job was found');
   }
 
   // Log event

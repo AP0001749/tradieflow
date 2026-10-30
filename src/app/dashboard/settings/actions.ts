@@ -15,6 +15,7 @@ import {
   DEFAULT_REVIEW_REQUEST_TEMPLATE,
   coerceAutomationTemplate,
 } from '@/lib/zero-leak';
+import { assertTwilioNumberOwnedByAccount } from '@/lib/twilio-ownership';
 import { revalidatePath } from 'next/cache';
 
 async function generateAvailableBookingSlug(
@@ -118,7 +119,7 @@ export async function updateBusinessProfile(formData: {
 
   const { data: existing, error: existingError } = await supabase
     .from('business_profile')
-    .select('id')
+    .select('id, twilio_phone_number')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -130,6 +131,19 @@ export async function updateBusinessProfile(formData: {
     formData.booking_url_slug || formData.business_name,
     existing?.id
   );
+
+  const requestedTwilioNumber = formData.twilio_phone_number?.trim() || null;
+  const existingTwilioNumber =
+    (existing as { twilio_phone_number?: string | null } | null)?.twilio_phone_number || null;
+  const sameTwilioNumber =
+    (requestedTwilioNumber || '').replace(/\D+/g, '') ===
+    (existingTwilioNumber || '').replace(/\D+/g, '');
+
+  // Twilio mapping is enforced server-side: ownership check + service-role write.
+  // Client-side updates to twilio_phone_number are blocked by a database trigger.
+  if (requestedTwilioNumber && !sameTwilioNumber) {
+    await assertTwilioNumberOwnedByAccount(requestedTwilioNumber);
+  }
 
   const payload = {
     business_name: formData.business_name,
@@ -149,7 +163,6 @@ export async function updateBusinessProfile(formData: {
       DEFAULT_MISSED_CALL_TEXT_TEMPLATE
     ),
     missed_call_forwarding_number: formData.missed_call_forwarding_number?.trim() || null,
-    twilio_phone_number: formData.twilio_phone_number?.trim() || null,
     emergency_response_sla_minutes: Math.min(
       Math.max(1, Math.round(formData.emergency_response_sla_minutes || 15)),
       10080
@@ -187,16 +200,54 @@ export async function updateBusinessProfile(formData: {
       .eq('id', existing.id)
       .eq('user_id', user.id);
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
+
+    if (!sameTwilioNumber) {
+      const supabaseAdmin = createAdminClient();
+      const { error: twilioError } = await supabaseAdmin
+        .from('business_profile')
+        .update({ twilio_phone_number: requestedTwilioNumber })
+        .eq('id', existing.id)
+        .eq('user_id', user.id);
+
+      if (twilioError) {
+        if (twilioError.code === '23505' && /twilio|normalize_phone/i.test(twilioError.message)) {
+          throw new Error('That Twilio number is already assigned to another workspace.');
+        }
+        throw twilioError;
+      }
+    }
   } else {
-    const { error } = await supabase
+    const { data: created, error } = await supabase
       .from('business_profile')
       .insert({
         user_id: user.id,
         ...payload,
-      });
+      })
+      .select('id')
+      .single();
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
+
+    if (requestedTwilioNumber && created?.id) {
+      const supabaseAdmin = createAdminClient();
+      const { error: twilioError } = await supabaseAdmin
+        .from('business_profile')
+        .update({ twilio_phone_number: requestedTwilioNumber })
+        .eq('id', created.id)
+        .eq('user_id', user.id);
+
+      if (twilioError) {
+        if (twilioError.code === '23505' && /twilio|normalize_phone/i.test(twilioError.message)) {
+          throw new Error('That Twilio number is already assigned to another workspace.');
+        }
+        throw twilioError;
+      }
+    }
   }
 
   revalidatePath('/dashboard/settings');

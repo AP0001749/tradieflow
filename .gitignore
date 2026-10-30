@@ -19,6 +19,8 @@
 
 # production
 /build
+/docs/production-evidence/*
+!/docs/production-evidence/.gitkeep
 
 # misc
 .DS_Store

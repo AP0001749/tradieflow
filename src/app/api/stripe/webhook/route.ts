@@ -133,6 +133,104 @@ async function updateProfileByUserId(
   return { error: null, updatedProfile };
 }
 
+const ACTIVE_SUBSCRIPTION_STATUSES = new Set([
+  "active",
+  "trialing",
+  "past_due",
+]);
+
+async function retrieveLiveSubscription(
+  stripe: ReturnType<typeof getStripeServer>,
+  subscriptionId: string
+) {
+  try {
+    return await stripe.subscriptions.retrieve(subscriptionId);
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "resource_missing"
+    ) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+async function findPreferredLiveSubscription(
+  stripe: ReturnType<typeof getStripeServer>,
+  customerId: string | undefined,
+  preferredSubscriptionId?: string
+) {
+  if (!customerId) {
+    return preferredSubscriptionId
+      ? await retrieveLiveSubscription(stripe, preferredSubscriptionId)
+      : null;
+  }
+
+  const subscriptions = await stripe.subscriptions.list({
+    customer: customerId,
+    status: "all",
+    limit: 20,
+  });
+
+  const active = subscriptions.data.find((subscription) =>
+    ACTIVE_SUBSCRIPTION_STATUSES.has(subscription.status)
+  );
+
+  if (active) {
+    return active;
+  }
+
+  if (preferredSubscriptionId) {
+    return (
+      subscriptions.data.find((subscription) => subscription.id === preferredSubscriptionId) ||
+      null
+    );
+  }
+
+  return subscriptions.data[0] || null;
+}
+
+function buildSubscriptionProfileUpdate(subscription: Stripe.Subscription) {
+  const customerId =
+    typeof subscription.customer === "string" ? subscription.customer : undefined;
+  const isActive = ACTIVE_SUBSCRIPTION_STATUSES.has(subscription.status);
+  const planKey = getPlanKeyFromSubscription(subscription);
+  const effectivePlanKey = getEffectiveSubscriptionPlanKey({
+    subscriptionPlanKey: planKey,
+    subscriptionTier: isActive ? "pro" : "free",
+    subscriptionStatus: subscription.status,
+  });
+
+  const update: Record<string, unknown> = {
+    subscription_tier: isActive ? "pro" : "free",
+    subscription_plan_key: effectivePlanKey,
+    subscription_status: subscription.status,
+    stripe_subscription_id: subscription.id,
+  };
+
+  if (customerId) {
+    update.stripe_customer_id = customerId;
+  }
+
+  const periodStart = (subscription as unknown as Record<string, unknown>)
+    .current_period_start as number | undefined;
+  const periodEnd = (subscription as unknown as Record<string, unknown>)
+    .current_period_end as number | undefined;
+
+  if (periodStart) {
+    update.subscription_start_date = new Date(periodStart * 1000).toISOString();
+  }
+  if (periodEnd) {
+    update.subscription_end_date = new Date(periodEnd * 1000).toISOString();
+  }
+
+  return update;
+}
+
 async function resolveProfileUserIdForSubscriptionEvent(
   supabaseAdmin: ReturnType<typeof createAdminClient>,
   customerId: string | undefined,
@@ -245,19 +343,24 @@ export async function POST(request: Request) {
           break;
         }
 
-        const planKey = normalizePlanKey(session?.metadata?.planKey);
-        const update: Record<string, unknown> = {
-          subscription_tier: "pro",
-          subscription_plan_key: planKey,
-          subscription_status: "active",
-        };
+        // Always reconcile against live Stripe state so a delayed checkout event
+        // cannot restore paid access after a newer cancellation or plan change.
+        const liveSubscription = await findPreferredLiveSubscription(
+          stripe,
+          customerId,
+          subscriptionId
+        );
 
-        if (customerId) {
-          update.stripe_customer_id = customerId;
+        if (!liveSubscription) {
+          outcomeStatus = "ignored";
+          outcomeDetails =
+            "checkout.session.completed ignored because no live Stripe subscription was found";
+          break;
         }
-        if (subscriptionId) {
-          update.stripe_subscription_id = subscriptionId;
-          update.subscription_start_date = new Date().toISOString();
+
+        const update = buildSubscriptionProfileUpdate(liveSubscription);
+        if (customerId && !update.stripe_customer_id) {
+          update.stripe_customer_id = customerId;
         }
 
         const { error: updateError } = await updateProfileByUserId(
@@ -276,98 +379,114 @@ export async function POST(request: Request) {
 
       case "customer.subscription.created":
       case "customer.subscription.updated": {
-        const subscription = event.data.object as Stripe.Subscription;
+        const eventSubscription = event.data.object as Stripe.Subscription;
         const customerId =
-          typeof subscription.customer === "string"
-            ? (subscription.customer as string)
+          typeof eventSubscription.customer === "string"
+            ? (eventSubscription.customer as string)
             : undefined;
 
         const metadataUserId =
-          typeof subscription.metadata?.userId === "string"
-            ? subscription.metadata.userId
+          typeof eventSubscription.metadata?.userId === "string"
+            ? eventSubscription.metadata.userId
             : undefined;
         const resolvedUserId = await resolveProfileUserIdForSubscriptionEvent(
           supabaseAdmin,
           customerId,
-          subscription.id,
+          eventSubscription.id,
           metadataUserId
         );
 
         if (!resolvedUserId) {
           outcomeStatus = "ignored";
-          outcomeDetails = `No profile found for subscription event ${event.type} (customer ${customerId ?? "unknown"}, subscription ${subscription.id})`;
+          outcomeDetails = `No profile found for subscription event ${event.type} (customer ${customerId ?? "unknown"}, subscription ${eventSubscription.id})`;
           break;
         }
 
-        const isActive = subscription.status === "active" || subscription.status === "trialing" || subscription.status === "past_due";
-        const planKey = getPlanKeyFromSubscription(subscription);
-        const effectivePlanKey = getEffectiveSubscriptionPlanKey({
-          subscriptionPlanKey: planKey,
-          subscriptionTier: isActive ? "pro" : "free",
-          subscriptionStatus: subscription.status,
-        });
+        // Reconcile against live Stripe state so older webhook deliveries cannot
+        // overwrite a newer subscription plan/status.
+        const liveSubscription =
+          (await findPreferredLiveSubscription(
+            stripe,
+            customerId,
+            eventSubscription.id
+          )) || eventSubscription;
 
-        const update: Record<string, unknown> = {
-          subscription_tier: isActive ? "pro" : "free",
-          subscription_plan_key: effectivePlanKey,
-          subscription_status: subscription.status,
-          stripe_subscription_id: subscription.id,
-        };
-
-        if (customerId) {
-          update.stripe_customer_id = customerId;
-        }
-
-        // Add period dates - Stripe timestamps are in seconds
-        const periodStart = (subscription as unknown as Record<string, unknown>).current_period_start as number | undefined;
-        const periodEnd = (subscription as unknown as Record<string, unknown>).current_period_end as number | undefined;
-        
-        if (periodStart) {
-          update.subscription_start_date = new Date(periodStart * 1000).toISOString();
-        }
-        if (periodEnd) {
-          update.subscription_end_date = new Date(periodEnd * 1000).toISOString();
+        if (liveSubscription.id !== eventSubscription.id) {
+          outcomeStatus = "ignored";
+          outcomeDetails = `Ignored stale ${event.type} for ${eventSubscription.id}; live subscription is ${liveSubscription.id}`;
+          const { error: preferredUpdateError } = await updateProfileByUserId(
+            supabaseAdmin,
+            resolvedUserId,
+            buildSubscriptionProfileUpdate(liveSubscription)
+          );
+          if (preferredUpdateError) {
+            throw new Error(
+              `Failed to sync preferred live subscription ${liveSubscription.id}: ${getWebhookDiagnostic(preferredUpdateError)}`
+            );
+          }
+          break;
         }
 
         const { error: updateError } = await updateProfileByUserId(
           supabaseAdmin,
           resolvedUserId,
-          update
+          buildSubscriptionProfileUpdate(liveSubscription)
         );
 
         if (updateError) {
           throw new Error(
-            `Failed to update subscription ${subscription.id}: ${getWebhookDiagnostic(updateError)}`
+            `Failed to update subscription ${liveSubscription.id}: ${getWebhookDiagnostic(updateError)}`
           );
         }
         break;
       }
 
       case "customer.subscription.deleted": {
-        const subscription = event.data.object as Stripe.Subscription;
+        const eventSubscription = event.data.object as Stripe.Subscription;
         const customerId =
-          typeof subscription.customer === "string"
-            ? (subscription.customer as string)
+          typeof eventSubscription.customer === "string"
+            ? (eventSubscription.customer as string)
             : undefined;
 
         const metadataUserId =
-          typeof subscription.metadata?.userId === "string"
-            ? subscription.metadata.userId
+          typeof eventSubscription.metadata?.userId === "string"
+            ? eventSubscription.metadata.userId
             : undefined;
         const resolvedUserId = await resolveProfileUserIdForSubscriptionEvent(
           supabaseAdmin,
           customerId,
-          subscription.id,
+          eventSubscription.id,
           metadataUserId
         );
 
         if (!resolvedUserId) {
           outcomeStatus = "ignored";
-          outcomeDetails = `No profile found for deleted subscription ${subscription.id} (customer ${customerId ?? "unknown"})`;
+          outcomeDetails = `No profile found for deleted subscription ${eventSubscription.id} (customer ${customerId ?? "unknown"})`;
           break;
         }
 
-        // Downgrade to free tier when subscription is deleted
+        const liveSubscription = await findPreferredLiveSubscription(
+          stripe,
+          customerId,
+          eventSubscription.id
+        );
+
+        if (liveSubscription && ACTIVE_SUBSCRIPTION_STATUSES.has(liveSubscription.status)) {
+          outcomeStatus = "ignored";
+          outcomeDetails = `Ignored deleted event for ${eventSubscription.id}; customer still has live subscription ${liveSubscription.id}`;
+          const { error: liveUpdateError } = await updateProfileByUserId(
+            supabaseAdmin,
+            resolvedUserId,
+            buildSubscriptionProfileUpdate(liveSubscription)
+          );
+          if (liveUpdateError) {
+            throw new Error(
+              `Failed to keep live subscription ${liveSubscription.id}: ${getWebhookDiagnostic(liveUpdateError)}`
+            );
+          }
+          break;
+        }
+
         const { error: updateError } = await updateProfileByUserId(
           supabaseAdmin,
           resolvedUserId,
@@ -376,14 +495,14 @@ export async function POST(request: Request) {
             subscription_plan_key: "free",
             subscription_status: "canceled",
             stripe_customer_id: customerId,
-            stripe_subscription_id: subscription.id,
+            stripe_subscription_id: eventSubscription.id,
             subscription_end_date: new Date().toISOString(),
           }
         );
 
         if (updateError) {
           throw new Error(
-            `Failed to downgrade subscription ${subscription.id}: ${getWebhookDiagnostic(updateError)}`
+            `Failed to downgrade subscription ${eventSubscription.id}: ${getWebhookDiagnostic(updateError)}`
           );
         }
         break;
