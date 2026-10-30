@@ -301,6 +301,75 @@ async function getConvertedLeadSmsSuppression({
   };
 }
 
+async function getBusinessIdForUser({
+  supabase,
+  userId,
+}: {
+  supabase: ReturnType<typeof createAdminClient>;
+  userId: string;
+}) {
+  const { data, error } = await supabase
+    .from("business_profile")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data as { id?: string } | null)?.id || null;
+}
+
+async function getPhoneSmsSuppression({
+  businessId,
+  phone,
+  supabase,
+}: {
+  businessId: string | null | undefined;
+  phone: string | null | undefined;
+  supabase: ReturnType<typeof createAdminClient>;
+}): Promise<SmsSuppressionState> {
+  if (!businessId || !phone) return { reason: null, suppressed: false };
+
+  const { data, error } = await supabase.rpc("is_sms_suppressed", {
+    p_business_id: businessId,
+    p_phone: phone,
+  });
+
+  if (error) {
+    // Fall back to converted-lead flag until the hardening migration is applied.
+    console.warn("is_sms_suppressed unavailable", error.message);
+    return { reason: null, suppressed: false };
+  }
+
+  return {
+    reason: data ? "phone_sms_suppression" : null,
+    suppressed: Boolean(data),
+  };
+}
+
+async function resolveSmsSuppression({
+  jobId,
+  phone,
+  supabase,
+  userId,
+}: {
+  jobId: string | null | undefined;
+  phone: string | null | undefined;
+  supabase: ReturnType<typeof createAdminClient>;
+  userId: string;
+}): Promise<SmsSuppressionState> {
+  const businessId = await getBusinessIdForUser({ supabase, userId });
+  const phoneSuppression = await getPhoneSmsSuppression({
+    businessId,
+    phone,
+    supabase,
+  });
+  if (phoneSuppression.suppressed) {
+    return phoneSuppression;
+  }
+
+  return getConvertedLeadSmsSuppression({ jobId, supabase });
+}
+
 async function getInvoiceJobId({
   invoiceId,
   supabase,
@@ -425,7 +494,12 @@ async function processQuoteFollowups({
       const replyToEmail = followup.reply_to_email || fallbackReplyTo;
       const smsFromNumber = normalizeAustralianPhone(followup.twilio_phone_number);
       const smsToNumber = normalizeAustralianPhone(followup.client_phone);
-      const smsSuppression = await getConvertedLeadSmsSuppression({ jobId: followup.job_id, supabase });
+      const smsSuppression = await resolveSmsSuppression({
+        jobId: followup.job_id,
+        phone: followup.client_phone,
+        supabase,
+        userId: followup.user_id,
+      });
       const canSendSms = Boolean(hasTwilioSmsConfig() && smsFromNumber && smsToNumber && !smsSuppression.suppressed);
 
       if (canSendSms && smsFromNumber && smsToNumber) {
@@ -513,7 +587,12 @@ async function processReviewRequests({
       const smsFromNumber = normalizeAustralianPhone(reviewRequest.twilio_phone_number);
       const smsToNumber = normalizeAustralianPhone(reviewRequest.client_phone);
       const invoiceJobId = await getInvoiceJobId({ invoiceId: reviewRequest.invoice_id, supabase, userId: reviewRequest.user_id });
-      const smsSuppression = await getConvertedLeadSmsSuppression({ jobId: invoiceJobId, supabase });
+      const smsSuppression = await resolveSmsSuppression({
+        jobId: invoiceJobId,
+        phone: reviewRequest.client_phone,
+        supabase,
+        userId: reviewRequest.user_id,
+      });
       const canSendSms = Boolean(hasTwilioSmsConfig() && smsFromNumber && smsToNumber && !smsSuppression.suppressed);
 
       if (canSendSms && smsFromNumber && smsToNumber) {

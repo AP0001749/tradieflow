@@ -70,40 +70,40 @@ export async function optimizeRouteDispatchAction(
   }
 
   const addresses = validJobs.map((j) => getClientAddress(j) as string);
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY?.trim();
+
+  if (!apiKey) {
+    return {
+      success: false,
+      error: "Route optimisation is disabled until GOOGLE_MAPS_API_KEY is configured.",
+    };
+  }
 
   let durationMatrix: number[][] = [];
 
-  if (!apiKey) {
-    // Simulated Distance Matrix to visually mock savings when API key isn't present
-    durationMatrix = validJobs.map((_job: unknown, i: number) =>
-      validJobs.map((_j: unknown, j: number) => (i === j ? 0 : Math.floor(Math.random() * 1800) + 600)),
+  try {
+    const originStr = addresses.join("|");
+    const res = await fetch(
+      `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(
+        originStr,
+      )}&destinations=${encodeURIComponent(
+        originStr,
+      )}&key=${apiKey}&mode=driving`,
     );
-  } else {
-    try {
-      const originStr = addresses.join("|");
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(
-          originStr,
-        )}&destinations=${encodeURIComponent(
-          originStr,
-        )}&key=${apiKey}&mode=driving`,
-      );
 
-      const data = (await res.json()) as DistanceMatrixResponse;
-      if (data.status !== "OK") {
-        return { success: false, error: "Google Maps API error: " + data.status };
-      }
-
-      // Build duration matrix [from][to] in seconds
-      durationMatrix = data.rows.map((row) =>
-        row.elements.map((el) =>
-          el.status === "OK" && el.duration ? el.duration.value : 999999,
-        ),
-      );
-    } catch {
-      return { success: false, error: "Failed to communicate with Google API." };
+    const data = (await res.json()) as DistanceMatrixResponse;
+    if (data.status !== "OK") {
+      return { success: false, error: "Google Maps API error: " + data.status };
     }
+
+    // Build duration matrix [from][to] in seconds
+    durationMatrix = data.rows.map((row) =>
+      row.elements.map((el) =>
+        el.status === "OK" && el.duration ? el.duration.value : 999999,
+      ),
+    );
+  } catch {
+    return { success: false, error: "Failed to communicate with Google API." };
   }
 
   // Calculate original duration (just traveling in their current linear order)

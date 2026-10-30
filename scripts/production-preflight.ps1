@@ -227,7 +227,8 @@ $criticalMigrations = @(
     "supabase/migrations/20260411160000_add_sms_opt_out_to_zero_leak_templates.sql",
     "supabase/migrations/20260411163000_gate_zero_leak_apex_automations.sql",
     "supabase/migrations/20260411164500_gate_missed_call_baseline_automation.sql",
-    "supabase/migrations/20260429103000_enable_rls_for_twilio_missed_call_textbacks.sql"
+    "supabase/migrations/20260429103000_enable_rls_for_twilio_missed_call_textbacks.sql",
+    "supabase/migrations/20261030120000_security_messaging_hardening.sql"
 )
 
 foreach ($migration in $criticalMigrations) {
@@ -237,15 +238,22 @@ foreach ($migration in $criticalMigrations) {
 Write-Host "`nCritical app routes and modules" -ForegroundColor Cyan
 $criticalAppFiles = @(
     "src/app/api/cron/zero-leak/route.ts",
+    "src/app/api/prospects/create/route.ts",
+    "src/app/api/stripe/checkout/route.ts",
+    "src/app/api/stripe/webhook/route.ts",
     "src/app/api/twilio/voice/route.ts",
     "src/app/api/twilio/missed-call/route.ts",
     "src/app/api/twilio/webhook/route.ts",
     "src/app/api/field/check-in/route.ts",
+    "src/app/book/page.tsx",
     "src/app/book/[slug]/page.tsx",
+    "src/app/invoice/[token]/page.tsx",
     "src/app/field/[token]/page.tsx",
     "src/app/dashboard/dispatch/page.tsx",
     "src/app/dashboard/leads/[id]/page.tsx",
     "src/app/dashboard/outreach/page.tsx",
+    "src/lib/sms-suppression.ts",
+    "src/lib/twilio-ownership.ts",
     "src/components/dashboard/emergency-lead-queue.tsx",
     "src/components/dashboard/lead-activity-feed.tsx",
     "src/components/dashboard/lead-response-actions.tsx",

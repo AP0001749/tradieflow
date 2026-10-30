@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import twilio from "twilio";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { upsertPhoneSmsSuppression } from "@/lib/sms-suppression";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -391,6 +392,19 @@ export async function POST(request: Request) {
     }
 
     await updateLeadWithSmsFallback(lead.id, updatePayload);
+
+    if (intent === "opt_out" || intent === "wrong_number") {
+      await upsertPhoneSmsSuppression({
+        businessId: businessProfile.id,
+        phone: fromNumber,
+        reason:
+          intent === "wrong_number"
+            ? "wrong_number_reply"
+            : optOutType || body || "STOP",
+        source: "twilio-webhook",
+        leadId: lead.id,
+      });
+    }
 
     const supabase = createAdminClient();
 

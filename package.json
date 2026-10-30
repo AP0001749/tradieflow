@@ -17,6 +17,11 @@
     "verify:local": "npm run lint && npm run typecheck && npm run audit:pivot && npm run build",
     "release:gate": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/release-gate.ps1",
     "release:gate:strict": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/release-gate.ps1 -StrictProduction",
+    "smoke:production:preflight": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/production-missed-call-smoke-test.ps1 -PreflightOnly",
+    "smoke:production:recent": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/production-missed-call-smoke-test.ps1 -ListRecent",
+    "probe:twilio:production": "node scripts/probe-twilio-production.mjs",
+    "probe:twilio:production:voice": "node scripts/probe-twilio-production.mjs --voice-probe",
+    "smoke:production:missed-call": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/production-missed-call-smoke-test.ps1",
     "generate-types": "supabase gen types typescript --linked > src/types/database.generated.ts"
   },
   "dependencies": {

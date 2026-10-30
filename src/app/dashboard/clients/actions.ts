@@ -94,60 +94,28 @@ export async function deleteClient(clientId: string) {
     return { error: "Unauthorized" };
   }
 
-  // Check for associated jobs
-  const { data: jobs, error: jobsError } = await supabase
-    .from("jobs")
-    .select("id")
-    .eq("client_id", clientId)
-    .eq("user_id", user.id);
-
-  if (jobsError) {
-    console.error("Error checking jobs:", jobsError);
-    return { error: jobsError.message };
-  }
-
-  if (jobs && jobs.length > 0) {
-    // Delete associated invoices first
-    const jobIds = jobs.map(j => j.id);
-    const { error: invoiceError } = await supabase
-      .from("invoices")
-      .delete()
-      .in("job_id", jobIds)
-      .eq("user_id", user.id);
-
-    if (invoiceError) {
-      console.error("Error deleting invoices:", invoiceError);
-      return { error: "Failed to delete associated invoices" };
-    }
-
-    // Delete associated jobs
-    const { error: jobDeleteError } = await supabase
-      .from("jobs")
-      .delete()
-      .eq("client_id", clientId)
-      .eq("user_id", user.id);
-
-    if (jobDeleteError) {
-      console.error("Error deleting jobs:", jobDeleteError);
-      return { error: "Failed to delete associated jobs" };
-    }
-  }
-
-  // Finally, delete the client
-  const { error } = await supabase
-    .from("clients")
-    .delete()
-    .eq("id", clientId)
-    .eq("user_id", user.id);
+  const { data, error } = await supabase.rpc("delete_or_archive_client", {
+    p_client_id: clientId,
+  });
 
   if (error) {
-    console.error("Error deleting client:", error);
+    console.error("Error deleting/archiving client:", error);
     return { error: error.message };
   }
+
+  const outcome = Array.isArray(data) ? data[0] : data;
+  const archived = Boolean(outcome?.archived);
 
   revalidatePath("/dashboard/clients");
   revalidatePath("/dashboard/jobs");
   revalidatePath("/dashboard/invoices");
   revalidatePath("/dashboard");
-  return { success: true };
+
+  return {
+    success: true,
+    archived,
+    message: archived
+      ? "Client archived because invoice history exists."
+      : "Client deleted.",
+  };
 }

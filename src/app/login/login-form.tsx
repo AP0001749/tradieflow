@@ -20,15 +20,24 @@ import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 interface LoginFormProps {
-  signInWithGoogle: () => Promise<void>;
+  demoEnabled?: boolean;
+  initialError?: string | null;
+  signInWithDemo: () => Promise<{ error: string } | void>;
+  signInWithGoogle: () => Promise<{ error: string } | void>;
 }
 
-export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
+export default function LoginForm({
+  demoEnabled = false,
+  initialError = null,
+  signInWithDemo,
+  signInWithGoogle,
+}: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [error, setError] = useState<string | null>(initialError);
   const [notice, setNotice] = useState<string | null>(null);
   const router = useRouter();
   const appOrigin = process.env.NEXT_PUBLIC_APP_URL?.trim();
@@ -151,10 +160,50 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
           )}
 
           {/* Primary CTA: Google Sign Up */}
+          {demoEnabled ? (
+            <form
+              action={async () => {
+                setDemoLoading(true);
+                setError(null);
+                try {
+                  const result = await signInWithDemo();
+                  if (result?.error) {
+                    setError(result.error);
+                    setDemoLoading(false);
+                  }
+                } catch {
+                  setError("Demo login failed. Try again.");
+                  setDemoLoading(false);
+                }
+              }}
+            >
+              <Button
+                type="submit"
+                variant="secondary"
+                className="w-full h-12 font-semibold"
+                disabled={demoLoading || googleLoading || loading}
+              >
+                {demoLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Opening demo workspace...
+                  </>
+                ) : (
+                  "Try the demo workspace"
+                )}
+              </Button>
+            </form>
+          ) : null}
+
           <form action={async () => {
             setGoogleLoading(true);
+            setError(null);
             try {
-              await signInWithGoogle();
+              const result = await signInWithGoogle();
+              if (result?.error) {
+                setError(result.error);
+                setGoogleLoading(false);
+              }
             } catch {
               setGoogleLoading(false);
             }
@@ -162,7 +211,7 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
             <Button
               type="submit"
               className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={googleLoading}
+              disabled={googleLoading || demoLoading || loading}
             >
               {googleLoading ? (
                 <>
@@ -257,7 +306,7 @@ export default function LoginForm({ signInWithGoogle }: LoginFormProps) {
               type="submit"
               variant="outline"
               className="w-full h-11 font-medium transition-colors mt-4"
-              disabled={loading}
+              disabled={loading || demoLoading || googleLoading}
             >
               {loading ? (
                 <>

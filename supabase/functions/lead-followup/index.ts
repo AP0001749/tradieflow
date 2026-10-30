@@ -29,6 +29,15 @@ type LeadResults = {
 const URGENT_JOB_TYPE_PATTERN =
   /(emergency|callout|blocked drain|fault|breakdown|urgent|no power|no hot water)/i;
 
+function escapeHtml(value: string | null | undefined) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 function formatJobType(jobType: string | null | undefined) {
   return jobType?.replaceAll("_", " ") || "your trade work";
 }
@@ -58,8 +67,10 @@ function requireSenderEmail() {
 }
 
 function immediateFollowupHtml(lead: ClaimedLead, businessName: string) {
-  const jobType = formatJobType(lead.job_type);
-  const suburb = lead.suburb || "your service area";
+  const jobType = escapeHtml(formatJobType(lead.job_type));
+  const suburb = escapeHtml(lead.suburb || "your service area");
+  const contactName = escapeHtml(lead.name);
+  const safeBusinessName = escapeHtml(businessName);
   const urgent = isUrgentJobType(lead.job_type);
   const heading = urgent
     ? "Dispatch workflow request received"
@@ -70,7 +81,7 @@ function immediateFollowupHtml(lead: ClaimedLead, businessName: string) {
       <body style="background:#f6f9fc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;padding:24px;">
         <div style="background:#ffffff;max-width:640px;margin:0 auto;padding:32px 40px;">
           <h1 style="color:#333333;">${heading}</h1>
-          <p>Hi ${lead.name},</p>
+          <p>Hi ${contactName},</p>
           <p>We received your TradieFlow request for ${jobType} in ${suburb}.</p>
           <p><strong>To configure your workspace, please reply with:</strong></p>
           <ul>
@@ -82,7 +93,7 @@ function immediateFollowupHtml(lead: ClaimedLead, businessName: string) {
           ${urgent ? "<p><strong>Urgent jobs:</strong> Include your after-hours coverage and dispatch radius so the workflow matches how your team actually responds to call-outs.</p>" : ""}
           <p>We&apos;ll configure your TradieFlow workspace around missed-call recovery, quote follow-up, and dispatch, then send your next steps within one business day.</p>
           <hr style="border:none;border-top:1px solid #e6ebf1;margin:24px 0;" />
-          <p style="color:#8898aa;font-size:12px;line-height:16px;">${businessName}<br />Reply to this email to continue onboarding</p>
+          <p style="color:#8898aa;font-size:12px;line-height:16px;">${safeBusinessName}<br />Reply to this email to continue onboarding</p>
         </div>
       </body>
     </html>
@@ -90,7 +101,9 @@ function immediateFollowupHtml(lead: ClaimedLead, businessName: string) {
 }
 
 function twentyFourHourFollowupHtml(lead: ClaimedLead, businessName: string) {
-  const jobType = formatJobType(lead.job_type);
+  const jobType = escapeHtml(formatJobType(lead.job_type));
+  const contactName = escapeHtml(lead.name);
+  const safeBusinessName = escapeHtml(businessName);
   const urgent = isUrgentJobType(lead.job_type);
   const heading = urgent ? "Dispatch follow-up" : "Quick follow-up";
 
@@ -99,12 +112,12 @@ function twentyFourHourFollowupHtml(lead: ClaimedLead, businessName: string) {
       <body style="background:#f6f9fc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;padding:24px;">
         <div style="background:#ffffff;max-width:640px;margin:0 auto;padding:32px 40px;">
           <h1 style="color:#333333;">${heading}</h1>
-          <p>Hi ${lead.name},</p>
+          <p>Hi ${contactName},</p>
           <p>Just checking in on your TradieFlow workflow request for ${jobType}.</p>
           <p><strong>Ready to get started?</strong> Reply "YES" and share the best time to map your missed-call, dispatch, and quote follow-up workflow.</p>
           <p>${urgent ? "If emergency or after-hours work is part of the mix, reply with your coverage window so the workflow fits how your team handles urgent jobs." : "If timing changed or you no longer need help, just reply and I&apos;ll close the request."}</p>
           <hr style="border:none;border-top:1px solid #e6ebf1;margin:24px 0;" />
-          <p style="color:#8898aa;font-size:12px;line-height:16px;">${businessName}<br />Reply to this email to continue setup</p>
+          <p style="color:#8898aa;font-size:12px;line-height:16px;">${safeBusinessName}<br />Reply to this email to continue setup</p>
         </div>
       </body>
     </html>
@@ -112,6 +125,8 @@ function twentyFourHourFollowupHtml(lead: ClaimedLead, businessName: string) {
 }
 
 function fortyEightHourFollowupHtml(lead: ClaimedLead, businessName: string) {
+  const contactName = escapeHtml(lead.name);
+  const safeBusinessName = escapeHtml(businessName);
   const urgent = isUrgentJobType(lead.job_type);
 
   return `
@@ -119,12 +134,12 @@ function fortyEightHourFollowupHtml(lead: ClaimedLead, businessName: string) {
       <body style="background:#f6f9fc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;padding:24px;">
         <div style="background:#ffffff;max-width:640px;margin:0 auto;padding:32px 40px;">
           <h1 style="color:#333333;">${urgent ? "Last dispatch check-in" : "Last check-in"}</h1>
-          <p>Hi ${lead.name},</p>
+          <p>Hi ${contactName},</p>
           <p>I haven&apos;t heard back about your TradieFlow workflow request.</p>
           <p><strong>Reply "YES" if you still want to plug missed-call leaks and tighten dispatch</strong> - otherwise I&apos;ll close this request.</p>
           <p>No pressure either way. If you want to start later, just reply and we can reopen it anytime.</p>
           <hr style="border:none;border-top:1px solid #e6ebf1;margin:24px 0;" />
-          <p style="color:#8898aa;font-size:12px;line-height:16px;">${businessName}<br />Reply to this email if you still want setup</p>
+          <p style="color:#8898aa;font-size:12px;line-height:16px;">${safeBusinessName}<br />Reply to this email if you still want setup</p>
         </div>
       </body>
     </html>
@@ -253,11 +268,8 @@ serve(async (request) => {
         const { error: emailError } = await resend.emails.send(payloadArgs);
 
         if (emailError) {
-          await supabase.from("webhook_failures").insert({
-            provider: "resend",
-            payload: payloadArgs,
-            error_message: String(emailError.message).slice(0, 500)
-          });
+          // Keep a single retry path via claim_due_leads with short backoff.
+          // Do not also enqueue DLQ or the lead can be emailed twice.
           throw new Error(emailError.message || "Failed to send email");
         }
 
@@ -299,11 +311,13 @@ serve(async (request) => {
         results.errors += 1;
         console.error(`Error processing lead ${lead.id}:`, error);
 
+        const retryAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
         await supabase
           .from("leads")
           .update({
             processing: false,
             processing_started_at: null,
+            next_followup_at: retryAt,
           })
           .eq("id", lead.id);
 
@@ -314,6 +328,7 @@ serve(async (request) => {
             error: error instanceof Error ? error.message : "Unknown error",
             step: lead.followup_step,
             source: "supabase-edge-function",
+            next_followup_at: retryAt,
           },
         });
       }

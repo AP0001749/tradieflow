@@ -367,6 +367,7 @@ export async function sendInvoiceEmail(invoiceId: string) {
       id,
       amount,
       due_date,
+      public_share_token,
       job:job_id (
         title,
         client:client_id (
@@ -386,17 +387,13 @@ export async function sendInvoiceEmail(invoiceId: string) {
 
   const invoiceNumber = invoice.id.slice(0, 8).toUpperCase();
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("business_name, email")
+  const { data: businessProfile } = await supabase
+    .from("business_profile")
+    .select("business_name")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (profileError) {
-    console.error("Error fetching profile:", profileError);
-  }
-
-  const businessName = profile?.business_name || "TradieFlow";
+  const businessName = businessProfile?.business_name || "TradieFlow";
   const fromEmail = getResendSenderEmail();
   
   // @ts-expect-error -- Supabase nested relation typing is not inferred here.
@@ -422,7 +419,28 @@ export async function sendInvoiceEmail(invoiceId: string) {
       })
     : "Upon Receipt";
 
-  const invoiceUrl = `${getAppOrigin()}/dashboard/invoices/${invoiceId}`;
+  let shareToken =
+    (invoice as { public_share_token?: string | null }).public_share_token || null;
+
+  if (!shareToken) {
+    const generatedToken = crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", "");
+    const { data: tokenRow, error: tokenError } = await supabase
+      .from("invoices")
+      .update({ public_share_token: generatedToken })
+      .eq("id", invoiceId)
+      .eq("user_id", user.id)
+      .select("public_share_token")
+      .maybeSingle();
+
+    if (tokenError || !tokenRow?.public_share_token) {
+      console.error("Failed to create invoice share token:", tokenError);
+      return { success: false, error: "Failed to create customer invoice link" };
+    }
+
+    shareToken = tokenRow.public_share_token;
+  }
+
+  const invoiceUrl = `${getAppOrigin()}/invoice/${shareToken}`;
 
   try {
     const resend = getResend();

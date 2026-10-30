@@ -8,6 +8,9 @@ import {
   hasBaselineAutomationAccess,
 } from "@/lib/pricing";
 import {
+  isPhoneSmsSuppressed,
+} from "@/lib/sms-suppression";
+import {
   DEFAULT_MISSED_CALL_TEXT_TEMPLATE,
   coerceAutomationTemplate,
   renderAutomationTemplate,
@@ -255,6 +258,13 @@ async function getOrCreateMissedCallLead(
     return existingLead;
   }
 
+  const phoneSuppressed = await isPhoneSmsSuppressed({
+    businessId,
+    phone: fromNumber,
+  });
+  const inheritedSuppression =
+    Boolean(existingLead?.sms_do_not_contact) || phoneSuppressed;
+
   const supabase = createAdminClient();
   const closedLeadContext = existingLead
     ? ` Prior closed lead: ${existingLead.id} (${existingLead.status}).`
@@ -272,6 +282,10 @@ async function getOrCreateMissedCallLead(
       triage_problem: "Missed inbound call requiring text-back recovery.",
       followup_step: 0,
       next_followup_at: null,
+      sms_do_not_contact: inheritedSuppression,
+      sms_do_not_contact_reason: inheritedSuppression
+        ? "inherited_phone_suppression"
+        : null,
       notes: `Inbound call missed. Twilio CallSid: ${callSid || "unknown"}.${closedLeadContext}`,
     })
     .select("id, name, phone, status, first_responded_at, lead_urgency, response_due_at, sms_do_not_contact, triage_problem")
@@ -492,12 +506,9 @@ async function sendMissedCallText({
       to: toNumber,
     });
   } catch (error) {
-    console.error("Twilio send failed, dumping to DLQ", error);
-    await supabase.from("webhook_failures").insert({
-      provider: "twilio",
-      payload: { body, from: fromNumber, to: toNumber },
-      error_message: String(error).slice(0, 500)
-    });
+    // Keep one retry path via CallSid claim status=failed.
+    // Do not also enqueue DLQ or the caller can receive duplicate SMS.
+    console.error("Twilio send failed", error);
     throw error;
   }
 
@@ -579,7 +590,12 @@ export async function POST(request: Request) {
       toNumber,
     });
 
-    if (lead.sms_do_not_contact) {
+    const phoneSuppressed = await isPhoneSmsSuppressed({
+      businessId: businessProfile.id,
+      phone: fromNumber,
+    });
+
+    if (lead.sms_do_not_contact || phoneSuppressed) {
       await markMissedCallTextBackStatus({
         callSid,
         status: "suppressed",
@@ -588,7 +604,9 @@ export async function POST(request: Request) {
         call_sid: callSid,
         dial_status: dialStatus,
         from: fromNumber,
-        reason: "sms_do_not_contact",
+        reason: lead.sms_do_not_contact
+          ? "sms_do_not_contact"
+          : "phone_sms_suppression",
         source: "twilio-missed-call",
         to: toNumber,
       });

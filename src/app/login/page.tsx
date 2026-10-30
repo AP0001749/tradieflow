@@ -1,33 +1,12 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { getAppOrigin } from "@/lib/app-origin";
-import { createClient } from "@/lib/supabase/server";
+
+import { isDemoLoginConfigured } from "@/lib/demo-login";
+
 import LoginForm from "./login-form";
-
-async function signInWithGoogle() {
-  "use server";
-  const supabase = await createClient();
-
-  // Always use the configured app URL for OAuth redirects to prevent open redirect
-  // attacks via x-forwarded-host header manipulation.
-  const origin = getAppOrigin();
-
-  const { data } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${origin}/auth/callback`,
-      queryParams: {
-        prompt: "select_account", // Always show account picker
-      },
-    },
-  });
-
-  if (data.url) {
-    redirect(data.url);
-  }
-
-  throw new Error("Unable to start Google OAuth flow");
-}
+import {
+  signInWithDemo,
+  signInWithGoogle,
+} from "./actions";
 
 export const metadata: Metadata = {
   title: "Sign In — TradieFlow",
@@ -35,6 +14,25 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function LoginPage() {
-  return <LoginForm signInWithGoogle={signInWithGoogle} />;
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+  const initialError =
+    error === "auth"
+      ? "Sign-in did not complete. Try again or use email."
+      : error === "config"
+        ? "App URL or Supabase keys are missing. Check NEXT_PUBLIC_APP_URL, NEXT_PUBLIC_SUPABASE_URL, and NEXT_PUBLIC_SUPABASE_ANON_KEY."
+        : null;
+
+  return (
+    <LoginForm
+      demoEnabled={isDemoLoginConfigured()}
+      initialError={initialError}
+      signInWithDemo={signInWithDemo}
+      signInWithGoogle={signInWithGoogle}
+    />
+  );
 }

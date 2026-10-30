@@ -66,20 +66,17 @@
   `TWILIO_ACCOUNT_SID`
   `TWILIO_AUTH_TOKEN`
   `TWILIO_SKIP_SIGNATURE_VALIDATION=false`
-  `LEAD_FOLLOWUP_SECRET` if using `/api/cron/leads-followup`
+  `LEAD_FOLLOWUP_SECRET` for Supabase Edge Function and hosted cron auth
   `CRON_SECRET` only as a legacy alias during cutover
   `NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL` if using lead conversion tracking
   `NEXT_PUBLIC_GOOGLE_ADS_SUBSCRIBE_LABEL` if using subscription conversion tracking
 - [ ] Verify `/login`, `/signup`, and `/dashboard` behave correctly after deploy
+- [ ] Verify `/book` accepts a public dispatch-audit request without login
 - [ ] Verify `/dashboard/outreach` loads and copies the dispatch-audit scripts
-- [ ] Verify `POST /api/cron/leads-followup` returns an authenticated success response if you are using the hosted compatibility processor
 - [ ] Verify `POST /api/cron/zero-leak` returns an authenticated success response after migrations are live
-- [ ] If using GitHub Actions fallback scheduling, confirm repo secrets:
-  `APP_BASE_URL`
+- [ ] If using GitHub Actions heartbeat scheduling, confirm repo secrets:
+  `APP_BASE_URL` / project Edge Function URL
   `LEAD_FOLLOWUP_SECRET` or `CRON_SECRET`
-- [ ] Confirm the app-host and GitHub Actions secrets are both present in the route allowlist during cutover
-- [ ] If both GitHub secrets exist during cutover, confirm at least one matches the app-host route secret set
-- [ ] Use `.\scripts\check-followup-route.ps1` to confirm the live route version, secret count, and secret source headers
 
 ## Supabase
 
@@ -112,29 +109,40 @@
   `20260411163000_gate_zero_leak_apex_automations.sql`
   `20260411164500_gate_missed_call_baseline_automation.sql`
   `20260429103000_enable_rls_for_twilio_missed_call_textbacks.sql`
+  `20260429120000_migrate_zero_leak_pgcron.sql`
+  `20260429130000_create_webhook_dlq.sql`
+  `20261030120000_security_messaging_hardening.sql`
 - [ ] Verify hosted Supabase auth settings directly in the live project dashboard
 - [ ] Verify RLS / tenant isolation in the live database
 - [ ] Confirm `tier_limits` contains the expected free, Baseline, and Apex plan rows
 - [ ] Confirm `business_profile` has the new dispatch, Twilio, automation, and SLA columns
 - [ ] Confirm `jobs` has dispatch fields, check-in fields, share-token fields, and quote follow-up claim fields
 - [ ] Confirm `leads` has triage, first-response, and SMS suppression fields
-- [ ] Confirm `job_dispatch_events` and `twilio_missed_call_textbacks` exist
+- [ ] Confirm `job_dispatch_events`, `twilio_missed_call_textbacks`, and `sms_suppressions` exist
+- [ ] Confirm Twilio numbers are unique by normalised digits
+- [ ] Confirm profiles billing columns are protected from client updates
 - [ ] Create or verify Vault secrets:
   `project_url`
   `supabase_anon_key`
   `lead_followup_secret`
-- [ ] Deploy the `lead-followup` Edge Function
+- [ ] Deploy Edge Functions:
+  `npx supabase functions deploy lead-followup --no-verify-jwt`
+  `npx supabase functions deploy zero-leak --no-verify-jwt`
+  `npx supabase functions deploy dlq-retry --no-verify-jwt`
 - [ ] Set Supabase Edge Function secrets:
   `LEAD_FOLLOWUP_SECRET`
   `SUPABASE_SERVICE_ROLE_KEY`
   `RESEND_API_KEY`
   `RESEND_SENDER_EMAIL` or `RESEND_FROM_EMAIL`
   `RESEND_REPLY_TO_EMAIL`
+  `TWILIO_ACCOUNT_SID`
+  `TWILIO_AUTH_TOKEN`
 - [ ] If Vault secrets were added after the migration, run:
   `select public.configure_lead_followup_cron();`
+  `select public.configure_zero_leak_cron();`
 - [ ] Verify `cron.job` and `cron.job_run_details`
 - [ ] Verify Supabase Edge Function logs show successful runs
-- [ ] Once Supabase Cron is confirmed healthy, disable the GitHub Actions fallback schedule if you no longer need the hosted compatibility route
+- [ ] Once Supabase Cron is confirmed healthy, keep GitHub heartbeat only as a manual fallback
 
 ## Stripe
 

@@ -113,6 +113,7 @@ export type Database = {
       clients: {
         Row: {
           address: string | null
+          archived_at: string | null
           created_at: string
           email: string | null
           id: string
@@ -123,6 +124,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          archived_at?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -133,6 +135,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          archived_at?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -152,6 +155,7 @@ export type Database = {
           job_id: string
           notes: string | null
           paid_at: string | null
+          public_share_token: string | null
           review_request_last_error: string | null
           review_request_processing: boolean
           review_request_processing_started_at: string | null
@@ -168,6 +172,7 @@ export type Database = {
           job_id: string
           notes?: string | null
           paid_at?: string | null
+          public_share_token?: string | null
           review_request_last_error?: string | null
           review_request_processing?: boolean
           review_request_processing_started_at?: string | null
@@ -184,6 +189,7 @@ export type Database = {
           job_id?: string
           notes?: string | null
           paid_at?: string | null
+          public_share_token?: string | null
           review_request_last_error?: string | null
           review_request_processing?: boolean
           review_request_processing_started_at?: string | null

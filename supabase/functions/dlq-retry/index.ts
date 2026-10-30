@@ -15,28 +15,55 @@ type WebhookFailure = {
   provider: "twilio" | "resend" | string;
   payload: Record<string, unknown>;
   retry_count: number;
+  claim_token: string | null;
 };
 
-serve(async () => {
+function requireCronSecret(request: Request) {
+  const expected = Deno.env.get("LEAD_FOLLOWUP_SECRET") || Deno.env.get("CRON_SECRET");
+  if (!expected) {
+    throw new Error("Missing LEAD_FOLLOWUP_SECRET");
+  }
+
+  const headerSecret = request.headers.get("x-cron-secret");
+  const authHeader = request.headers.get("authorization");
+  const bearer = authHeader?.toLowerCase().startsWith("bearer ")
+    ? authHeader.slice(7).trim()
+    : null;
+
+  if (headerSecret !== expected && bearer !== expected) {
+    return false;
+  }
+
+  return true;
+}
+
+serve(async (request) => {
   try {
+    if (!requireCronSecret(request)) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const supabase = createAdminClient();
-    
-    // Fetch pending DLQ items
-    const { data: failures, error: fetchError } = await supabase
-      .from("webhook_failures")
-      .select("*")
-      .eq("status", "pending")
-      .lte("next_retry_at", new Date().toISOString())
-      .limit(50);
+    const { data: failures, error: claimError } = await supabase.rpc(
+      "claim_webhook_failures",
+      { limit_count: 50 },
+    );
 
-    if (fetchError) throw fetchError;
+    if (claimError) throw claimError;
 
-    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    const resend = resendApiKey ? new Resend(resendApiKey) : null;
     const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
     const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
     const twilioClient = accountSid && authToken ? twilio(accountSid, authToken) : null;
 
+    let processed = 0;
+
     for (const item of ((failures || []) as WebhookFailure[])) {
+      processed += 1;
       try {
         if (item.provider === "twilio") {
           if (!twilioClient) throw new Error("Twilio not configured");
@@ -45,29 +72,48 @@ serve(async () => {
           >[0];
           await twilioClient.messages.create(payload);
         } else if (item.provider === "resend") {
+          if (!resend) throw new Error("Resend not configured");
           const payload = item.payload as Parameters<typeof resend.emails.send>[0];
-          await resend.emails.send(payload);
+          const { error: emailError } = await resend.emails.send(payload);
+          if (emailError) {
+            throw new Error(emailError.message || "Resend send failed");
+          }
+        } else {
+          throw new Error(`Unsupported provider: ${item.provider}`);
         }
 
-        // Mark success
-        await supabase.from("webhook_failures").update({ status: "success" }).eq("id", item.id);
+        await supabase
+          .from("webhook_failures")
+          .update({
+            status: "success",
+            claimed_at: null,
+            claim_token: null,
+            error_message: null,
+          })
+          .eq("id", item.id)
+          .eq("claim_token", item.claim_token);
       } catch (err) {
-        // Increment retry, retry after +5 mins, or fail if > 5 retries
-        const newRetryCount = item.retry_count + 1;
+        const newRetryCount = (item.retry_count || 0) + 1;
         const status = newRetryCount > 5 ? "failed" : "pending";
         const nextRetryAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
         const errorMessage = String(err).slice(0, 500);
 
-        await supabase.from("webhook_failures").update({
-          retry_count: newRetryCount,
-          status,
-          next_retry_at: nextRetryAt,
-          error_message: errorMessage,
-        }).eq("id", item.id);
+        await supabase
+          .from("webhook_failures")
+          .update({
+            retry_count: newRetryCount,
+            status,
+            next_retry_at: nextRetryAt,
+            error_message: errorMessage,
+            claimed_at: null,
+            claim_token: null,
+          })
+          .eq("id", item.id)
+          .eq("claim_token", item.claim_token);
       }
     }
 
-    return new Response(JSON.stringify({ success: true, processed: failures?.length || 0 }), {
+    return new Response(JSON.stringify({ success: true, processed }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err) {

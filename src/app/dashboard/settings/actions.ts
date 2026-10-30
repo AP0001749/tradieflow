@@ -15,6 +15,7 @@ import {
   DEFAULT_REVIEW_REQUEST_TEMPLATE,
   coerceAutomationTemplate,
 } from '@/lib/zero-leak';
+import { assertTwilioNumberOwnedByAccount } from '@/lib/twilio-ownership';
 import { revalidatePath } from 'next/cache';
 
 async function generateAvailableBookingSlug(
@@ -118,7 +119,7 @@ export async function updateBusinessProfile(formData: {
 
   const { data: existing, error: existingError } = await supabase
     .from('business_profile')
-    .select('id')
+    .select('id, twilio_phone_number')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -130,6 +131,20 @@ export async function updateBusinessProfile(formData: {
     formData.booking_url_slug || formData.business_name,
     existing?.id
   );
+
+  const requestedTwilioNumber = formData.twilio_phone_number?.trim() || null;
+  const existingTwilioNumber =
+    (existing as { twilio_phone_number?: string | null } | null)?.twilio_phone_number || null;
+
+  if (requestedTwilioNumber) {
+    const sameNumber =
+      requestedTwilioNumber.replace(/\D+/g, '') ===
+      (existingTwilioNumber || '').replace(/\D+/g, '');
+
+    if (!sameNumber) {
+      await assertTwilioNumberOwnedByAccount(requestedTwilioNumber);
+    }
+  }
 
   const payload = {
     business_name: formData.business_name,
@@ -149,7 +164,7 @@ export async function updateBusinessProfile(formData: {
       DEFAULT_MISSED_CALL_TEXT_TEMPLATE
     ),
     missed_call_forwarding_number: formData.missed_call_forwarding_number?.trim() || null,
-    twilio_phone_number: formData.twilio_phone_number?.trim() || null,
+    twilio_phone_number: requestedTwilioNumber,
     emergency_response_sla_minutes: Math.min(
       Math.max(1, Math.round(formData.emergency_response_sla_minutes || 15)),
       10080
@@ -187,7 +202,12 @@ export async function updateBusinessProfile(formData: {
       .eq('id', existing.id)
       .eq('user_id', user.id);
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === '23505' && /twilio/i.test(error.message)) {
+        throw new Error('That Twilio number is already assigned to another workspace.');
+      }
+      throw error;
+    }
   } else {
     const { error } = await supabase
       .from('business_profile')
@@ -196,7 +216,12 @@ export async function updateBusinessProfile(formData: {
         ...payload,
       });
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === '23505' && /twilio/i.test(error.message)) {
+        throw new Error('That Twilio number is already assigned to another workspace.');
+      }
+      throw error;
+    }
   }
 
   revalidatePath('/dashboard/settings');
