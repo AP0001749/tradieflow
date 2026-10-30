@@ -1,5 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 
 import { getResend, getResendSenderEmail } from "@/lib/resend";
 
@@ -16,8 +18,48 @@ const prospectSchema = z.object({
   website: z.string().max(0).optional().or(z.literal("")),
 });
 
-export async function POST(request: Request) {
+let prospectRatelimit: Ratelimit | null = null;
+
+function getProspectRateLimit() {
+  if (prospectRatelimit) {
+    return prospectRatelimit;
+  }
+
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return null;
+  }
+
+  prospectRatelimit = new Ratelimit({
+    redis: Redis.fromEnv(),
+    limiter: Ratelimit.slidingWindow(3, "60 s"),
+    prefix: "rl:prospect:ip",
+  });
+
+  return prospectRatelimit;
+}
+
+function getClientIp(request: NextRequest) {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  const forwardedIp = forwardedFor?.split(",")[0]?.trim();
+  const directIp = "ip" in request ? (request.ip as string | undefined) : undefined;
+  return forwardedIp || directIp || "unknown";
+}
+
+export async function POST(request: NextRequest) {
   try {
+    const limiter = getProspectRateLimit();
+    if (!limiter) {
+      return NextResponse.json(
+        { error: "Prospect intake is temporarily unavailable" },
+        { status: 503 }
+      );
+    }
+
+    const { success } = await limiter.limit(getClientIp(request));
+    if (!success) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const body = await request.json().catch(() => null);
     const parsed = prospectSchema.safeParse(body);
 

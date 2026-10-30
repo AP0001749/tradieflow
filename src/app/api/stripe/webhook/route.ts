@@ -343,19 +343,24 @@ export async function POST(request: Request) {
           break;
         }
 
-        const planKey = normalizePlanKey(session?.metadata?.planKey);
-        const update: Record<string, unknown> = {
-          subscription_tier: "pro",
-          subscription_plan_key: planKey,
-          subscription_status: "active",
-        };
+        // Always reconcile against live Stripe state so a delayed checkout event
+        // cannot restore paid access after a newer cancellation or plan change.
+        const liveSubscription = await findPreferredLiveSubscription(
+          stripe,
+          customerId,
+          subscriptionId
+        );
 
-        if (customerId) {
-          update.stripe_customer_id = customerId;
+        if (!liveSubscription) {
+          outcomeStatus = "ignored";
+          outcomeDetails =
+            "checkout.session.completed ignored because no live Stripe subscription was found";
+          break;
         }
-        if (subscriptionId) {
-          update.stripe_subscription_id = subscriptionId;
-          update.subscription_start_date = new Date().toISOString();
+
+        const update = buildSubscriptionProfileUpdate(liveSubscription);
+        if (customerId && !update.stripe_customer_id) {
+          update.stripe_customer_id = customerId;
         }
 
         const { error: updateError } = await updateProfileByUserId(

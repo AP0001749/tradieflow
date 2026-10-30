@@ -302,8 +302,8 @@ begin
     where n.nspname = 'public'
       and p.proname = 'configure_lead_followup_cron'
   ) then
-    execute 'revoke all on function public.configure_lead_followup_cron() from public';
-    execute 'grant execute on function public.configure_lead_followup_cron() to service_role';
+    execute 'revoke all on function public.configure_lead_followup_cron(text) from public';
+    execute 'grant execute on function public.configure_lead_followup_cron(text) to service_role';
   end if;
 end $$;
 

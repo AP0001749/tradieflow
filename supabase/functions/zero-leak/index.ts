@@ -410,18 +410,10 @@ async function sendTwilioSms({
 
   if (!accountSid || !authToken) throw new Error("Twilio SMS delivery is not configured");
 
+  // Single retry path: claim release + quote_followup_last_error / review_request_last_error.
+  // Do not also enqueue webhook_failures or the same SMS can send twice.
   const client = twilio(accountSid, authToken);
-  try {
-    return await client.messages.create({ body, from: fromNumber, to: toNumber });
-  } catch (err) {
-    const supabase = createAdminClient();
-    await supabase.from("webhook_failures").insert({
-      provider: "twilio",
-      payload: { body, from: fromNumber, to: toNumber },
-      error_message: String(err).slice(0, 500),
-    });
-    throw err;
-  }
+  return await client.messages.create({ body, from: fromNumber, to: toNumber });
 }
 
 async function sendAutomationEmail({
@@ -455,12 +447,7 @@ async function sendAutomationEmail({
   const { error: emailError } = await resend.emails.send(payload);
 
   if (emailError) {
-    const supabase = createAdminClient();
-    await supabase.from("webhook_failures").insert({
-      provider: "resend",
-      payload,
-      error_message: String(emailError.message).slice(0, 500),
-    });
+    // Rely on Zero-Leak claim release for retry; avoid a second DLQ send path.
     throw new Error(emailError.message || "Failed to send automation email");
   }
 }

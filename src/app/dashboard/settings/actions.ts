@@ -135,15 +135,14 @@ export async function updateBusinessProfile(formData: {
   const requestedTwilioNumber = formData.twilio_phone_number?.trim() || null;
   const existingTwilioNumber =
     (existing as { twilio_phone_number?: string | null } | null)?.twilio_phone_number || null;
+  const sameTwilioNumber =
+    (requestedTwilioNumber || '').replace(/\D+/g, '') ===
+    (existingTwilioNumber || '').replace(/\D+/g, '');
 
-  if (requestedTwilioNumber) {
-    const sameNumber =
-      requestedTwilioNumber.replace(/\D+/g, '') ===
-      (existingTwilioNumber || '').replace(/\D+/g, '');
-
-    if (!sameNumber) {
-      await assertTwilioNumberOwnedByAccount(requestedTwilioNumber);
-    }
+  // Twilio mapping is enforced server-side: ownership check + service-role write.
+  // Client-side updates to twilio_phone_number are blocked by a database trigger.
+  if (requestedTwilioNumber && !sameTwilioNumber) {
+    await assertTwilioNumberOwnedByAccount(requestedTwilioNumber);
   }
 
   const payload = {
@@ -164,7 +163,6 @@ export async function updateBusinessProfile(formData: {
       DEFAULT_MISSED_CALL_TEXT_TEMPLATE
     ),
     missed_call_forwarding_number: formData.missed_call_forwarding_number?.trim() || null,
-    twilio_phone_number: requestedTwilioNumber,
     emergency_response_sla_minutes: Math.min(
       Math.max(1, Math.round(formData.emergency_response_sla_minutes || 15)),
       10080
@@ -203,24 +201,52 @@ export async function updateBusinessProfile(formData: {
       .eq('user_id', user.id);
 
     if (error) {
-      if (error.code === '23505' && /twilio/i.test(error.message)) {
-        throw new Error('That Twilio number is already assigned to another workspace.');
-      }
       throw error;
     }
+
+    if (!sameTwilioNumber) {
+      const supabaseAdmin = createAdminClient();
+      const { error: twilioError } = await supabaseAdmin
+        .from('business_profile')
+        .update({ twilio_phone_number: requestedTwilioNumber })
+        .eq('id', existing.id)
+        .eq('user_id', user.id);
+
+      if (twilioError) {
+        if (twilioError.code === '23505' && /twilio|normalize_phone/i.test(twilioError.message)) {
+          throw new Error('That Twilio number is already assigned to another workspace.');
+        }
+        throw twilioError;
+      }
+    }
   } else {
-    const { error } = await supabase
+    const { data: created, error } = await supabase
       .from('business_profile')
       .insert({
         user_id: user.id,
         ...payload,
-      });
+      })
+      .select('id')
+      .single();
 
     if (error) {
-      if (error.code === '23505' && /twilio/i.test(error.message)) {
-        throw new Error('That Twilio number is already assigned to another workspace.');
-      }
       throw error;
+    }
+
+    if (requestedTwilioNumber && created?.id) {
+      const supabaseAdmin = createAdminClient();
+      const { error: twilioError } = await supabaseAdmin
+        .from('business_profile')
+        .update({ twilio_phone_number: requestedTwilioNumber })
+        .eq('id', created.id)
+        .eq('user_id', user.id);
+
+      if (twilioError) {
+        if (twilioError.code === '23505' && /twilio|normalize_phone/i.test(twilioError.message)) {
+          throw new Error('That Twilio number is already assigned to another workspace.');
+        }
+        throw twilioError;
+      }
     }
   }
 

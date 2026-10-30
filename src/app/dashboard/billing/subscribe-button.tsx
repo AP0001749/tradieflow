@@ -36,17 +36,27 @@ export function SubscribeButton({
       });
 
       const data = (await res.json()) as {
-        sessionId?: string;
+        sessionId?: string | null;
         url?: string | null;
+        mode?: "checkout" | "portal";
         error?: string;
       };
 
-      if (!res.ok || !data.sessionId) {
+      if (!res.ok) {
         throw new Error(data.error || "Failed to start checkout");
       }
 
       if (!data.url) {
-        throw new Error("Checkout URL missing");
+        throw new Error(
+          data.mode === "portal"
+            ? "Billing portal URL missing"
+            : "Checkout URL missing"
+        );
+      }
+
+      // Portal redirects intentionally omit sessionId; checkout includes one.
+      if (data.mode !== "portal" && !data.sessionId) {
+        throw new Error(data.error || "Failed to start checkout");
       }
 
       window.location.assign(data.url);

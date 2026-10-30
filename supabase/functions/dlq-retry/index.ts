@@ -37,6 +37,40 @@ function requireCronSecret(request: Request) {
   return true;
 }
 
+async function isSmsSuppressed(
+  supabase: ReturnType<typeof createAdminClient>,
+  payload: Record<string, unknown>,
+) {
+  const businessId =
+    typeof payload.business_id === "string"
+      ? payload.business_id
+      : typeof payload.businessId === "string"
+        ? payload.businessId
+        : null;
+  const toNumber =
+    typeof payload.to === "string"
+      ? payload.to
+      : typeof payload.To === "string"
+        ? payload.To
+        : null;
+
+  if (!businessId || !toNumber) {
+    return false;
+  }
+
+  const { data, error } = await supabase.rpc("is_sms_suppressed", {
+    p_business_id: businessId,
+    p_phone: toNumber,
+  });
+
+  if (error) {
+    console.warn("is_sms_suppressed unavailable during DLQ retry", error.message);
+    return false;
+  }
+
+  return Boolean(data);
+}
+
 serve(async (request) => {
   try {
     if (!requireCronSecret(request)) {
@@ -61,11 +95,27 @@ serve(async (request) => {
     const twilioClient = accountSid && authToken ? twilio(accountSid, authToken) : null;
 
     let processed = 0;
+    let suppressed = 0;
 
     for (const item of ((failures || []) as WebhookFailure[])) {
       processed += 1;
       try {
         if (item.provider === "twilio") {
+          if (await isSmsSuppressed(supabase, item.payload || {})) {
+            suppressed += 1;
+            await supabase
+              .from("webhook_failures")
+              .update({
+                status: "success",
+                claimed_at: null,
+                claim_token: null,
+                error_message: "suppressed: sms_do_not_contact",
+              })
+              .eq("id", item.id)
+              .eq("claim_token", item.claim_token);
+            continue;
+          }
+
           if (!twilioClient) throw new Error("Twilio not configured");
           const payload = item.payload as Parameters<
             NonNullable<typeof twilioClient>["messages"]["create"]
@@ -113,7 +163,7 @@ serve(async (request) => {
       }
     }
 
-    return new Response(JSON.stringify({ success: true, processed }), {
+    return new Response(JSON.stringify({ success: true, processed, suppressed }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err) {
